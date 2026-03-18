@@ -7,3 +7,38 @@
 <link href="./index_files/css2" rel="stylesheet">
 
 <style>
+:root {
+  --green: #1a7a4a;
+  --green-light: #f0faf4;
+  --green-border: #a7f3d0;
+  --green-dark: #155f3a;
+  --purple: #7c3aed;
+  --purple-light: #f5f3ff;
+  --red: #dc2626;
+  --amber: #f59e0b;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-900: #111827;
+  --bg: #f4f5f0;
+  --card: #ffffff;
+  --border: #e5e7eb;
+  --text: #1f2937;
+  --text-sub: #6b7280;
+  --text-hint: #9ca3af;
+  --radius: 10px;
+  --shadow: 0 1px 4px rgba(0,0,0,.07);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* ── LAYOUT ── */
+.app { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* 頂部 header（手機） */
+.topbar { background: var(--green-dark); display: flex; align-items: center; padding: 0 16px; height: 52px; position: fixed; top: 0; left: 0; right: 0; z-index: 100; gap: 10px; }
+.logo { width: 32px; height: 32px; background: white; border-radius: 7px; display: 
