@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>好糰 Goood 外送員</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --green:#1a7a4a;--green-light:#f0faf4;--green-border:#a7f3d0;--green-dark:#155f3a;
+  --orange:#ea580c;--orange-light:#fff7ed;--blue:#2563eb;--blue-light:#eff6ff;
+  --red:#dc2626;--gray-50:#f9fafb;--border:#e5e7eb;
+  --text:#1f2937;--text-sub:#6b7280;--text-hint:#9ca3af;
+  --bg:#f0f2ec;--card:#fff;--radius:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.login-card{background:var(--card);border-radius:var(--radius);padding:32px 24px;width:100%;max-width:360px;box-shadow:0 4px 24px rgba(0,0,0,.1)}
+.login-logo{width:60px;height:60px;background:var(--green);border-radius:14px;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:20px;margin:0 auto 16px;line-height:1.2;text-align:center}
+.login-title{text-align:center;font-size:20px;font-weight:700;margin-bottom:4px}
+.login-sub{text-align:center;font-size:13px;color:var(--text-hint);margin-bottom:28px}
+.flabel{display:block;font-size:12px;color:var(--text-sub);margin-bottom:5px;font-weight:600}
+.finput{width:100%;padding:13px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:16px;font-family:inherit;outline:none;background:var(--gray-50);color:var(--text);margin-bottom:14px;transition:border-color .15s;-webkit-appearance:none;appearance:none}
+.finput:focus{border-color:var(--green);background:#fff}
+.login-btn{width:100%;padding:14px;background:var(--green);color:white;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px}
+.login-btn:active{background:var(--green-dark)}
+.login-err{color:var(--red);font-size:13px;text-align:center;margin-top:10px;min-height:18px;font-weight:500}
+.app{display:none;flex-direction:column;min-height:100vh}
+.topbar{background:var(--green-dark);padding:0 16px;height:56px;display:flex;align-items:center;justify-content:space-between;position:fixed;top:0;left:0;right:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.tlogo{width:36px;height:36px;background:white;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:var(--green-dark);line-height:1.1;text-align:center;flex-shrink:0}
+.driver-name{color:white;font-weight:700;font-size:15px}
+.driver-sub{color:rgba(255,255,255,.65);font-size:11px;margin-top:1px}
+.logout-btn{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);color:white;padding:7px 14px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit}
+.main{padding:16px;padding-top:72px;padding-bottom:24px}
+.date-tab-wrap{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch}
+.date-tab{padding:8px 16px;border:1.5px solid var(--border);border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;background:white;color:var(--text-sub);white-space:nowrap;font-family:inherit;flex-shrink:0}
+.date-tab.active{background:var(--green);border-color:var(--green);color:white}
+.trip-card{background:var(--card);border-radius:var(--radius);border:2px solid var(--border);margin-bottom:14px;overflow:hidden}
+.trip-card.sc-dispatched{border-color:#93c5fd}
+.trip-card.sc-out{border-color:var(--orange)}
+.trip-card.sc-done{border-color:var(--green-border);opacity:.75}
+.trip-header{padding:14px 16px;display:flex;align-items:flex-start;gap:12px}
+.trip-time-main{font-size:19px;font-weight:700}
+.trip-time-sub{font-size:12px;color:var(--text-hint);margin-top:3px;line-height:1.5}
+.sbadge{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;white-space:nowrap;flex-shrink:0;margin-top:2px}
+.sb-pending{background:#fef3c7;color:#92400e}
+.sb-dispatched{background:var(--blue-light);color:var(--blue)}
+.sb-out{background:var(--orange-light);color:var(--orange)}
+.sb-done{background:var(--green-light);color:var(--green)}
+.trip-body{padding:0 16px 14px}
+.order-mini{background:var(--gray-50);border-radius:10px;padding:12px;margin-bottom:8px;border:1px solid var(--border)}
+.om-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.om-customer{font-size:14px;font-weight:700}
+.om-amt{font-size:14px;font-weight:700;color:var(--green)}
+.om-addr{font-size:12px;color:var(--text-sub);margin-bottom:5px;line-height:1.4}
+.om-items{font-size:12px;color:var(--text-hint);line-height:1.6}
+.om-bags{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.bag-chip{font-size:11px;background:white;border:1px solid var(--border);border-radius:5px;padding:2px 8px;color:var(--text-sub)}
+.om-note{font-size:11px;background:#fef9c3;color:#713f12;padding:4px 9px;border-radius:6px;margin-top:6px}
+.nav-map-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;background:var(--blue);color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;text-decoration:none;margin:10px 0;width:100%}
+.trip-actions{display:flex;gap:8px;margin-top:10px}
+.action-btn{flex:1;padding:14px;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
+.action-btn:active{transform:scale(.97)}
+.btn-out{background:var(--orange);color:white}
+.btn-done{background:var(--green);color:white}
+.btn-disabled{background:var(--gray-50);color:var(--text-hint);cursor:default;border:1px solid var(--border)}
+.expand-toggle{background:none;border:none;color:var(--text-hint);font-size:13px;cursor:pointer;padding:4px 16px 12px;width:100%;text-align:center;font-family:inherit;display:block}
+.trip-detail{padding:0 16px 14px;border-top:1px solid var(--border)}
+.confirm-msg{background:var(--gray-50);border-radius:8px;padding:12px;font-size:12px;line-height:1.9;white-space:pre-wrap;margin-bottom:8px;color:var(--text);border:1px solid var(--border);max-height:220px;overflow-y:auto}
+.copy-msg-btn{display:flex;align-items:center;gap:6px;padding:9px 14px;background:var(--blue);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:10px}
+.empty-state{text-align:center;padding:52px 20px;color:var(--text-hint);font-size:14px;line-height:1.8}
+.loading-state{text-align:center;padding:40px 20px}
+.loading-spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;display:inline-block;vertical-align:middle}
+.sync-dot.off{background:#f87171}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1f2937;color:white;padding:11px 22px;border-radius:10px;font-size:13px;z-index:999;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.toast.show{opacity:1}
+</style>
+</head>
+<body><div style="position:fixed;top:0;right:0;z-index:999;padding:6px 10px"><a href="index.html" style="font-size:11px;background:rgba(0,0,0,.6);color:white;padding:4px 10px;border-radius:5px;text-decoration:none">← 客服系統</a></div>
+
+<div class="login-wrap" id="login-page">
+  <div class="login-card">
+    <div class="login-logo">好<br>糰</div>
+    <div class="login-title">外送員登入</div>
+    <div class="login-sub">好糰 Goood 外送管理系統</div>
+    <label class="flabel">您的名字</label>
+    <select class="finput" id="driver-select">
+      <option value="">— 請選擇 —</option>
+      <option>鎮哥</option><option>潘伊莎</option><option>正志</option>
+      <option>小賴</option><option>純如</option><option>熊熊</option>
+      <option>龍</option><option>瑋瑋</option><option>平台</option>
+    </select>
+    <label class="flabel">密碼</label>
+    <input class="finput" type="password" id="driver-pwd" placeholder="請向客服確認密碼"
+      onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="login-btn" onclick="doLogin()">登入</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<div class="app" id="app">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="tlogo">好<br>糰</div>
+      <div>
+        <div class="driver-name" id="display-name"></div>
+        <div class="driver-sub">
+          <span class="sync-dot" id="sync-dot"></span>
+          <span id="sync-txt" style="margin-left:4px">連線中…</span>
+        </div>
+      </div>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">登出</button>
+  </div>
+  <div class="main">
+    <div class="date-tab-wrap" id="date-tabs"></div>
+    <div id="trips-list">
+      <div class="loading-state">
+        <div class="loading-spinner"></div>
+        <div style="font-size:13px;color:var(--text-hint)">載入中…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const FB_URL='https://goood-orders-default-rtdb.asia-southeast1.firebasedatabase.app';
+const PASSWORDS={'鎮哥':'1111','潘伊莎':'2222','正志':'3333','小賴':'4444','純如':'5555','熊熊':'6666','龍':'7777','瑋瑋':'8888','平台':'9999'};
+
+let currentDriver=null,currentDate=new Date().toISOString().slice(0,10),allTrips={},pollTimer=null;
+
+function doLogin(){
+  const name=document.getElementById('driver-select').value;
+  const pwd=document.getElementById('driver-pwd').value;
+  const err=document.getElementById('login-err');
+  err.textContent='';
+  if(!name){err.textContent='請選擇您的名字';return;}
+  if(!pwd){err.textContent='請輸入密碼';return;}
+  if(pwd!==PASSWORDS[name]){err.textContent='密碼錯誤，請向客服確認';return;}
+  currentDriver=name;
+  document.getElementById('login-page').style.display='none';
+  document.getElementById('app').style.display='flex';
+  document.getElementById('display-name').textContent=name;
+  renderDateTabs();
+  loadTrips();
+  if(pollTimer)clearInterval(pollTimer);
+  pollTimer=setInterval(loadTrips,12000);
+}
+
+function doLogout(){
+  if(pollTimer)clearInterval(pollTimer);
+  currentDriver=null;allTrips={};
+  document.getElementById('login-page').style.display='flex';
+  document.getElementById('app').style.display='none';
+  document.getElementById('driver-select').value='';
+  document.getElementById('driver-pwd').value='';
+  document.getElementById('login-err').textContent='';
+}
+
+async function fbGet(path){
+  const r=await fetch(FB_URL+path+'.json');
+  if(!r.ok)throw new Error(r.status);
+  return r.json();
+}
+async function fbPatch(path,data){
+  const r=await fetch(FB_URL+path+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  if(!r.ok)throw new Error(r.status);
+  return r.json();
+}
+
+async function loadTrips(){
+  const dot=document.getElementById('sync-dot'),txt=document.getElementById('sync-txt');
+  try{
+    allTrips=await fbGet('/trips')||{};
+    dot.classList.remove('off');txt.textContent='已連線';
+    renderTrips();
+  }catch(e){dot.classList.add('off');txt.textContent='連線失敗';}
+}
+
+function renderDateTabs(){
+  const el=document.getElementById('date-tabs');el.innerHTML='';
+  const today=new Date();
+  for(let i=-1;i<=3;i++){
+    const d=new Date(today);d.setDate(today.getDate()+i);
+    const ds=d.toISOString().slice(0,10);
+    const wd=['日','一','二','三','四','五','六'][d.getDay()];
+    const label=i===0?`今天 (${d.getMonth()+1}/${d.getDate()})`:`${d.getMonth()+1}/${d.getDate()}(${wd})`;
+    const btn=document.createElement('button');
+    btn.className='date-tab'+(ds===currentDate?' active':'');
+    btn.textContent=label;
+    btn.onclick=()=>{currentDate=ds;renderDateTabs();renderTrips();};
+    el.appendChild(btn);
+  }
+}
+
+function renderTrips(){
+  const el=document.getElementById('trips-list');
+  const myTrips=Object.entries(allTrips)
+    .filter(([id,t])=>t.date===currentDate&&t.driver===currentDriver)
+    .sort((a,b)=>(a[1].timeslot||'').localeCompare(b[1].timeslot||''));
+  if(!myTrips.length){
+    const isToday=currentDate===new Date().toISOString().slice(0,10);
+    el.innerHTML=`<div class="empty-state"><div style="font-size:40px;margin-bottom:12px">🛵</div><div>${isToday?'今日尚無派單':'該日無派單'}</div></div>`;
+    return;
+  }
+  el.innerHTML='';
+  myTrips.forEach(([tripId,trip])=>el.appendChild(buildTripCard(tripId,trip)));
+}
+
+function buildTripCard(tripId,trip){
+  const orders=trip.orders||[];
+  const s=trip.status||'dispatched';
+  const sLabel={pending:'待派單',dispatched:'已派單',out:'已出發',done:'已完成'};
+  const sClass={pending:'sb-pending',dispatched:'sb-dispatched',out:'sb-out',done:'sb-done'};
+  const cClass={pending:'',dispatched:'sc-dispatched',out:'sc-out',done:'sc-done'};
+  const totalBags=orders.reduce((sum,o)=>sum+(parseFloat(o.totalBags)||0),0);
+  const totalAmt=orders.reduce((sum,o)=>sum+(o.total||0),0);
+  const firstAddr=(orders[0]?.address)||'';
+  const mapsUrl=firstAddr?`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(firstAddr)}&travelmode=two-wheeler`:'';
+
+  const ordersHtml=orders.map(o=>{
+    const itemsText=(o.items||[]).map(it=>`${x(it.name)}×${it.qty||1}`).join('・');
+    const bagsHtml=(o.bags||[]).map(b=>`<span class="bag-chip">${x(b.name||b.vendorName||'')}：${b.bags}袋</span>`).join('');
+    return `<div class="order-mini">
+      <div class="om-head"><span class="om-customer">${x(o.customer||'')}</span><span class="om-amt">$${(o.total||0).toLocaleString()}</span></div>
+      <div class="om-addr">📍 ${x(o.address||'')}</div>
+      <div class="om-items">${itemsText}</div>
+      ${bagsHtml?`<div class="om-bags">${bagsHtml}</div>`:''}
+      ${o.note?`<div class="om-note">備：${x(o.note)}</div>`:''}
+    </div>`;
+  }).join('');
+
+  let actionHtml='';
+  if(s==='dispatched') actionHtml=`<div class="trip-actions"><button class="action-btn btn-out" onclick="updateStatus(event,'${tripId}','out')">🛵 出發！</button></div>`;
+  else if(s==='out') actionHtml=`<div class="trip-actions"><button class="action-btn btn-done" onclick="updateStatus(event,'${tripId}','done')">✅ 已完成送達</button></div>`;
+  else if(s==='done') actionHtml=`<div class="trip-actions"><button class="action-btn btn-disabled" disabled>✓ 已完成</button></div>`;
+
+  const confirmMsgs=orders.map((o,i)=>`
+    <div style="margin-bottom:12px">
+      <div style="font-size:12px;font-weight:700;color:var(--text-sub);margin-bottom:5px">訂單 ${i+1}：${x(o.customer||'')}</div>
+      <div class="confirm-msg">${x(o.confirmMsg||'（無確認訊息）')}</div>
+      <button class="copy-msg-btn" onclick="copyConfirm('${tripId}',${i})">📋 複製給 ${x(o.customer||'')}</button>
+    </div>`).join('');
+
+  const card=document.createElement('div');
+  card.className=`trip-card ${cClass[s]}`;
+  card.innerHTML=`
+    <div class="trip-header">
+      <div style="flex:1">
+        <div class="trip-time-main">🕐 ${x(trip.timeslot||'未指定時段')}</div>
+        <div class="trip-time-sub">出門：${x(trip.departTime||'—')} · ${orders.length}筆 · ${totalBags.toFixed(1)}袋 · $${totalAmt.toLocaleString()}</div>
+      </div>
+      <span class="sbadge ${sClass[s]}">${sLabel[s]||s}</span>
+    </div>
+    <div class="trip-body">
+      ${ordersHtml}
+      ${mapsUrl?`<a href="${mapsUrl}" target="_blank" class="nav-map-btn">🗺 導航到第一站</a>`:''}
+      ${actionHtml}
+    </div>
+    <button class="expand-toggle" onclick="toggleDetail(this)">▼ 查看確認訊息</button>
+    <div class="trip-detail" style="display:none">${confirmMsgs}</div>`;
+  return card;
+}
+
+function toggleDetail(btn){
+  const d=btn.nextElementSibling;
+  const hidden=d.style.display==='none';
+  d.style.display=hidden?'block':'none';
+  btn.textContent=hidden?'▲ 收起確認訊息':'▼ 查看確認訊息';
+}
+
+function copyConfirm(tripId,idx){
+  const msg=allTrips[tripId]?.orders?.[idx]?.confirmMsg;
+  if(!msg){showToast('無確認訊息');return;}
+  const customer=allTrips[tripId]?.orders?.[idx]?.customer||'';
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(msg).then(()=>showToast(`✅ 已複製 ${customer} 的確認訊息`)).catch(()=>fallbackCopy(msg));
+  }else{fallbackCopy(msg);}
+}
+function fallbackCopy(text){
+  const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast('已複製確認訊息');
+}
+
+async function updateStatus(e,tripId,newStatus){
+  const label={out:'已出發',done:'已完成'};
+  if(!confirm(`確認更新為「${label[newStatus]}」？`))return;
+  const btn=e.target;btn.disabled=true;btn.textContent='更新中…';
+  try{
+    const upd={status:newStatus};upd[newStatus+'At']=new Date().toISOString();
+    await fbPatch('/trips/'+tripId,upd);
+    if(allTrips[tripId])allTrips[tripId]={...allTrips[tripId],...upd};
+    renderTrips();showToast(`✅ ${label[newStatus]}！`);
+  }catch(err){
+    btn.disabled=false;
+    btn.textContent=newStatus==='out'?'🛵 出發！':'✅ 已完成送達';
+    showToast('更新失敗，請確認網路');
+  }
+}
+
+function x(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+</script>
+</body>
+</html>
