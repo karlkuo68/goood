@@ -584,77 +584,121 @@
             background: #d97706;
         }
 
-        /* Chat */
+        /* Chat - Private Messaging */
         .chat-section {
             display: none;
             flex-direction: column;
-            height: calc(100% - 200px);
+            height: calc(100% - 60px);
+            position: relative;
+        }
+        .chat-section.active { display: flex; }
+
+        /* Conversation List View */
+        .chat-list-view { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .chat-list-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 0; border-bottom: 1px solid var(--border);
+        }
+        .chat-list-title { font-size: 18px; font-weight: 700; }
+        .chat-new-btn {
+            background: var(--green); color: white; border: none; border-radius: 8px;
+            padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+            display: flex; align-items: center; gap: 4px;
+        }
+        .chat-conversations { flex: 1; overflow-y: auto; }
+        .chat-conv-item {
+            display: flex; align-items: center; gap: 12px; padding: 14px 4px;
+            border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.2s;
+        }
+        .chat-conv-item:hover { background: var(--gray-50); }
+        .chat-conv-avatar {
+            width: 44px; height: 44px; border-radius: 50%; background: var(--green-light);
+            color: var(--green); display: flex; align-items: center; justify-content: center;
+            font-size: 18px; font-weight: 700; flex-shrink: 0;
+        }
+        .chat-conv-info { flex: 1; min-width: 0; }
+        .chat-conv-name { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+        .chat-conv-last { font-size: 13px; color: var(--text-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chat-conv-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+        .chat-conv-time { font-size: 11px; color: var(--text-sub); }
+        .chat-conv-badge {
+            background: var(--red); color: white; border-radius: 50%; min-width: 20px; height: 20px;
+            display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700;
+            padding: 0 5px;
         }
 
-        .chat-section.active {
-            display: flex;
+        /* New Chat Modal */
+        .chat-new-modal {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.45); z-index: 500; align-items: center; justify-content: center;
         }
+        .chat-new-modal.active { display: flex; }
+        .chat-new-modal-box {
+            background: var(--card); border-radius: 16px; padding: 24px; width: 90%; max-width: 340px;
+            box-shadow: var(--shadow-lg); max-height: 70vh; overflow-y: auto;
+        }
+        .chat-new-modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; text-align: center; }
+        .chat-contact-item {
+            display: flex; align-items: center; gap: 10px; padding: 12px 8px;
+            border-bottom: 1px solid var(--border); cursor: pointer; border-radius: 8px;
+            transition: background 0.2s;
+        }
+        .chat-contact-item:hover { background: var(--green-light); }
+        .chat-contact-avatar {
+            width: 36px; height: 36px; border-radius: 50%; background: var(--blue-light);
+            color: var(--blue); display: flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 700; flex-shrink: 0;
+        }
+        .chat-contact-name { font-size: 15px; font-weight: 500; }
+        .chat-contact-role { font-size: 12px; color: var(--text-sub); }
+
+        /* Conversation Detail View */
+        .chat-detail-view { display: none; flex-direction: column; height: 100%; }
+        .chat-detail-view.active { display: flex; }
+        .chat-detail-header {
+            display: flex; align-items: center; gap: 10px; padding: 10px 0;
+            border-bottom: 1px solid var(--border); flex-shrink: 0;
+        }
+        .chat-back-btn {
+            background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text);
+            padding: 4px 8px; min-height: 36px;
+        }
+        .chat-detail-name { font-size: 16px; font-weight: 700; }
+        .chat-detail-status { font-size: 12px; color: var(--text-sub); }
 
         .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            margin-bottom: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+            flex: 1; overflow-y: auto; padding: 12px 0;
+            display: flex; flex-direction: column; gap: 8px;
         }
-
         .chat-message {
-            background: var(--bg);
-            border-radius: 8px;
-            padding: 12px;
-            border-left: 3px solid var(--green);
-            font-size: 14px;
-            word-break: break-word;
+            max-width: 80%; padding: 10px 14px; border-radius: 16px;
+            font-size: 14px; word-break: break-word; line-height: 1.4;
         }
-
+        .chat-message.received {
+            background: var(--gray-100); align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
         .chat-message.sent {
-            background: var(--green-light);
-            border-left-color: var(--green);
+            background: var(--green); color: white; align-self: flex-end;
+            border-bottom-right-radius: 4px;
         }
-
         .chat-message-time {
-            font-size: 12px;
-            color: var(--text-sub);
-            margin-top: 4px;
+            font-size: 11px; color: var(--text-sub); margin-top: 4px;
         }
+        .chat-message.sent .chat-message-time { color: rgba(255,255,255,0.7); }
 
         .chat-input-group {
-            display: flex;
-            gap: 8px;
+            display: flex; gap: 8px; padding: 8px 0; border-top: 1px solid var(--border); flex-shrink: 0;
         }
-
         .chat-input {
-            flex: 1;
-            padding: 10px 12px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-family: 'Noto Sans TC', sans-serif;
-            font-size: 14px;
-            background: var(--bg);
-            color: var(--text);
-            resize: none;
-            max-height: 80px;
+            flex: 1; padding: 10px 14px; border: 1px solid var(--border); border-radius: 20px;
+            font-family: 'Noto Sans TC', sans-serif; font-size: 14px;
+            background: var(--bg); color: var(--text); resize: none; max-height: 80px;
         }
-
         .chat-send {
-            padding: 10px 16px;
-            background: var(--green);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            min-height: 44px;
-            min-width: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 44px; height: 44px; background: var(--green); color: white;
+            border: none; border-radius: 50%; cursor: pointer; font-size: 18px;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
         }
 
         /* Statistics */
@@ -947,14 +991,65 @@
         .clock-record-label { font-size: 12px; color: var(--text-sub); margin-bottom: 4px; }
         .clock-record-value { font-size: 16px; font-weight: 600; }
 
-        .schedule-month-nav {
+        /* Foodpanda-style Weekly Shift Grid */
+        .schedule-week-nav {
             display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
         }
-        .schedule-month-nav button {
+        .schedule-week-nav button {
             background: var(--card); border: 1px solid var(--border); border-radius: 8px;
             padding: 8px 12px; cursor: pointer; color: var(--text); min-height: 44px; min-width: 44px; font-size: 16px;
         }
-        .schedule-month-title { font-size: 18px; font-weight: 700; }
+        .schedule-week-title { font-size: 16px; font-weight: 700; text-align: center; }
+        .shift-grid {
+            background: var(--card); border-radius: 12px; border: 1px solid var(--border);
+            box-shadow: var(--shadow); overflow-x: auto; -webkit-overflow-scrolling: touch;
+        }
+        .shift-grid table { width: 100%; border-collapse: collapse; min-width: 500px; }
+        .shift-grid th {
+            padding: 10px 4px; font-size: 12px; font-weight: 600; color: var(--text-sub);
+            background: var(--gray-100); border-bottom: 1px solid var(--border); text-align: center;
+            position: sticky; top: 0; z-index: 1;
+        }
+        .shift-grid th.today-col { color: var(--green); font-weight: 700; }
+        .shift-grid th small { display: block; font-size: 10px; font-weight: 400; }
+        .shift-grid td {
+            padding: 6px 4px; text-align: center; border-bottom: 1px solid var(--border);
+            border-right: 1px solid var(--border); vertical-align: middle;
+        }
+        .shift-grid td:first-child {
+            font-size: 12px; font-weight: 600; color: var(--text-sub); white-space: nowrap;
+            padding: 8px 8px; background: var(--gray-50); text-align: left; min-width: 90px;
+            position: sticky; left: 0; z-index: 1;
+        }
+        .shift-cell {
+            width: 100%; min-height: 44px; border: 2px solid transparent; border-radius: 8px;
+            cursor: pointer; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; gap: 2px; transition: all 0.2s; padding: 4px 2px;
+            font-size: 11px; color: var(--text-sub); background: var(--bg);
+        }
+        .shift-cell:hover { border-color: var(--green); background: var(--green-light); }
+        .shift-cell.booked {
+            background: var(--green-light); border-color: var(--green); color: var(--green); font-weight: 600;
+        }
+        .shift-cell.pending {
+            background: var(--orange-light); border-color: var(--orange); color: var(--orange); font-weight: 600;
+        }
+        .shift-cell.full-slot { opacity: 0.5; cursor: not-allowed; background: var(--gray-100); }
+        .shift-cell.past-slot { opacity: 0.4; cursor: not-allowed; }
+        .shift-cell-count { font-size: 10px; }
+        .shift-legend { display: flex; gap: 12px; margin-top: 12px; justify-content: center; flex-wrap: wrap; }
+        .shift-legend-item { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-sub); }
+        .shift-legend-dot { width: 10px; height: 10px; border-radius: 4px; border: 2px solid; }
+
+        /* Mini Month Calendar */
+        .schedule-month-nav {
+            display: flex; justify-content: space-between; align-items: center; margin: 16px 0 8px;
+        }
+        .schedule-month-nav button {
+            background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+            padding: 6px 10px; cursor: pointer; color: var(--text); min-height: 36px; min-width: 36px; font-size: 14px;
+        }
+        .schedule-month-title { font-size: 15px; font-weight: 700; }
         .schedule-calendar {
             background: var(--card); border-radius: 12px; border: 1px solid var(--border);
             box-shadow: var(--shadow); overflow: hidden;
@@ -963,63 +1058,24 @@
             display: grid; grid-template-columns: repeat(7, 1fr);
             background: var(--gray-100); border-bottom: 1px solid var(--border);
         }
-        .schedule-weekday { text-align: center; padding: 8px 4px; font-size: 12px; font-weight: 600; color: var(--text-sub); }
+        .schedule-weekday { text-align: center; padding: 6px 2px; font-size: 11px; font-weight: 600; color: var(--text-sub); }
         .schedule-days { display: grid; grid-template-columns: repeat(7, 1fr); }
         .schedule-day {
             aspect-ratio: 1; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; font-size: 14px;
-            cursor: pointer; border: 1px solid transparent; position: relative;
-            transition: background 0.2s;
+            align-items: center; justify-content: center; font-size: 12px;
+            cursor: default; border: 1px solid transparent; position: relative;
         }
-        .schedule-day:hover { background: var(--gray-50); }
         .schedule-day.other-month { color: var(--gray-400); }
         .schedule-day.today { font-weight: 700; color: var(--green); }
-        .schedule-day.scheduled::after {
-            content: ''; width: 6px; height: 6px; border-radius: 50%;
-            background: var(--green); position: absolute; bottom: 4px;
+        .schedule-day .shift-count-badge {
+            font-size: 8px; background: var(--green); color: white; border-radius: 50%;
+            width: 14px; height: 14px; display: flex; align-items: center; justify-content: center;
+            position: absolute; bottom: 2px;
         }
-        .schedule-day.pending-change::after { background: var(--orange); }
-        .schedule-day.selected { background: var(--green-light); border-color: var(--green); border-radius: 8px; }
-        .schedule-legend { display: flex; gap: 16px; margin-top: 12px; justify-content: center; flex-wrap: wrap; }
-        .schedule-legend-item { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-sub); }
-        .schedule-legend-dot { width: 8px; height: 8px; border-radius: 50%; }
 
-        .schedule-section .schedule-info { margin-bottom: 24px; }
+        .schedule-section .schedule-info { margin-bottom: 16px; }
 
-        /* Shift Type Selection Modal */
-        .shift-modal-overlay {
-            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.45); z-index: 500; align-items: center; justify-content: center;
-        }
-        .shift-modal-overlay.active { display: flex; }
-        .shift-modal-box {
-            background: var(--card); border-radius: 16px; padding: 24px; width: 90%; max-width: 320px;
-            box-shadow: var(--shadow-lg); text-align: center;
-        }
-        .shift-modal-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
-        .shift-modal-date { font-size: 14px; color: var(--text-sub); margin-bottom: 20px; }
-        .shift-type-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-        .shift-type-btn {
-            padding: 14px; border: 2px solid var(--border); border-radius: 10px; background: var(--bg);
-            color: var(--text); font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s;
-            display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px;
-        }
-        .shift-type-btn:hover { border-color: var(--green); background: var(--green-light); }
-        .shift-type-btn.selected { border-color: var(--green); background: var(--green-light); color: var(--green); }
-        .shift-modal-actions { display: flex; gap: 10px; }
-        .shift-modal-actions button { flex: 1; padding: 12px; border-radius: 10px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; min-height: 44px; }
-
-        /* Chat Target Selector */
-        .chat-target-bar {
-            display: flex; align-items: center; gap: 8px; padding: 10px 0; margin-bottom: 8px;
-            border-bottom: 1px solid var(--border);
-        }
-        .chat-target-bar label { font-size: 13px; color: var(--text-sub); margin-bottom: 0; font-weight: 500; min-width: auto; }
-        .chat-target-select {
-            flex: 1; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
-            font-size: 14px; background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', sans-serif;
-        }
-        .chat-target-name { font-size: 15px; font-weight: 600; color: var(--green); }
+        /* (Chat target selector removed - now using private messaging UI) */
     </style>
 </head>
 <body>
@@ -1147,20 +1203,42 @@
                 </div>
             </div>
 
-            <!-- Chat -->
+            <!-- Chat - Private Messaging -->
             <div id="chatSection" class="chat-section">
-                <div class="chat-target-bar">
-                    <label>對話對象：</label>
-                    <select class="chat-target-select" id="chatTarget" onchange="onChatTargetChange()">
-                        <option value="客服">💬 客服中心</option>
-                        <option value="管理員">👤 管理員</option>
-                        <option value="群組">👥 外送員群組</option>
-                    </select>
+                <!-- Conversation List -->
+                <div id="chatListView" class="chat-list-view">
+                    <div class="chat-list-header">
+                        <div class="chat-list-title">訊息</div>
+                        <button class="chat-new-btn" onclick="openNewChatModal()">＋ 新對話</button>
+                    </div>
+                    <div class="chat-conversations" id="chatConversations">
+                        <div class="empty-state"><div class="empty-state-icon">💬</div><div class="empty-state-text">尚無對話<br>點擊「新對話」開始聊天</div></div>
+                    </div>
                 </div>
-                <div class="chat-messages" id="chatMessages"></div>
-                <div class="chat-input-group">
-                    <textarea class="chat-input" id="chatInput" placeholder="輸入訊息..." rows="2"></textarea>
-                    <button class="chat-send" onclick="sendChatMessage()">送出</button>
+                <!-- Conversation Detail -->
+                <div id="chatDetailView" class="chat-detail-view">
+                    <div class="chat-detail-header">
+                        <button class="chat-back-btn" onclick="backToConvList()">←</button>
+                        <div>
+                            <div class="chat-detail-name" id="chatDetailName"></div>
+                            <div class="chat-detail-status" id="chatDetailStatus"></div>
+                        </div>
+                    </div>
+                    <div class="chat-messages" id="chatMessages"></div>
+                    <div class="chat-input-group">
+                        <textarea class="chat-input" id="chatInput" placeholder="輸入訊息..." rows="1"></textarea>
+                        <button class="chat-send" onclick="sendPrivateMessage()">➤</button>
+                    </div>
+                </div>
+            </div>
+            <!-- New Chat Modal -->
+            <div id="newChatModal" class="chat-new-modal">
+                <div class="chat-new-modal-box">
+                    <div class="chat-new-modal-title">選擇對話對象</div>
+                    <div id="chatContactList"></div>
+                    <div style="text-align:center; margin-top:16px;">
+                        <button onclick="closeNewChatModal()" style="padding:10px 24px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text); cursor:pointer; font-size:14px;">取消</button>
+                    </div>
                 </div>
             </div>
 
@@ -1187,7 +1265,20 @@
                     </div>
                 </div>
 
-                <!-- Monthly Schedule -->
+                <!-- Foodpanda-style Weekly Shift Grid -->
+                <div class="schedule-week-nav">
+                    <button onclick="changeShiftWeek(-1)">◀</button>
+                    <div class="schedule-week-title" id="shiftWeekTitle"></div>
+                    <button onclick="changeShiftWeek(1)">▶</button>
+                </div>
+                <div class="shift-grid" id="shiftGrid"></div>
+                <div class="shift-legend">
+                    <div class="shift-legend-item"><div class="shift-legend-dot" style="background:var(--green-light); border-color:var(--green);"></div>已報名</div>
+                    <div class="shift-legend-item"><div class="shift-legend-dot" style="background:var(--orange-light); border-color:var(--orange);"></div>待核准</div>
+                    <div class="shift-legend-item"><div class="shift-legend-dot" style="background:var(--gray-100); border-color:var(--gray-400);"></div>已滿</div>
+                </div>
+
+                <!-- Mini Month Calendar -->
                 <div class="schedule-month-nav">
                     <button onclick="changeScheduleMonth(-1)">◀</button>
                     <div class="schedule-month-title" id="scheduleMonthTitle"></div>
@@ -1205,36 +1296,12 @@
                     </div>
                     <div class="schedule-days" id="scheduleDays"></div>
                 </div>
-                <div class="schedule-legend">
-                    <div class="schedule-legend-item"><div class="schedule-legend-dot" style="background:var(--green);"></div>已排班</div>
-                    <div class="schedule-legend-item"><div class="schedule-legend-dot" style="background:var(--orange);"></div>申請調整中</div>
-                    <div class="schedule-legend-item"><div class="schedule-legend-dot" style="background:var(--gray-400);"></div>未排班</div>
-                </div>
-                <div class="schedule-info" style="margin-top:16px;">
-                    <div class="schedule-info-title">排班規則</div>
+                <div class="schedule-info" style="margin-top:12px;">
+                    <div class="schedule-info-title">排班說明</div>
                     <div class="schedule-info-text">
-                        • 排班以月為單位，每月初排定當月班表<br>
-                        • <strong>3 天以上</strong>的班次可自由調整<br>
-                        • <strong>3 天內</strong>的班次需提出申請，待管理員核准<br>
-                        • 點擊日期可選擇班制（全天/上午/下午）
-                    </div>
-                </div>
-            </div>
-
-            <!-- Shift Type Selection Modal -->
-            <div id="shiftModal" class="shift-modal-overlay">
-                <div class="shift-modal-box">
-                    <div class="shift-modal-title">選擇班制</div>
-                    <div class="shift-modal-date" id="shiftModalDate"></div>
-                    <div class="shift-type-options" id="shiftTypeOptions">
-                        <button class="shift-type-btn" data-shift="full" onclick="selectShiftType('full')">🕐 全天班</button>
-                        <button class="shift-type-btn" data-shift="morning" onclick="selectShiftType('morning')">🌅 上午班</button>
-                        <button class="shift-type-btn" data-shift="afternoon" onclick="selectShiftType('afternoon')">🌇 下午班</button>
-                    </div>
-                    <div class="shift-modal-actions">
-                        <button style="background:var(--gray-200); color:var(--text);" onclick="closeShiftModal()">取消</button>
-                        <button id="shiftConfirmBtn" style="background:var(--green); color:white;" onclick="confirmShiftSelection()">確認排班</button>
-                        <button id="shiftRemoveBtn" style="background:var(--red); color:white; display:none;" onclick="removeShiftSelection()">取消排班</button>
+                        • 點擊時段格子即可報名/取消<br>
+                        • 每個時段有人數上限，額滿無法報名<br>
+                        • 報名後可隨時取消（當天時段除外）
                     </div>
                 </div>
             </div>
@@ -1862,78 +1929,273 @@
             }
         }
 
-        // Chat functionality with target selection
-        function getChatTarget() {
-            return document.getElementById('chatTarget').value;
+        // ===== Private Messaging System =====
+        let chatState = {
+            currentChatId: null,
+            currentChatPartner: null,
+            conversations: [],
+            staffList: [],
+            chatListeners: []
+        };
+
+        function generateChatId(uid1, uid2) {
+            return [uid1, uid2].sort().join('_');
         }
 
-        function getChatPath() {
-            const target = getChatTarget();
-            const dateStr = formatDate(new Date());
-            // Chat channels: 客服 = support, 管理員 = admin-{driver}, 群組 = group
-            if (target === '客服') return `/chat/support/${state.driver}/${dateStr}`;
-            if (target === '管理員') return `/chat/admin/${state.driver}/${dateStr}`;
-            return `/chat/group/${dateStr}`;
+        // Load staff/admin accounts from Firebase
+        async function loadStaffList() {
+            try {
+                const accounts = await getFromFirebase('/accounts');
+                if (!accounts) {
+                    // Fallback: use known roles
+                    chatState.staffList = [
+                        { uid: '管理員', name: '管理員', role: 'admin' },
+                        { uid: '平台', name: '平台客服', role: 'staff' }
+                    ];
+                    return;
+                }
+                chatState.staffList = Object.entries(accounts)
+                    .filter(([_, acc]) => acc && (acc.role === 'staff' || acc.role === 'admin'))
+                    .map(([uid, acc]) => ({ uid, name: acc.name || uid, role: acc.role }));
+
+                // Always include built-in contacts
+                if (!chatState.staffList.find(s => s.uid === '管理員')) {
+                    chatState.staffList.push({ uid: '管理員', name: '管理員', role: 'admin' });
+                }
+                if (!chatState.staffList.find(s => s.uid === '平台')) {
+                    chatState.staffList.push({ uid: '平台', name: '平台客服', role: 'staff' });
+                }
+            } catch (e) {
+                console.error('loadStaffList error:', e);
+                chatState.staffList = [
+                    { uid: '管理員', name: '管理員', role: 'admin' },
+                    { uid: '平台', name: '平台客服', role: 'staff' }
+                ];
+            }
         }
 
-        function onChatTargetChange() {
-            loadChatMessages();
+        // Load conversation list
+        async function loadConversations() {
+            try {
+                const allChats = await getFromFirebase('/chats');
+                if (!allChats) {
+                    chatState.conversations = [];
+                    renderConversationList();
+                    return;
+                }
+
+                const myConvs = [];
+                for (const [chatId, chatData] of Object.entries(allChats)) {
+                    if (!chatData || !chatData.meta) continue;
+                    const participants = chatData.meta.participants || [];
+                    if (!participants.includes(state.driver)) continue;
+
+                    const partner = participants.find(p => p !== state.driver) || '未知';
+                    // Count unread
+                    let unread = 0;
+                    if (chatData.messages) {
+                        for (const msg of Object.values(chatData.messages)) {
+                            if (msg && msg.to === state.driver && !msg.read) unread++;
+                        }
+                    }
+
+                    myConvs.push({
+                        chatId,
+                        partner,
+                        lastMessage: chatData.meta.lastMessage || '',
+                        lastTimestamp: chatData.meta.lastTimestamp || '',
+                        unread
+                    });
+                }
+
+                myConvs.sort((a, b) => new Date(b.lastTimestamp) - new Date(a.lastTimestamp));
+                chatState.conversations = myConvs;
+                renderConversationList();
+            } catch (e) {
+                console.error('loadConversations error:', e);
+            }
         }
 
-        async function sendChatMessage() {
+        function renderConversationList() {
+            const container = document.getElementById('chatConversations');
+            if (chatState.conversations.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💬</div><div class="empty-state-text">尚無對話<br>點擊「新對話」開始聊天</div></div>';
+                return;
+            }
+
+            container.innerHTML = chatState.conversations.map(conv => {
+                const initial = conv.partner.charAt(0);
+                const timeStr = conv.lastTimestamp ? new Date(conv.lastTimestamp).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }) : '';
+                const dateStr = conv.lastTimestamp ? formatRelativeDate(conv.lastTimestamp) : '';
+                return `
+                    <div class="chat-conv-item" onclick="openConversation('${conv.chatId}', '${escapeHtml(conv.partner)}')">
+                        <div class="chat-conv-avatar">${initial}</div>
+                        <div class="chat-conv-info">
+                            <div class="chat-conv-name">${escapeHtml(conv.partner)}</div>
+                            <div class="chat-conv-last">${escapeHtml(conv.lastMessage)}</div>
+                        </div>
+                        <div class="chat-conv-meta">
+                            <div class="chat-conv-time">${dateStr} ${timeStr}</div>
+                            ${conv.unread > 0 ? `<div class="chat-conv-badge">${conv.unread}</div>` : ''}
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        function formatRelativeDate(timestamp) {
+            const date = new Date(timestamp);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const msgDate = new Date(date);
+            msgDate.setHours(0, 0, 0, 0);
+            const diffDays = Math.floor((today - msgDate) / (1000 * 60 * 60 * 24));
+            if (diffDays === 0) return '今天';
+            if (diffDays === 1) return '昨天';
+            return `${date.getMonth() + 1}/${date.getDate()}`;
+        }
+
+        // Open new chat modal
+        async function openNewChatModal() {
+            if (chatState.staffList.length === 0) await loadStaffList();
+            const container = document.getElementById('chatContactList');
+            container.innerHTML = chatState.staffList
+                .filter(s => s.uid !== state.driver)
+                .map(s => {
+                    const roleLabel = s.role === 'admin' ? '👤 管理員' : '💬 客服';
+                    return `
+                        <div class="chat-contact-item" onclick="startNewChat('${s.uid}', '${escapeHtml(s.name)}')">
+                            <div class="chat-contact-avatar">${s.name.charAt(0)}</div>
+                            <div>
+                                <div class="chat-contact-name">${escapeHtml(s.name)}</div>
+                                <div class="chat-contact-role">${roleLabel}</div>
+                            </div>
+                        </div>`;
+                }).join('');
+            document.getElementById('newChatModal').classList.add('active');
+        }
+
+        function closeNewChatModal() {
+            document.getElementById('newChatModal').classList.remove('active');
+        }
+
+        async function startNewChat(partnerUid, partnerName) {
+            closeNewChatModal();
+            const chatId = generateChatId(state.driver, partnerUid);
+
+            // Create chat meta if not exists
+            const existing = await getFromFirebase(`/chats/${chatId}/meta`);
+            if (!existing) {
+                await writeToFirebase(`/chats/${chatId}/meta`, {
+                    participants: [state.driver, partnerUid].sort(),
+                    lastMessage: '',
+                    lastTimestamp: new Date().toISOString()
+                });
+            }
+            openConversation(chatId, partnerName);
+        }
+
+        async function openConversation(chatId, partnerName) {
+            chatState.currentChatId = chatId;
+            chatState.currentChatPartner = partnerName;
+
+            document.getElementById('chatListView').style.display = 'none';
+            document.getElementById('chatDetailView').classList.add('active');
+            document.getElementById('chatDetailName').textContent = partnerName;
+            document.getElementById('chatDetailStatus').textContent = '私訊';
+
+            await loadChatMessages();
+            await markMessagesAsRead(chatId);
+        }
+
+        function backToConvList() {
+            chatState.currentChatId = null;
+            chatState.currentChatPartner = null;
+            document.getElementById('chatDetailView').classList.remove('active');
+            document.getElementById('chatListView').style.display = 'flex';
+            loadConversations();
+        }
+
+        async function sendPrivateMessage() {
             const input = document.getElementById('chatInput');
             const message = input.value.trim();
-            if (!message) return;
+            if (!message || !chatState.currentChatId) return;
 
             try {
-                const chatPath = getChatPath();
+                const chatId = chatState.currentChatId;
                 const msgId = Date.now().toString();
-                const target = getChatTarget();
+                const participants = chatId.split('_');
+                const toUser = participants.find(p => p !== state.driver) || '';
+
                 const msgData = {
-                    sender: state.driver,
-                    target: target,
+                    from: state.driver,
+                    to: toUser,
                     text: message,
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
+                    read: false
                 };
 
-                await writeToFirebase(`${chatPath}/${msgId}`, msgData);
+                await writeToFirebase(`/chats/${chatId}/messages/${msgId}`, msgData);
+                await patchFirebase(`/chats/${chatId}/meta`, {
+                    lastMessage: message.substring(0, 50),
+                    lastTimestamp: new Date().toISOString()
+                });
+
                 input.value = '';
-                loadChatMessages();
-                showToast('訊息已傳送');
+                await loadChatMessages();
             } catch (error) {
-                console.error('sendChatMessage error:', error);
+                console.error('sendPrivateMessage error:', error);
                 showToast('傳送失敗');
             }
         }
 
         async function loadChatMessages() {
+            if (!chatState.currentChatId) return;
             try {
-                const chatPath = getChatPath();
-                const messages = await getFromFirebase(chatPath);
-                const target = getChatTarget();
-
+                const messages = await getFromFirebase(`/chats/${chatState.currentChatId}/messages`);
                 const container = document.getElementById('chatMessages');
+
                 if (!messages) {
-                    const targetLabel = target === '客服' ? '客服中心' : target === '管理員' ? '管理員' : '外送員群組';
-                    container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">💬</div><div class="empty-state-text">與${targetLabel}的對話<br>尚無訊息，開始對話吧！</div></div>`;
+                    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💬</div><div class="empty-state-text">尚無訊息<br>開始對話吧！</div></div>';
                     return;
                 }
 
                 const msgArray = Object.entries(messages)
-                    .map(([_, msg]) => msg)
+                    .map(([id, msg]) => ({ id, ...msg }))
                     .filter(msg => msg && msg.timestamp)
                     .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
-                container.innerHTML = msgArray.map(msg => `
-                    <div class="chat-message ${msg.sender === state.driver ? 'sent' : ''}">
-                        <strong>${escapeHtml(msg.sender || '未知')}</strong>: ${escapeHtml(msg.text || '')}
-                        <div class="chat-message-time">${new Date(msg.timestamp).toLocaleTimeString('zh-TW')}</div>
-                    </div>
-                `).join('');
+                container.innerHTML = msgArray.map(msg => {
+                    const isSent = msg.from === state.driver;
+                    const timeStr = new Date(msg.timestamp).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+                    return `
+                        <div class="chat-message ${isSent ? 'sent' : 'received'}">
+                            ${escapeHtml(msg.text || '')}
+                            <div class="chat-message-time">${timeStr}${isSent && msg.read ? ' ✓' : ''}</div>
+                        </div>`;
+                }).join('');
 
                 container.scrollTop = container.scrollHeight;
             } catch (error) {
                 console.error('loadChatMessages error:', error);
+            }
+        }
+
+        async function markMessagesAsRead(chatId) {
+            try {
+                const messages = await getFromFirebase(`/chats/${chatId}/messages`);
+                if (!messages) return;
+                const updates = {};
+                for (const [msgId, msg] of Object.entries(messages)) {
+                    if (msg && msg.to === state.driver && !msg.read) {
+                        updates[`/chats/${chatId}/messages/${msgId}/read`] = true;
+                    }
+                }
+                // Batch update
+                for (const [path, val] of Object.entries(updates)) {
+                    await writeToFirebase(path, val);
+                }
+            } catch (e) {
+                console.error('markMessagesAsRead error:', e);
             }
         }
 
@@ -2037,7 +2299,8 @@
                 if (tab === 'statistics') {
                     loadStatistics();
                 } else if (tab === 'chat') {
-                    loadChatMessages();
+                    loadConversations();
+                    loadStaffList();
                 } else if (tab === 'schedule') {
                     loadScheduleData();
                     loadClockData();
@@ -2269,6 +2532,181 @@
         let clockState = { clockedIn: false, clockInTime: null, clockOutTime: null };
         let clockTimer = null;
 
+        // Foodpanda-style shift scheduling
+        let shiftWeekStart = getMonday(new Date());
+        const DEFAULT_SLOTS = [
+            { id: 'morning', label: '上午', time: '09:00-12:00', icon: '🌅' },
+            { id: 'lunch', label: '午餐', time: '11:00-14:00', icon: '🍱' },
+            { id: 'afternoon', label: '下午', time: '14:00-17:00', icon: '☀️' },
+            { id: 'dinner', label: '晚餐', time: '17:00-21:00', icon: '🌙' }
+        ];
+        let shiftSlotConfig = {}; // loaded from Firebase
+        let shiftBookings = {}; // all bookings for the week
+
+        function getMonday(d) {
+            const date = new Date(d);
+            const day = date.getDay();
+            const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+            date.setDate(diff);
+            date.setHours(0, 0, 0, 0);
+            return date;
+        }
+
+        function changeShiftWeek(delta) {
+            shiftWeekStart = new Date(shiftWeekStart);
+            shiftWeekStart.setDate(shiftWeekStart.getDate() + delta * 7);
+            loadShiftWeekData();
+        }
+
+        async function loadShiftWeekData() {
+            // Load slot config from admin
+            const config = await getFromFirebase('/settings/shiftSlots');
+            if (config && Object.keys(config).length > 0) {
+                shiftSlotConfig = config;
+            } else {
+                // Use defaults with max capacity 3
+                shiftSlotConfig = {};
+                DEFAULT_SLOTS.forEach(s => {
+                    shiftSlotConfig[s.id] = { label: s.label, time: s.time, icon: s.icon, maxDrivers: 3 };
+                });
+            }
+
+            // Load all bookings for the week range
+            const weekKey = formatDate(shiftWeekStart);
+            const endDate = new Date(shiftWeekStart);
+            endDate.setDate(endDate.getDate() + 6);
+
+            // Load bookings for each day
+            shiftBookings = {};
+            const promises = [];
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(shiftWeekStart);
+                d.setDate(d.getDate() + i);
+                const dateKey = formatDate(d);
+                promises.push(
+                    getFromFirebase(`/shiftBookings/${dateKey}`).then(data => {
+                        shiftBookings[dateKey] = data || {};
+                    })
+                );
+            }
+            await Promise.all(promises);
+            renderShiftGrid();
+        }
+
+        function renderShiftGrid() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const endDate = new Date(shiftWeekStart);
+            endDate.setDate(endDate.getDate() + 6);
+
+            // Week title
+            const startStr = `${shiftWeekStart.getMonth() + 1}/${shiftWeekStart.getDate()}`;
+            const endStr = `${endDate.getMonth() + 1}/${endDate.getDate()}`;
+            document.getElementById('shiftWeekTitle').textContent = `${startStr} - ${endStr}`;
+
+            const slots = Object.entries(shiftSlotConfig);
+            const dayNames = ['日', '一', '二', '三', '四', '五', '六'];
+
+            let html = '<table><thead><tr><th>時段</th>';
+            // Day headers
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(shiftWeekStart);
+                d.setDate(d.getDate() + i);
+                const isToday = d.getTime() === today.getTime();
+                html += `<th class="${isToday ? 'today-col' : ''}">${dayNames[d.getDay()]}<small>${d.getMonth() + 1}/${d.getDate()}</small></th>`;
+            }
+            html += '</tr></thead><tbody>';
+
+            // Slot rows
+            for (const [slotId, slotInfo] of slots) {
+                html += `<td>${slotInfo.icon || ''} ${slotInfo.label}<br><span style="font-size:10px;font-weight:400;">${slotInfo.time}</span></td>`;
+                for (let i = 0; i < 7; i++) {
+                    const d = new Date(shiftWeekStart);
+                    d.setDate(d.getDate() + i);
+                    const dateKey = formatDate(d);
+                    const dayBookings = shiftBookings[dateKey] || {};
+                    const slotBookings = dayBookings[slotId] || {};
+
+                    // Count booked drivers
+                    const bookedDrivers = Object.entries(slotBookings).filter(([_, v]) => v && (v.status === 'booked' || v.status === 'pending'));
+                    const totalBooked = bookedDrivers.length;
+                    const maxDrivers = slotInfo.maxDrivers || 3;
+                    const myBooking = slotBookings[state.driver];
+                    const isBooked = myBooking && myBooking.status === 'booked';
+                    const isPending = myBooking && myBooking.status === 'pending';
+                    const isFull = totalBooked >= maxDrivers && !isBooked && !isPending;
+                    const isPast = d < today;
+
+                    let cellClass = 'shift-cell';
+                    if (isBooked) cellClass += ' booked';
+                    else if (isPending) cellClass += ' pending';
+                    else if (isFull) cellClass += ' full-slot';
+                    if (isPast) cellClass += ' past-slot';
+
+                    const statusText = isBooked ? '✓ 已報名' : isPending ? '⏳ 待核准' : isFull ? '已滿' : '可報名';
+
+                    html += `<td><div class="${cellClass}" onclick="toggleShiftSlot('${dateKey}','${slotId}',${isPast},${isFull})" data-date="${dateKey}" data-slot="${slotId}">`;
+                    html += `<span>${statusText}</span>`;
+                    html += `<span class="shift-cell-count">${totalBooked}/${maxDrivers}</span>`;
+                    html += `</div></td>`;
+                }
+                html += '</tr>';
+            }
+
+            html += '</tbody></table>';
+            document.getElementById('shiftGrid').innerHTML = html;
+
+            // Also update mini calendar
+            renderScheduleCalendar();
+        }
+
+        async function toggleShiftSlot(dateKey, slotId, isPast, isFull) {
+            if (isPast) {
+                showToast('無法修改過去的時段');
+                return;
+            }
+
+            const dayBookings = shiftBookings[dateKey] || {};
+            const slotBookings = dayBookings[slotId] || {};
+            const myBooking = slotBookings[state.driver];
+
+            if (myBooking && (myBooking.status === 'booked' || myBooking.status === 'pending')) {
+                // Cancel booking
+                await writeToFirebase(`/shiftBookings/${dateKey}/${slotId}/${state.driver}`, null);
+                if (!shiftBookings[dateKey]) shiftBookings[dateKey] = {};
+                if (!shiftBookings[dateKey][slotId]) shiftBookings[dateKey][slotId] = {};
+                delete shiftBookings[dateKey][slotId][state.driver];
+                showToast('已取消報名');
+            } else {
+                if (isFull) {
+                    showToast('此時段已額滿');
+                    return;
+                }
+                // Check if within 24 hours - needs approval
+                const slotDate = new Date(dateKey + 'T00:00:00');
+                const now = new Date();
+                const hoursUntil = (slotDate - now) / (1000 * 60 * 60);
+                const status = hoursUntil < 24 ? 'pending' : 'booked';
+
+                const bookingData = {
+                    status: status,
+                    bookedAt: new Date().toISOString(),
+                    driverName: state.driver
+                };
+                await writeToFirebase(`/shiftBookings/${dateKey}/${slotId}/${state.driver}`, bookingData);
+                if (!shiftBookings[dateKey]) shiftBookings[dateKey] = {};
+                if (!shiftBookings[dateKey][slotId]) shiftBookings[dateKey][slotId] = {};
+                shiftBookings[dateKey][slotId][state.driver] = bookingData;
+
+                if (status === 'pending') {
+                    showToast('已申請報名（24小時內需核准）');
+                } else {
+                    showToast('已成功報名');
+                }
+            }
+            renderShiftGrid();
+        }
+
         // Clock - live time display
         function startClockTimer() {
             if (clockTimer) clearInterval(clockTimer);
@@ -2369,25 +2807,19 @@
             renderClockUI();
         }
 
-        // Schedule - load data
+        // Schedule - load data (now loads shift grid + mini calendar)
         async function loadScheduleData() {
-            const year = scheduleViewDate.getFullYear();
-            const month = scheduleViewDate.getMonth() + 1;
-            const key = `${year}-${String(month).padStart(2, '0')}`;
-            const data = await getFromFirebase(`/schedules/${state.driver}/${key}`);
-            scheduleData = data || {};
-            renderScheduleCalendar();
+            await loadShiftWeekData();
         }
 
         function changeScheduleMonth(delta) {
             scheduleViewDate.setMonth(scheduleViewDate.getMonth() + delta);
-            loadScheduleData();
+            renderScheduleCalendar();
         }
 
         function renderScheduleCalendar() {
             const year = scheduleViewDate.getFullYear();
             const month = scheduleViewDate.getMonth();
-            const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
 
             document.getElementById('scheduleMonthTitle').textContent = `${year} 年 ${month + 1} 月`;
 
@@ -2399,7 +2831,6 @@
             const container = document.getElementById('scheduleDays');
             container.innerHTML = '';
 
-            // Fill empty days before first day of month
             for (let i = 0; i < firstDay; i++) {
                 const prevMonthDays = new Date(year, month, 0).getDate();
                 const dayNum = prevMonthDays - firstDay + i + 1;
@@ -2409,7 +2840,6 @@
                 container.appendChild(div);
             }
 
-            // Fill days of month
             for (let d = 1; d <= daysInMonth; d++) {
                 const div = document.createElement('div');
                 div.className = 'schedule-day';
@@ -2417,33 +2847,31 @@
 
                 const dateObj = new Date(year, month, d);
                 dateObj.setHours(0, 0, 0, 0);
-                const dateKey = String(d);
 
-                if (dateObj.getTime() === today.getTime()) {
-                    div.classList.add('today');
+                if (dateObj.getTime() === today.getTime()) div.classList.add('today');
+
+                // Count how many slots booked for this day
+                const dateKey = formatDate(dateObj);
+                const dayBookings = shiftBookings[dateKey];
+                if (dayBookings) {
+                    let bookedCount = 0;
+                    for (const slotId of Object.keys(dayBookings)) {
+                        const slotData = dayBookings[slotId];
+                        if (slotData && slotData[state.driver] && (slotData[state.driver].status === 'booked' || slotData[state.driver].status === 'pending')) {
+                            bookedCount++;
+                        }
+                    }
+                    if (bookedCount > 0) {
+                        const badge = document.createElement('div');
+                        badge.className = 'shift-count-badge';
+                        badge.textContent = bookedCount;
+                        div.appendChild(badge);
+                    }
                 }
 
-                const dayData = scheduleData[dateKey];
-                if (dayData) {
-                    if (dayData.status === 'scheduled') {
-                        div.classList.add('scheduled');
-                    } else if (dayData.status === 'pending') {
-                        div.classList.add('pending-change');
-                    }
-                    // Show shift type label
-                    if (dayData.shift && dayData.shift !== 'full') {
-                        const shiftLabel = document.createElement('span');
-                        shiftLabel.style.cssText = 'font-size:9px; position:absolute; top:2px; right:2px; color:var(--green);';
-                        shiftLabel.textContent = dayData.shift === 'morning' ? '午前' : '午後';
-                        div.appendChild(shiftLabel);
-                    }
-                }
-
-                div.onclick = () => toggleScheduleDay(d, dateObj);
                 container.appendChild(div);
             }
 
-            // Fill remaining days
             const totalCells = firstDay + daysInMonth;
             const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
             for (let i = 1; i <= remaining; i++) {
@@ -2452,105 +2880,6 @@
                 div.textContent = i;
                 container.appendChild(div);
             }
-        }
-
-        // Shift modal state
-        let shiftModalState = { day: null, dateObj: null, diffDays: 0, selectedShift: 'full' };
-
-        const SHIFT_LABELS = { full: '全天班', morning: '上午班', afternoon: '下午班' };
-
-        async function toggleScheduleDay(day, dateObj) {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const diffDays = Math.ceil((dateObj - today) / (1000 * 60 * 60 * 24));
-
-            if (diffDays < 0) {
-                showToast('無法修改過去的排班');
-                return;
-            }
-
-            // Open shift type modal
-            shiftModalState = { day, dateObj, diffDays, selectedShift: 'full' };
-            const month = scheduleViewDate.getMonth() + 1;
-            document.getElementById('shiftModalDate').textContent = `${month} 月 ${day} 日` + (diffDays <= 3 ? '（3天內，需管理員核准）' : '');
-
-            const dayKey = String(day);
-            const current = scheduleData[dayKey];
-            const confirmBtn = document.getElementById('shiftConfirmBtn');
-            const removeBtn = document.getElementById('shiftRemoveBtn');
-
-            if (current && (current.status === 'scheduled' || current.status === 'pending')) {
-                // Already scheduled - show remove option, pre-select shift type
-                removeBtn.style.display = 'block';
-                removeBtn.textContent = current.status === 'pending' ? '撤銷申請' : '取消排班';
-                confirmBtn.textContent = '更新班制';
-                shiftModalState.selectedShift = current.shift || 'full';
-            } else {
-                removeBtn.style.display = 'none';
-                confirmBtn.textContent = '確認排班';
-                shiftModalState.selectedShift = 'full';
-            }
-
-            // Highlight pre-selected shift
-            document.querySelectorAll('.shift-type-btn').forEach(btn => {
-                btn.classList.toggle('selected', btn.dataset.shift === shiftModalState.selectedShift);
-            });
-
-            document.getElementById('shiftModal').classList.add('active');
-        }
-
-        function selectShiftType(shift) {
-            shiftModalState.selectedShift = shift;
-            document.querySelectorAll('.shift-type-btn').forEach(btn => {
-                btn.classList.toggle('selected', btn.dataset.shift === shift);
-            });
-        }
-
-        function closeShiftModal() {
-            document.getElementById('shiftModal').classList.remove('active');
-        }
-
-        async function confirmShiftSelection() {
-            const { day, dateObj, diffDays, selectedShift } = shiftModalState;
-            const year = scheduleViewDate.getFullYear();
-            const month = scheduleViewDate.getMonth() + 1;
-            const monthKey = `${year}-${String(month).padStart(2, '0')}`;
-            const dayKey = String(day);
-
-            if (diffDays <= 3) {
-                scheduleData[dayKey] = { status: 'pending', action: 'add', shift: selectedShift, requestedAt: new Date().toISOString() };
-                await patchFirebase(`/schedules/${state.driver}/${monthKey}/${dayKey}`, scheduleData[dayKey]);
-                showToast(`已申請 ${month}/${day} ${SHIFT_LABELS[selectedShift]}（需核准）`);
-            } else {
-                scheduleData[dayKey] = { status: 'scheduled', shift: selectedShift, updatedAt: new Date().toISOString() };
-                await patchFirebase(`/schedules/${state.driver}/${monthKey}/${dayKey}`, scheduleData[dayKey]);
-                showToast(`已排班 ${month}/${day} ${SHIFT_LABELS[selectedShift]}`);
-            }
-
-            closeShiftModal();
-            renderScheduleCalendar();
-        }
-
-        async function removeShiftSelection() {
-            const { day, diffDays } = shiftModalState;
-            const year = scheduleViewDate.getFullYear();
-            const month = scheduleViewDate.getMonth() + 1;
-            const monthKey = `${year}-${String(month).padStart(2, '0')}`;
-            const dayKey = String(day);
-            const current = scheduleData[dayKey];
-
-            if (diffDays <= 3 && current && current.status === 'scheduled') {
-                scheduleData[dayKey] = { status: 'pending', action: 'cancel', requestedAt: new Date().toISOString() };
-                await patchFirebase(`/schedules/${state.driver}/${monthKey}/${dayKey}`, scheduleData[dayKey]);
-                showToast('已申請取消排班（3天內需核准）');
-            } else {
-                scheduleData[dayKey] = null;
-                await writeToFirebase(`/schedules/${state.driver}/${monthKey}/${dayKey}`, null);
-                showToast(current && current.status === 'pending' ? '已撤銷申請' : `已取消 ${month}/${day} 排班`);
-            }
-
-            closeShiftModal();
-            renderScheduleCalendar();
         }
 
         // Check if logged in
@@ -2569,7 +2898,7 @@
             document.getElementById('chatInput').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
-                    sendChatMessage();
+                    sendPrivateMessage();
                 }
             });
         });
