@@ -1,481 +1,2073 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-<title>好糰 Goood 外送員</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet"/>
-<style>
-:root{
-  --green:#1a7a4a;--green-light:#f0faf4;--green-border:#a7f3d0;--green-dark:#155f3a;
-  --orange:#ea580c;--orange-light:#fff7ed;--blue:#2563eb;--blue-light:#eff6ff;
-  --red:#dc2626;--gray-50:#f9fafb;--border:#e5e7eb;
-  --text:#1f2937;--text-sub:#6b7280;--text-hint:#9ca3af;
-  --bg:#f0f2ec;--card:#fff;--radius:12px;
-}
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
-.login-card{background:var(--card);border-radius:var(--radius);padding:32px 24px;width:100%;max-width:360px;box-shadow:0 4px 24px rgba(0,0,0,.1)}
-.login-logo{width:60px;height:60px;background:var(--green);border-radius:14px;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:20px;margin:0 auto 16px;line-height:1.2;text-align:center}
-.login-title{text-align:center;font-size:20px;font-weight:700;margin-bottom:4px}
-.login-sub{text-align:center;font-size:13px;color:var(--text-hint);margin-bottom:28px}
-.flabel{display:block;font-size:12px;color:var(--text-sub);margin-bottom:5px;font-weight:600}
-.finput{width:100%;padding:13px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:16px;font-family:inherit;outline:none;background:var(--gray-50);color:var(--text);margin-bottom:14px;transition:border-color .15s;-webkit-appearance:none;appearance:none}
-.finput:focus{border-color:var(--green);background:#fff}
-.login-btn{width:100%;padding:14px;background:var(--green);color:white;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px}
-.login-btn:active{background:var(--green-dark)}
-.login-err{color:var(--red);font-size:13px;text-align:center;margin-top:10px;min-height:18px;font-weight:500}
-.app{display:none;flex-direction:column;min-height:100vh}
-.topbar{background:var(--green-dark);padding:0 16px;height:56px;display:flex;align-items:center;justify-content:space-between;position:fixed;top:0;left:0;right:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
-.tlogo{width:36px;height:36px;background:white;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:var(--green-dark);line-height:1.1;text-align:center;flex-shrink:0}
-.driver-name{color:white;font-weight:700;font-size:15px}
-.driver-sub{color:rgba(255,255,255,.65);font-size:11px;margin-top:1px}
-.logout-btn{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);color:white;padding:7px 14px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit}
-.main{padding:16px;padding-top:72px;padding-bottom:24px}
-.date-tab-wrap{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch}
-.date-tab{padding:8px 16px;border:1.5px solid var(--border);border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;background:white;color:var(--text-sub);white-space:nowrap;font-family:inherit;flex-shrink:0}
-.date-tab.active{background:var(--green);border-color:var(--green);color:white}
-.trip-card{background:var(--card);border-radius:var(--radius);border:2px solid var(--border);margin-bottom:14px;overflow:hidden}
-.trip-card.sc-dispatched{border-color:#93c5fd}
-.trip-card.sc-out{border-color:var(--orange)}
-.trip-card.sc-done{border-color:var(--green-border);opacity:.75}
-.trip-header{padding:14px 16px;display:flex;align-items:flex-start;gap:12px}
-.trip-time-main{font-size:19px;font-weight:700}
-.trip-time-sub{font-size:12px;color:var(--text-hint);margin-top:3px;line-height:1.5}
-.sbadge{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;white-space:nowrap;flex-shrink:0;margin-top:2px}
-.sb-pending{background:#fef3c7;color:#92400e}
-.sb-dispatched{background:var(--blue-light);color:var(--blue)}
-.sb-out{background:var(--orange-light);color:var(--orange)}
-.sb-done{background:var(--green-light);color:var(--green)}
-.trip-body{padding:0 16px 14px}
-.order-mini{background:var(--gray-50);border-radius:10px;padding:12px;margin-bottom:8px;border:1px solid var(--border)}
-.om-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
-.om-customer{font-size:14px;font-weight:700}
-.om-amt{font-size:14px;font-weight:700;color:var(--green)}
-.om-addr{font-size:12px;color:var(--text-sub);margin-bottom:5px;line-height:1.4}
-.om-items{font-size:12px;color:var(--text-hint);line-height:1.6}
-.om-bags{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
-.bag-chip{font-size:11px;background:white;border:1px solid var(--border);border-radius:5px;padding:2px 8px;color:var(--text-sub)}
-.om-note{font-size:11px;background:#fef9c3;color:#713f12;padding:4px 9px;border-radius:6px;margin-top:6px}
-.nav-map-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;background:var(--blue);color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;text-decoration:none;margin:10px 0;width:100%}
-.trip-actions{display:flex;gap:8px;margin-top:10px}
-.action-btn{flex:1;padding:14px;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
-.action-btn:active{transform:scale(.97)}
-.btn-out{background:var(--orange);color:white}
-.btn-done{background:var(--green);color:white}
-.btn-disabled{background:var(--gray-50);color:var(--text-hint);cursor:default;border:1px solid var(--border)}
-.expand-toggle{background:none;border:none;color:var(--text-hint);font-size:13px;cursor:pointer;padding:4px 16px 12px;width:100%;text-align:center;font-family:inherit;display:block}
-.trip-detail{padding:0 16px 14px;border-top:1px solid var(--border)}
-.confirm-msg{background:var(--gray-50);border-radius:8px;padding:12px;font-size:12px;line-height:1.9;white-space:pre-wrap;margin-bottom:8px;color:var(--text);border:1px solid var(--border);max-height:220px;overflow-y:auto}
-.copy-msg-btn{display:flex;align-items:center;gap:6px;padding:9px 14px;background:var(--blue);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:10px}
-.empty-state{text-align:center;padding:52px 20px;color:var(--text-hint);font-size:14px;line-height:1.8}
-.loading-state{text-align:center;padding:40px 20px}
-.loading-spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
-@keyframes spin{to{transform:rotate(360deg)}}
-.sync-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;display:inline-block;vertical-align:middle}
-.sync-dot.off{background:#f87171}
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1f2937;color:white;padding:11px 22px;border-radius:10px;font-size:13px;z-index:999;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.2)}
-.toast.show{opacity:1}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>好糰 Goood 外送員 v20260324</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-/* ── 照片上傳 ── */
-.photo-upload-label { display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;background:#f0fdf4;color:var(--green-dark);border:1.5px dashed var(--green-border);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px;font-family:inherit; }
-.photo-upload-label:hover { background:var(--green-light); }
+        :root {
+            --green: #1a7a4a;
+            --green-light: #f0faf4;
+            --green-border: #a7f3d0;
+            --green-dark: #155f3a;
+            --orange: #ea580c;
+            --orange-light: #fff7ed;
+            --blue: #2563eb;
+            --blue-light: #eff6ff;
+            --red: #dc2626;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-700: #374151;
+            --gray-900: #111827;
+            --bg: white;
+            --card: white;
+            --text: #111827;
+            --text-sub: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+        }
 
-/* ── 推播通知按鈕 ── */
-.notif-btn { display:flex;align-items:center;gap:6px;padding:8px 14px;background:#7c3aed;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit; }
-.notif-btn.off { background:var(--gray-400); }
-</style>
+        [data-theme="dark"] {
+            --bg: #1a1a2e;
+            --card: #16213e;
+            --text: #e0e0e0;
+            --text-sub: #a0a0a0;
+            --border: #2a2a4a;
+            --gray-50: #2a2a3e;
+            --gray-100: #323249;
+            --gray-200: #3a3a52;
+        }
+
+        html, body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .safe-area {
+            padding-top: max(12px, env(safe-area-inset-top));
+            padding-bottom: max(12px, env(safe-area-inset-bottom));
+            padding-left: max(12px, env(safe-area-inset-left));
+            padding-right: max(12px, env(safe-area-inset-right));
+        }
+
+        /* Login Page */
+        .login-page {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%);
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .login-container {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 40px 30px;
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 320px;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .login-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--green);
+            margin-bottom: 8px;
+        }
+
+        .login-version {
+            font-size: 12px;
+            color: var(--text-sub);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--green);
+            box-shadow: 0 0 0 3px var(--green-light);
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--green);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            min-height: 44px;
+        }
+
+        .login-button:hover {
+            background-color: var(--green-dark);
+        }
+
+        .login-button:active {
+            transform: scale(0.98);
+        }
+
+        .error-msg {
+            color: var(--red);
+            font-size: 14px;
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        /* Main App */
+        .app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: var(--bg);
+        }
+
+        .top-bar {
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            flex-shrink: 0;
+            box-shadow: var(--shadow);
+            gap: 12px;
+        }
+
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+        }
+
+        .top-bar-back-link {
+            color: var(--text-sub);
+            text-decoration: none;
+            font-size: 14px;
+            padding: 6px 8px;
+            border-radius: 4px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            min-width: 44px;
+        }
+
+        .top-bar-back-link:hover {
+            background-color: var(--gray-100);
+            color: var(--text);
+        }
+
+        .driver-name {
+            font-weight: 700;
+            color: var(--green);
+        }
+
+        .connection-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #10b981;
+            flex-shrink: 0;
+        }
+
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            padding-bottom: 80px;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--card);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            padding: max(8px, env(safe-area-inset-bottom)) 8px 8px;
+            gap: 8px;
+            z-index: 100;
+            box-shadow: 0 -1px 3px rgba(0,0,0,0.1);
+        }
+
+        .nav-btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            background: none;
+            color: var(--text-sub);
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            min-height: 44px;
+            justify-content: center;
+            font-weight: 500;
+            transition: color 0.2s, background-color 0.2s;
+        }
+
+        .nav-btn:hover {
+            background-color: var(--gray-100);
+        }
+
+        .nav-btn.active {
+            color: var(--green);
+        }
+
+        /* Dashboard */
+        .dashboard {
+            display: none;
+        }
+
+        .dashboard.active {
+            display: block;
+        }
+
+        .status-card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .status-row:last-child {
+            border-bottom: none;
+        }
+
+        .status-label {
+            color: var(--text-sub);
+            font-size: 14px;
+        }
+
+        .status-value {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .trips-container {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+
+        .date-tab {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--text);
+            cursor: pointer;
+            white-space: nowrap;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        .date-tab:hover {
+            border-color: var(--green);
+        }
+
+        .date-tab.active {
+            background: var(--green);
+            color: white;
+            border-color: var(--green);
+        }
+
+        .trip-card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--green);
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .trip-card:active {
+            transform: scale(0.98);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .trip-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .trip-timeslot {
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--green);
+        }
+
+        .trip-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .trip-status.pending {
+            background: var(--orange-light);
+            color: var(--orange);
+        }
+
+        .trip-status.dispatched {
+            background: var(--blue-light);
+            color: var(--blue);
+        }
+
+        .trip-status.out {
+            background: var(--green-light);
+            color: var(--green);
+        }
+
+        .trip-status.done {
+            background: var(--gray-100);
+            color: var(--gray-700);
+        }
+
+        .trip-stats {
+            display: flex;
+            gap: 16px;
+            font-size: 14px;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            align-items: flex-end;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--card);
+            width: 100%;
+            border-radius: 12px 12px 0 0;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 16px;
+            padding-top: 8px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-sub);
+            min-height: 44px;
+            min-width: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .order-item {
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .order-customer {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+
+        .order-detail {
+            font-size: 13px;
+            color: var(--text-sub);
+            margin: 4px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .order-detail-label {
+            font-weight: 500;
+            min-width: 60px;
+        }
+
+        .order-items-list {
+            font-size: 13px;
+            color: var(--text-sub);
+            margin: 8px 0;
+            padding: 8px;
+            background: var(--card);
+            border-radius: 4px;
+        }
+
+        .order-confirm-msg {
+            background: var(--green-light);
+            border-left: 3px solid var(--green);
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 8px;
+            font-size: 13px;
+            word-break: break-word;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .action-buttons.full {
+            grid-template-columns: 1fr;
+        }
+
+        .btn {
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: var(--green);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--green-dark);
+        }
+
+        .btn-secondary {
+            background: var(--gray-200);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-100);
+        }
+
+        .btn-danger {
+            background: var(--red);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #991b1b;
+        }
+
+        .btn-orange {
+            background: var(--orange);
+            color: white;
+        }
+
+        .btn-orange:hover {
+            background: #d97706;
+        }
+
+        /* Chat */
+        .chat-section {
+            display: none;
+            flex-direction: column;
+            height: calc(100% - 200px);
+        }
+
+        .chat-section.active {
+            display: flex;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .chat-message {
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 12px;
+            border-left: 3px solid var(--green);
+            font-size: 14px;
+            word-break: break-word;
+        }
+
+        .chat-message.sent {
+            background: var(--green-light);
+            border-left-color: var(--green);
+        }
+
+        .chat-message-time {
+            font-size: 12px;
+            color: var(--text-sub);
+            margin-top: 4px;
+        }
+
+        .chat-input-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 14px;
+            background: var(--bg);
+            color: var(--text);
+            resize: none;
+            max-height: 80px;
+        }
+
+        .chat-send {
+            padding: 10px 16px;
+            background: var(--green);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            min-height: 44px;
+            min-width: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Statistics */
+        .statistics {
+            display: none;
+        }
+
+        .statistics.active {
+            display: block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--green);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-sub);
+        }
+
+        /* Settings */
+        .settings {
+            display: none;
+        }
+
+        .settings.active {
+            display: block;
+        }
+
+        .settings-group {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .settings-title {
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text);
+        }
+
+        .settings-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .settings-item:last-child {
+            border-bottom: none;
+        }
+
+        .settings-label {
+            font-size: 14px;
+            color: var(--text);
+        }
+
+        .toggle {
+            width: 48px;
+            height: 28px;
+            background: var(--gray-300);
+            border-radius: 14px;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.3s;
+            border: none;
+        }
+
+        .toggle.on {
+            background: var(--green);
+        }
+
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: left 0.3s;
+        }
+
+        .toggle.on::after {
+            left: 22px;
+        }
+
+        .photo-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin: 12px 0;
+        }
+
+        .photo-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            aspect-ratio: 1;
+            background: var(--gray-100);
+        }
+
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-delete {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 24px;
+            height: 24px;
+            background: var(--red);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            min-height: 28px;
+            min-width: 28px;
+        }
+
+        .photo-item:hover .photo-delete {
+            display: flex;
+        }
+
+        .photo-upload {
+            padding: 16px;
+            background: var(--gray-50);
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 12px;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .photo-upload:hover {
+            border-color: var(--green);
+            background: var(--green-light);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 16px;
+            right: 16px;
+            max-width: 400px;
+            background: var(--gray-900);
+            color: white;
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            z-index: 300;
+            animation: slideInUp 0.3s ease-out;
+            word-break: break-word;
+        }
+
+        @keyframes slideInUp {
+            from { transform: translateY(100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .toast.hide {
+            animation: slideOutDown 0.3s ease-out forwards;
+        }
+
+        @keyframes slideOutDown {
+            from { transform: translateY(0); opacity: 1; }
+            to { transform: translateY(100px); opacity: 0; }
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--gray-200);
+            border-top-color: var(--green);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-sub);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state-text {
+            font-size: 14px;
+        }
+
+        .refresh-pull-indicator {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-sub);
+            font-size: 12px;
+        }
+
+        .issue-form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .issue-form textarea {
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 14px;
+            min-height: 80px;
+            background: var(--bg);
+            color: var(--text);
+            resize: vertical;
+        }
+
+        @media (max-width: 600px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
-<body><div style="position:fixed;top:0;right:0;z-index:999;padding:6px 10px"><a href="index.html" style="font-size:11px;background:rgba(0,0,0,.6);color:white;padding:4px 10px;border-radius:5px;text-decoration:none">← 客服系統</a></div>
-
-<div class="login-wrap" id="login-page">
-  <div class="login-card">
-    <div class="login-logo">好<br>糰</div>
-    <div class="login-title">外送員登入</div>
-    <div class="login-sub">好糰 Goood 外送管理系統</div>
-    <label class="flabel">您的名字</label>
-    <select class="finput" id="driver-select">
-      <option value="">— 請選擇 —</option>
-      <option>鎮哥</option><option>潘伊莎</option><option>正志</option>
-      <option>小賴</option><option>純如</option><option>熊熊</option>
-      <option>龍</option><option>瑋瑋</option><option>平台</option>
-    </select>
-    <label class="flabel">密碼</label>
-    <input class="finput" type="password" id="driver-pwd" placeholder="請向客服確認密碼"
-      onkeydown="if(event.key==='Enter')doLogin()"/>
-    <button class="login-btn" onclick="doLogin()">登入</button>
-    <div class="login-err" id="login-err"></div>
-  </div>
-</div>
-
-<div class="app" id="app">
-  <div class="topbar">
-    <div style="display:flex;align-items:center;gap:10px">
-      <div class="tlogo">好<br>糰</div>
-      <div>
-        <div class="driver-name" id="display-name"></div>
-        <div class="driver-sub">
-          <span class="sync-dot" id="sync-dot"></span>
-          <span id="sync-txt" style="margin-left:4px">連線中…</span>
+<body>
+    <!-- Login Page -->
+    <div id="loginPage" class="login-page">
+        <div class="login-container">
+            <div class="login-header">
+                <div class="login-title">好糰 Goood</div>
+                <div class="login-version">外送員 v20260324</div>
+            </div>
+            <div class="form-group">
+                <label for="driverSelect">選擇外送員</label>
+                <select id="driverSelect">
+                    <option value="">-- 請選擇 --</option>
+                    <option value="鎮哥">鎮哥</option>
+                    <option value="潘伊莎">潘伊莎</option>
+                    <option value="正志">正志</option>
+                    <option value="小賴">小賴</option>
+                    <option value="純如">純如</option>
+                    <option value="熊熊">熊熊</option>
+                    <option value="龍">龍</option>
+                    <option value="瑋瑋">瑋瑋</option>
+                    <option value="平台">平台</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="passwordInput">密碼</label>
+                <input type="password" id="passwordInput" placeholder="輸入密碼">
+            </div>
+            <button class="login-button" onclick="handleLogin()">登入</button>
+            <div id="loginError" class="error-msg"></div>
         </div>
-      </div>
     </div>
-    <button class="logout-btn" onclick="doLogout()">登出</button>
-    <button class="notif-btn" id="notif-btn" onclick="requestNotifPermission()" style="margin-left:8px">🔕 開啟通知</button>
-  </div>
-  <div class="main">
-    <div class="date-tab-wrap" id="date-tabs"></div>
-    <div id="trips-list">
-      <div class="loading-state">
-        <div class="loading-spinner"></div>
-        <div style="font-size:13px;color:var(--text-hint)">載入中…</div>
-      </div>
+
+    <!-- Main App -->
+    <div id="app" class="app" style="display: none;">
+        <!-- Top Bar -->
+        <div class="top-bar safe-area">
+            <div class="top-bar-left">
+                <a href="index.html" class="top-bar-back-link">← 客服系統</a>
+                <div class="driver-name" id="topDriverName">鎮哥</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div class="connection-indicator" id="connectionIndicator"></div>
+                <span id="connectionStatus" style="font-size: 12px; color: var(--text-sub);">連線中</span>
+                <div id="bellIcon" onclick="toggleAnnouncements()" style="font-size: 20px; cursor: pointer; position: relative;">
+                    🔔<span id="announceBadge" style="display:none; position:absolute; top:-6px; right:-8px; background:var(--red); color:white; border-radius:10px; width:18px; height:18px; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center;">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Announcements Panel -->
+        <div id="announcementsPanel" style="display:none; position:fixed; top:0; left:0; right:0; max-height:70vh; overflow-y:auto; background:var(--card); border-bottom:2px solid var(--border); box-shadow:0 4px 20px rgba(0,0,0,0.15); z-index:999; padding:16px; padding-top: max(16px, env(safe-area-inset-top));">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <strong style="font-size:16px;">公告通知</strong>
+                <button onclick="closeAnnouncements()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-sub);">✕</button>
+            </div>
+            <div id="announcementsContent"><div style="text-align:center; color:var(--text-sub); padding:20px;">載入中...</div></div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content">
+            <!-- Dashboard -->
+            <div id="dashboard" class="dashboard active">
+                <div class="status-card">
+                    <div class="status-row">
+                        <span class="status-label">今日派單</span>
+                        <span class="status-value" id="todayTripsCount">0</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">已完成</span>
+                        <span class="status-value" id="completedCount">0</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">進行中</span>
+                        <span class="status-value" id="ongoingCount">0</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">待派</span>
+                        <span class="status-value" id="pendingCount">0</span>
+                    </div>
+                </div>
+
+                <div id="tripsContainer" class="trips-container"></div>
+
+                <div id="tripsList"></div>
+
+                <div id="emptyState" class="empty-state" style="display: none;">
+                    <div class="empty-state-icon">📦</div>
+                    <div class="empty-state-text">今天沒有派單</div>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div id="statistics" class="statistics">
+                <div class="status-card">
+                    <div class="status-row">
+                        <span class="status-label">過去7天統計</span>
+                        <div class="loading-spinner" id="statsSpinner" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card">
+                        <div class="stat-value">-</div>
+                        <div class="stat-label">派單數</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">-</div>
+                        <div class="stat-label">完成數</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">-</div>
+                        <div class="stat-label">訂單數</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">-</div>
+                        <div class="stat-label">總金額</div>
+                    </div>
+                </div>
+
+                <div class="status-card">
+                    <div id="statsByDay"></div>
+                </div>
+            </div>
+
+            <!-- Chat -->
+            <div id="chatSection" class="chat-section">
+                <div class="chat-messages" id="chatMessages"></div>
+                <div class="chat-input-group">
+                    <textarea class="chat-input" id="chatInput" placeholder="輸入訊息..." rows="2"></textarea>
+                    <button class="chat-send" onclick="sendChatMessage()">送出</button>
+                </div>
+            </div>
+
+            <!-- Settings -->
+            <div id="settings" class="settings">
+                <div class="settings-group">
+                    <div class="settings-title">帳號</div>
+                    <div class="settings-item">
+                        <span class="settings-label">登出</span>
+                        <button class="btn btn-secondary" onclick="handleLogout()" style="width: auto; padding: 8px 16px;">登出</button>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <div class="settings-title">顯示</div>
+                    <div class="settings-item">
+                        <span class="settings-label">深色模式</span>
+                        <button class="toggle" id="darkModeToggle" onclick="toggleDarkMode()"></button>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <div class="settings-title">版本</div>
+                    <div class="settings-item">
+                        <span class="settings-label">版本號</span>
+                        <span style="font-size: 12px; color: var(--text-sub);">v20260324</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav safe-area">
+            <button class="nav-btn active" onclick="switchTab('dashboard')">
+                <span>🏠</span>
+                <span>首頁</span>
+            </button>
+            <button class="nav-btn" onclick="switchTab('statistics')">
+                <span>📊</span>
+                <span>統計</span>
+            </button>
+            <button class="nav-btn" onclick="switchTab('chat')">
+                <span>💬</span>
+                <span>聊天</span>
+            </button>
+            <button class="nav-btn" onclick="switchTab('settings')">
+                <span>⚙️</span>
+                <span>設定</span>
+            </button>
+        </div>
     </div>
-  </div>
-</div>
 
-<div class="toast" id="toast"></div>
+    <!-- Trip Modal -->
+    <div id="tripModal" class="modal">
+        <div class="modal-content safe-area">
+            <div class="modal-header">
+                <div>
+                    <div class="modal-title" id="modalTitle">派單詳情</div>
+                    <div style="font-size: 12px; color: var(--text-sub); margin-top: 4px;" id="modalTimeslot"></div>
+                </div>
+                <button class="modal-close" onclick="closeTripModal()">✕</button>
+            </div>
 
-<script>
-const FB_URL='https://goood-orders-default-rtdb.asia-southeast1.firebasedatabase.app';
-const PASSWORDS={'鎮哥':'1111','潘伊莎':'2222','正志':'3333','小賴':'4444','純如':'5555','熊熊':'6666','龍':'7777','瑋瑋':'8888','平台':'9999'};
+            <div id="modalOrders"></div>
 
-let currentDriver=null,currentDate=new Date().toISOString().slice(0,10),allTrips={},pollTimer=null,gpsWatchId=null;
+            <div class="action-buttons" id="modalActions"></div>
 
-async function doLogin(){
-  const name=document.getElementById('driver-select').value;
-  const pwd=document.getElementById('driver-pwd').value;
-  const err=document.getElementById('login-err');
-  err.textContent='';
-  if(!name){err.textContent='請選擇您的名字';return;}
-  if(!pwd){err.textContent='請輸入密碼';return;}
-  if(pwd!==PASSWORDS[name]){err.textContent='密碼錯誤，請向客服確認';return;}
-  currentDriver=name;
-  document.getElementById('login-page').style.display='none';
-  document.getElementById('app').style.display='flex';
-  document.getElementById('display-name').textContent=name;
-  renderDateTabs();
-  loadTrips();
-  if(pollTimer)clearInterval(pollTimer);
-  pollTimer=setInterval(()=>{ loadTrips().catch(e=>console.warn("poll error",e)); },12000);
-}
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+                <div style="margin-bottom: 12px;">
+                    <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px;">聯絡客戶</div>
+                    <button class="btn btn-secondary" onclick="callCustomer()" style="width: 100%; margin-bottom: 8px;">📞 撥打</button>
+                    <button class="btn btn-secondary" onclick="optimizeRoute()">🗺️ 優化路線</button>
+                </div>
 
-async function doLogout(){
-  if(pollTimer)clearInterval(pollTimer);
-  currentDriver=null;allTrips={};
-  document.getElementById('login-page').style.display='flex';
-  document.getElementById('app').style.display='none';
-  document.getElementById('driver-select').value='';
-  document.getElementById('driver-pwd').value='';
-  document.getElementById('login-err').textContent='';
-}
+                <div style="margin-top: 12px;">
+                    <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px;">上傳照片</div>
+                    <div class="photo-upload" onclick="document.getElementById('photoInput').click()">
+                        📷 點擊上傳照片
+                    </div>
+                    <input type="file" id="photoInput" style="display: none;" accept="image/*" onchange="handlePhotoUpload(event)">
+                    <div class="photo-container" id="photoContainer"></div>
+                </div>
 
-async function fbGet(path){
-  const r=await fetch(FB_URL+path+'.json');
-  if(!r.ok)throw new Error(r.status);
-  return r.json();
-}
-async function fbPatch(path,data){
-  const r=await fetch(FB_URL+path+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
-  if(!r.ok)throw new Error(r.status);
-  return r.json();
-}
+                <div style="margin-top: 12px;">
+                    <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px;">回報問題</div>
+                    <div class="issue-form">
+                        <select id="issueType" style="padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text);">
+                            <option value="">-- 選擇問題類型 --</option>
+                            <option value="地址找不到">地址找不到</option>
+                            <option value="客戶無法聯絡">客戶無法聯絡</option>
+                            <option value="地址有誤">地址有誤</option>
+                            <option value="車輛故障">車輛故障</option>
+                            <option value="其他">其他</option>
+                        </select>
+                        <textarea id="issueDesc" placeholder="詳細說明..."></textarea>
+                        <button class="btn btn-secondary" onclick="submitIssue()">提交</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-async function loadTrips(){
-  const dot=document.getElementById('sync-dot'),txt=document.getElementById('sync-txt');
-  try{
-    const prev = JSON.stringify(allTrips);
-    allTrips=await fbGet('/trips')||{};
-    dot.classList.remove('off');txt.textContent='已連線';
-    // 偵測新派單
-    if(prev !== '{}' && prev !== JSON.stringify(allTrips)) {
-      const newTrips = Object.entries(allTrips).filter(([id,t])=>t.driver===currentDriver&&!JSON.parse(prev)[id]);
-      if(newTrips.length > 0) {
-        showToast('🔔 有新的派單！');
-        triggerNotification(newTrips.length);
-      }
-    }
-    renderTrips();
-  }catch(e){dot.classList.add('off');txt.textContent='連線失敗';}
-}
+    <!-- Toast Notification -->
+    <div id="toast" class="toast" style="display: none;"></div>
 
-function triggerNotification(count) {
-  // 震動
-  if(navigator.vibrate) navigator.vibrate([200,100,200]);
-  // 推播
-  if(Notification.permission === 'granted') {
-    new Notification('好糰 Goood 新派單', {
-      body: `你有 ${count} 個新趟次待出發！`,
-      icon: '/goood/icon.png'
-    });
-  }
-}
+    <script>
+        // Constants
+        const PASSWORDS = {
+            '鎮哥': '1111', '潘伊莎': '2222', '正志': '3333',
+            '小賴': '4444', '純如': '5555', '熊熊': '6666',
+            '龍': '7777', '瑋瑋': '8888', '平台': '9999'
+        };
 
-function requestNotifPermission() {
-  if(!('Notification' in window)) { showToast('此裝置不支援推播通知'); return; }
-  Notification.requestPermission().then(p => {
-    if(p==='granted') showToast('✅ 推播通知已開啟！');
-    else showToast('推播通知未開啟');
-    updateNotifBtn();
-  });
-}
+        // Global state - regular script, NOT module scope
+        const state = {
+            driver: '',
+            db: null,
+            currentDate: new Date(),
+            currentTrips: [],
+            currentTripId: null,
+            isDarkMode: false,
+            firebaseConfig: null,
+            hasFirebaseSDK: false,
+            isOffline: false,
+            unsubscribers: [],
+            gpsEnabled: localStorage.getItem('gpsEnabled') !== 'false',
+            notificationsEnabled: localStorage.getItem('notificationsEnabled') !== 'false',
+            announcements: []
+        };
 
-function updateNotifBtn() {
-  const btn = document.getElementById('notif-btn');
-  if(!btn) return;
-  const granted = 'Notification' in window && Notification.permission === 'granted';
-  btn.textContent = granted ? '🔔 通知已開啟' : '🔕 開啟新派單通知';
-  btn.classList.toggle('off', !granted);
-}
+        // Initialize theme
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                state.isDarkMode = true;
+                document.documentElement.setAttribute('data-theme', 'dark');
+                const toggle = document.getElementById('darkModeToggle');
+                if (toggle) toggle.classList.add('on');
+            }
+        }
 
-function renderDateTabs(){
-  const el=document.getElementById('date-tabs');el.innerHTML='';
-  const today=new Date();
-  for(let i=-1;i<=3;i++){
-    const d=new Date(today);d.setDate(today.getDate()+i);
-    const ds=d.toISOString().slice(0,10);
-    const wd=['日','一','二','三','四','五','六'][d.getDay()];
-    const label=i===0?`今天 (${d.getMonth()+1}/${d.getDate()})`:`${d.getMonth()+1}/${d.getDate()}(${wd})`;
-    const btn=document.createElement('button');
-    btn.className='date-tab'+(ds===currentDate?' active':'');
-    btn.textContent=label;
-    btn.onclick=()=>{currentDate=ds;renderDateTabs();renderTrips();};
-    el.appendChild(btn);
-  }
-}
+        // Toggle dark mode
+        function toggleDarkMode() {
+            state.isDarkMode = !state.isDarkMode;
+            if (state.isDarkMode) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+                const toggle = document.getElementById('darkModeToggle');
+                if (toggle) toggle.classList.add('on');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+                const toggle = document.getElementById('darkModeToggle');
+                if (toggle) toggle.classList.remove('on');
+            }
+        }
 
-async function renderTrips(){
-  const el=document.getElementById('trips-list');
-  const myTrips=Object.entries(allTrips)
-    .filter(([id,t])=>t.date===currentDate&&t.driver===currentDriver)
-    .sort((a,b)=>(a[1].timeslot||'').localeCompare(b[1].timeslot||''));
-  if(!myTrips.length){
-    const isToday=currentDate===new Date().toISOString().slice(0,10);
-    el.innerHTML=`<div class="empty-state"><div style="font-size:40px;margin-bottom:12px">🛵</div><div>${isToday?'今日尚無派單':'該日無派單'}</div></div>`;
-    return;
-  }
-  el.innerHTML='';
-  myTrips.forEach(([tripId,trip])=>el.appendChild(buildTripCard(tripId,trip)));
-}
+        // Toast notification
+        function showToast(message, duration = 3000) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.display = 'block';
+            toast.classList.remove('hide');
 
-async function buildTripCard(tripId, trip) {
-  const orders = trip.orders || [];
-  const s = trip.status || 'dispatched';
-  const sLabel = { pending:'待派單', dispatched:'✅ 已派單', out:'🛵 出發中', done:'🏁 已完成' };
-  const sClass = { pending:'sb-pending', dispatched:'sb-dispatched', out:'sb-out', done:'sb-done' };
-  const cClass = { pending:'', dispatched:'sc-dispatched', out:'sc-out', done:'sc-done' };
-  const totalBags = orders.reduce((sum,o) => sum+(parseFloat(o.totalBags)||0), 0);
-  const totalAmt  = orders.reduce((sum,o) => sum+(o.total||0), 0);
+            setTimeout(() => {
+                toast.classList.add('hide');
+                setTimeout(() => {
+                    toast.style.display = 'none';
+                }, 300);
+            }, duration);
+        }
 
-  const card = document.createElement('div');
-  card.className = `trip-card ${cClass[s]}`;
+        // Login handler
+        function handleLogin() {
+            const driverSelect = document.getElementById('driverSelect');
+            const passwordInput = document.getElementById('passwordInput');
+            const errorMsg = document.getElementById('loginError');
 
-  // ── 頭部 ──
-  const header = document.createElement('div');
-  header.className = 'trip-header';
-  header.innerHTML = `<div style="flex:1"><div class="trip-time-main">🕐 ${x(trip.timeslot||'未指定時段')}</div><div class="trip-time-sub">出門：${x(trip.departTime||'—')} · ${orders.length}筆 · ${totalBags.toFixed(1)}袋 · $${totalAmt.toLocaleString()}</div></div><span class="sbadge ${sClass[s]}">${sLabel[s]||s}</span>`;
-  card.appendChild(header);
+            const driver = driverSelect.value;
+            const password = passwordInput.value;
 
-  // ── 訂單列表 ──
-  const body = document.createElement('div');
-  body.className = 'trip-body';
+            errorMsg.textContent = '';
 
-  orders.forEach((o, oi) => {
-    const itemsText = (o.items||[]).map(it=>`${x(it.name)}×${it.qty||1}`).join('・');
-    const bagsHtml  = (o.bags||[]).map(b=>`<span class="bag-chip">${x(b.name||b.vendorName||'')}：${b.bags}袋</span>`).join('');
-    const mapsUrl   = o.address ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(o.address)}&travelmode=two-wheeler` : '';
-    const payType   = o.payType==='transfer'
-      ? `<span style="background:#dbeafe;color:#1e40af;padding:1px 5px;border-radius:3px;font-size:10px">轉帳</span>`
-      : `<span style="background:#fef3c7;color:#92400e;padding:1px 5px;border-radius:3px;font-size:10px">現金 $${(o.total||0).toLocaleString()}</span>`;
+            if (!driver) {
+                errorMsg.textContent = '請選擇外送員';
+                return;
+            }
 
-    const mini = document.createElement('div');
-    mini.className = 'order-mini';
-    mini.innerHTML = `<div class="om-head"><span class="om-customer">${x(o.customer||'')} ${payType}</span><span class="om-amt">$${(o.total||0).toLocaleString()}</span></div><div class="om-addr">📍 ${x(o.address||'')}</div><div class="om-items">${itemsText}</div>${bagsHtml?`<div class="om-bags">${bagsHtml}</div>`:''}${o.note?`<div class="om-note">備：${x(o.note)}</div>`:''}`;
+            if (!password) {
+                errorMsg.textContent = '請輸入密碼';
+                return;
+            }
 
-    if (mapsUrl) {
-      const navBtn = document.createElement('a');
-      navBtn.href = mapsUrl; navBtn.target = '_blank'; navBtn.className = 'nav-map-btn';
-      navBtn.style.marginTop = '8px'; navBtn.textContent = '🗺 導航到此地址';
-      mini.appendChild(navBtn);
-    }
-    body.appendChild(mini);
-  });
+            if (PASSWORDS[driver] !== password) {
+                errorMsg.textContent = '密碼錯誤';
+                return;
+            }
 
-  // ── 動作按鈕 ──
-  const actDiv = document.createElement('div');
-  actDiv.className = 'trip-actions';
+            state.driver = driver;
+            localStorage.setItem('driver', driver);
+            showLoginPage(false);
+            initializeApp();
+        }
 
-  if (s === 'dispatched') {
-    const outBtn = document.createElement('button');
-    outBtn.className = 'action-btn btn-out'; outBtn.textContent = '🛵 出發！';
-    outBtn.addEventListener('click', e => { e.stopPropagation(); updateStatus(e, tripId, 'out'); });
-    actDiv.appendChild(outBtn);
-  } else if (s === 'out') {
-    // 完成按鈕 + 上傳照片
-    const doneBtn = document.createElement('button');
-    doneBtn.className = 'action-btn btn-done'; doneBtn.textContent = '✅ 已完成送達';
-    doneBtn.addEventListener('click', e => { e.stopPropagation(); updateStatus(e, tripId, 'done'); });
-    actDiv.appendChild(doneBtn);
+        // Logout handler
+        function handleLogout() {
+            if (confirm('確認登出?')) {
+                localStorage.removeItem('driver');
+                state.driver = '';
+                state.currentTrips = [];
+                state.currentTripId = null;
+                unsubscribeAllListeners();
+                showLoginPage(true);
+            }
+        }
 
-    const photoLabel = document.createElement('label');
-    photoLabel.className = 'photo-upload-label';
-    photoLabel.innerHTML = '📷 上傳送達照片';
-    const photoInput = document.createElement('input');
-    photoInput.type = 'file'; photoInput.accept = 'image/*'; photoInput.capture = 'environment';
-    photoInput.style.display = 'none';
-    photoInput.addEventListener('change', function() {
-      if (!this.files[0]) return;
-      uploadDeliveryPhoto(tripId, this.files[0]);
-    });
-    photoLabel.appendChild(photoInput);
-    actDiv.appendChild(photoLabel);
-  } else if (s === 'done') {
-    const doneDisabled = document.createElement('button');
-    doneDisabled.className = 'action-btn btn-disabled'; doneDisabled.disabled = true;
-    doneDisabled.textContent = '✓ 已完成';
-    actDiv.appendChild(doneDisabled);
+        function showLoginPage(show) {
+            document.getElementById('loginPage').style.display = show ? 'flex' : 'none';
+            document.getElementById('app').style.display = show ? 'none' : 'flex';
+        }
 
-    // 顯示已上傳的照片
-    if (trip.photos && trip.photos.length > 0) {
-      const photoRow = document.createElement('div');
-      photoRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px';
-      trip.photos.forEach(url => {
-        const img = document.createElement('img');
-        img.src = url; img.style.cssText = 'width:60px;height:60px;object-fit:cover;border-radius:7px;border:1px solid var(--border)';
-        img.addEventListener('click', () => window.open(url, '_blank'));
-        photoRow.appendChild(img);
-      });
-      actDiv.appendChild(photoRow);
-    }
-  }
-  body.appendChild(actDiv);
-  card.appendChild(body);
+        // Initialize Firebase or REST API
+        async function initializeFirebase() {
+            try {
+                // Try to load Firebase SDK
+                if (window.firebase) {
+                    const { initializeApp } = window.firebase;
+                    const { getDatabase, ref } = window.firebase.database;
+                    const { getAuth } = window.firebase.auth;
 
-  // ── 確認訊息（收合）──
-  const toggle = document.createElement('button');
-  toggle.className = 'expand-toggle';
-  toggle.textContent = '▼ 查看確認訊息';
-  toggle.addEventListener('click', function() {
-    const detail = this.nextElementSibling;
-    const open = detail.style.display !== 'none';
-    detail.style.display = open ? 'none' : 'block';
-    this.textContent = open ? '▼ 查看確認訊息' : '▲ 收起';
-  });
-  card.appendChild(toggle);
+                    const firebaseConfig = {
+                        apiKey: "AIzaSyDpG7X8ZqR5pKpL4mZ3ZvN9XmKlYqR8vZ0",
+                        authDomain: "goood-orders.firebaseapp.com",
+                        databaseURL: "https://goood-orders-default-rtdb.asia-southeast1.firebasedatabase.app",
+                        projectId: "goood-orders",
+                        storageBucket: "goood-orders.appspot.com",
+                        messagingSenderId: "123456789",
+                        appId: "1:123456789:web:abc123def456"
+                    };
 
-  const detail = document.createElement('div');
-  detail.className = 'trip-detail'; detail.style.display = 'none';
-  orders.forEach((o, i) => {
-    const sec = document.createElement('div'); sec.style.marginBottom = '12px';
-    sec.innerHTML = `<div style="font-size:12px;font-weight:700;color:var(--text-sub);margin-bottom:5px">訂單 ${i+1}：${x(o.customer||'')}</div><div class="confirm-msg">${x(o.confirmMsg||'（無確認訊息）')}</div>`;
-    const copyBtn = document.createElement('button');
-    copyBtn.className = 'copy-msg-btn'; copyBtn.textContent = `📋 複製給 ${x(o.customer||'')}`;
-    copyBtn.addEventListener('click', (function(tid, oi2){ return function(){ copyConfirm(tid, oi2); }; })(tripId, i));
-    sec.appendChild(copyBtn);
-    detail.appendChild(sec);
-  });
-  card.appendChild(detail);
-  return card;
-}
+                    const app = initializeApp(firebaseConfig);
+                    state.db = getDatabase(app);
+                    state.hasFirebaseSDK = true;
+                    state.firebaseConfig = firebaseConfig;
+                    setupRealtimeListeners();
+                } else {
+                    console.log('Firebase SDK not available, using REST API fallback');
+                }
+            } catch (error) {
+                console.error('Firebase initialization error:', error);
+            }
+        }
 
-async function uploadDeliveryPhoto(tripId, file) {
-  showToast('上傳照片中…');
-  try {
-    // 壓縮圖片（最大 800px）
-    const b64 = await new Promise((res, rej) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX = 800;
-        let w = img.width, h = img.height;
-        if (w > MAX) { h = Math.round(h * MAX/w); w = MAX; }
-        if (h > MAX) { w = Math.round(w * MAX/h); h = MAX; }
-        canvas.width = w; canvas.height = h;
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        res(canvas.toDataURL('image/jpeg', 0.8));
-      };
-      img.onerror = rej;
-      img.src = URL.createObjectURL(file);
-    });
+        // REST API functions
+        async function getFromFirebase(path) {
+            try {
+                const url = `https://goood-orders-default-rtdb.asia-southeast1.firebasedatabase.app${path}.json`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return await response.json();
+            } catch (error) {
+                console.error('REST GET error:', error);
+                return null;
+            }
+        }
 
-    // 存到 Firebase（base64 字串）
-    const trip = allTrips[tripId];
-    const photos = trip.photos || [];
-    photos.push(b64);
-    await fbPatch(`/trips/${tripId}`, { photos });
-    allTrips[tripId].photos = photos;
-    showToast('✅ 照片已上傳！');
-    renderTrips();
-  } catch(e) {
-    showToast('上傳失敗：' + e.message);
-  }
-}
+        async function writeToFirebase(path, data) {
+            try {
+                const url = `https://goood-orders-default-rtdb.asia-southeast1.firebasedatabase.app${path}.json`;
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return await response.json();
+            } catch (error) {
+                console.error('REST PUT error:', error);
+                return null;
+            }
+        }
 
+        async function updateTripInFirebase(tripId, updates) {
+            return patchFirebase(`/trips/${tripId}`, updates);
+        }
 
-function toggleDetail(btn){
-  const d=btn.nextElementSibling;
-  const hidden=d.style.display==='none';
-  d.style.display=hidden?'block':'none';
-  btn.textContent=hidden?'▲ 收起確認訊息':'▼ 查看確認訊息';
-}
+        // Load trips for date
+        async function loadTrips(date) {
+            try {
+                const allTrips = await getFromFirebase('/trips');
+                if (!allTrips) {
+                    state.currentTrips = [];
+                    renderTrips();
+                    return;
+                }
 
-function copyConfirm(tripId,idx){
-  const msg=allTrips[tripId]?.orders?.[idx]?.confirmMsg;
-  if(!msg){showToast('無確認訊息');return;}
-  const customer=allTrips[tripId]?.orders?.[idx]?.customer||'';
-  if(navigator.clipboard){
-    navigator.clipboard.writeText(msg).then(()=>showToast(`✅ 已複製 ${customer} 的確認訊息`)).catch(()=>fallbackCopy(msg));
-  }else{fallbackCopy(msg);}
-}
-function fallbackCopy(text){
-  const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast('已複製確認訊息');
-}
+                const dateStr = formatDate(date);
+                const filtered = Object.entries(allTrips)
+                    .filter(([_, trip]) => trip.date === dateStr)
+                    .map(([id, trip]) => ({ id, ...trip }));
 
-// GPS 追蹤
-async function startGpsTracking(tripId) {
-  if (!navigator.geolocation) return;
-  if (gpsWatchId !== null) navigator.geolocation.clearWatch(gpsWatchId);
-  gpsWatchId = navigator.geolocation.watchPosition(
-    async (pos) => {
-      const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude, ts: Date.now() };
-      try { await fbPatch('/trips/' + tripId, { location: loc }); } catch(e) {}
-    },
-    (err) => console.warn('GPS 錯誤:', err.message),
-    { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
-  );
-  showToast('📍 位置追蹤已開啟');
-}
+                state.currentTrips = filtered.sort((a, b) => {
+                    const timeA = a.timeslot || '00:00';
+                    const timeB = b.timeslot || '00:00';
+                    return timeA.localeCompare(timeB);
+                });
 
-async function stopGpsTracking() {
-  if (gpsWatchId !== null) {
-    navigator.geolocation.clearWatch(gpsWatchId);
-    gpsWatchId = null;
-  }
-}
+                renderTrips();
+                updateDashboardStats();
+            } catch (error) {
+                console.error('loadTrips error:', error);
+                showToast('載入派單失敗');
+            }
+        }
 
-async function updateStatus(e, tripId, newStatus) {
-  const label = { out:'已出發', done:'已完成' };
-  if (!confirm(`確認更新為「${label[newStatus]}」？`)) return;
-  const btn = e.target; btn.disabled = true; btn.textContent = '更新中…';
-  try {
-    const upd = { status: newStatus }; upd[newStatus+'At'] = new Date().toISOString();
-    await fbPatch('/trips/'+tripId, upd);
-    if (allTrips[tripId]) allTrips[tripId] = { ...allTrips[tripId], ...upd };
-    // 出發 → 開始追蹤；完成 → 停止追蹤
-    if (newStatus === 'out') startGpsTracking(tripId);
-    else if (newStatus === 'done') stopGpsTracking();
-    renderTrips();
-    showToast(`✅ ${label[newStatus]}！`);
-  } catch(err) {
-    btn.disabled = false;
-    btn.textContent = newStatus==='out' ? '🛵 出發！' : '✅ 已完成送達';
-    showToast('更新失敗，請確認網路');
-  }
-}
+        function renderTrips() {
+            const container = document.getElementById('tripsList');
+            const emptyState = document.getElementById('emptyState');
 
-function x(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
-</script>
+            if (state.currentTrips.length === 0) {
+                container.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            container.innerHTML = state.currentTrips.map(trip => `
+                <div class="trip-card" onclick="openTripModal('${trip.id}')">
+                    <div class="trip-header">
+                        <div class="trip-timeslot">${escapeHtml(trip.timeslot || '未定')}</div>
+                        <div class="trip-status ${trip.status || 'pending'}">${getStatusLabel(trip.status || 'pending')}</div>
+                    </div>
+                    <div class="trip-stats">
+                        <div class="stat-item">📦 ${(trip.orders || []).length} 訂</div>
+                        <div class="stat-item">💰 ${(trip.orders || []).reduce((s, o) => s + (o.total || 0), 0)} 元</div>
+                        <div class="stat-item">🎒 ${(trip.orders || []).reduce((s, o) => s + (o.totalBags || 0), 0)} 袋</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getStatusLabel(status) {
+            const labels = {
+                'pending': '待派',
+                'dispatched': '已派',
+                'out': '進行中',
+                'done': '已完成'
+            };
+            return labels[status] || '待派';
+        }
+
+        // Open trip modal
+        function openTripModal(tripId) {
+            const trip = state.currentTrips.find(t => t.id === tripId);
+            if (!trip) return;
+
+            state.currentTripId = tripId;
+
+            // Set title and timeslot
+            const title = document.getElementById('modalTitle');
+            const timeslot = document.getElementById('modalTimeslot');
+            title.textContent = `派單詳情 - ${getStatusLabel(trip.status || 'pending')}`;
+            timeslot.textContent = `時間: ${trip.timeslot || '未定'} | 司機: ${trip.driver || '未指派'}`;
+
+            // Render orders
+            const ordersHtml = (trip.orders || []).map((order, idx) => `
+                <div class="order-item">
+                    <div class="order-customer">${idx + 1}. ${escapeHtml(order.customer || '未知')}</div>
+                    <div class="order-detail">
+                        <span class="order-detail-label">📍</span>
+                        <span>${escapeHtml(order.address || '未知')}</span>
+                    </div>
+                    <div class="order-detail">
+                        <span class="order-detail-label">📞</span>
+                        <span>${escapeHtml(order.phone || '-')}</span>
+                    </div>
+                    <div class="order-detail">
+                        <span class="order-detail-label">💰</span>
+                        <span>${order.total || 0} 元 (${order.payType === 'cash' ? '現金' : '轉帳'})</span>
+                    </div>
+                    ${order.items && order.items.length > 0 ? `
+                        <div class="order-items-list">
+                            ${order.items.map(item => `${escapeHtml(item.name || '')} x${item.qty || 1}`).join('<br>')}
+                        </div>
+                    ` : ''}
+                    ${order.note ? `<div style="font-size: 13px; background: var(--orange-light); padding: 8px; border-radius: 4px; margin-top: 8px;">備註: ${escapeHtml(order.note)}</div>` : ''}
+                    ${order.confirmMsg ? `<div class="order-confirm-msg">${escapeHtml(order.confirmMsg)}</div>` : ''}
+                </div>
+            `).join('');
+
+            document.getElementById('modalOrders').innerHTML = ordersHtml;
+
+            // Action buttons
+            const actionsHtml = getActionButtons(trip);
+            document.getElementById('modalActions').innerHTML = actionsHtml;
+
+            // Photos
+            renderPhotos(trip.photos || []);
+
+            document.getElementById('tripModal').classList.add('active');
+        }
+
+        function getActionButtons(trip) {
+            const buttons = [];
+            const status = trip.status || 'pending';
+
+            if (status === 'pending') {
+                buttons.push('<button class="btn btn-primary" onclick="updateTripStatus(\'dispatched\')">派出</button>');
+            } else if (status === 'dispatched') {
+                buttons.push('<button class="btn btn-orange" onclick="updateTripStatus(\'out\')">開始配送</button>');
+            } else if (status === 'out') {
+                buttons.push('<button class="btn btn-primary" onclick="updateTripStatus(\'done\')">完成</button>');
+            }
+
+            if (status !== 'done') {
+                buttons.push('<button class="btn btn-danger" onclick="cancelTrip()">取消</button>');
+            }
+
+            return `<div class="${buttons.length > 1 ? '' : 'full'}" style="display: grid; grid-template-columns: ${buttons.length > 1 ? '1fr 1fr' : '1fr'}; gap: 8px;">
+                ${buttons.join('')}
+            </div>`;
+        }
+
+        function closeTripModal() {
+            document.getElementById('tripModal').classList.remove('active');
+            state.currentTripId = null;
+        }
+
+        // Update trip status
+        async function updateTripStatus(newStatus) {
+            if (!state.currentTripId) return;
+
+            try {
+                const updates = { status: newStatus };
+
+                if (newStatus === 'out' && !state.currentTrips.find(t => t.id === state.currentTripId).outAt) {
+                    updates.outAt = new Date().toISOString();
+                }
+
+                if (newStatus === 'done' && !state.currentTrips.find(t => t.id === state.currentTripId).doneAt) {
+                    updates.doneAt = new Date().toISOString();
+                }
+
+                await updateTripInFirebase(state.currentTripId, updates);
+
+                // GPS 追蹤：出發開始、完成停止
+                if (newStatus === 'out' && state.gpsEnabled) startGPSTracking(state.currentTripId);
+                if (newStatus === 'done') stopGPSTracking();
+
+                showToast(`狀態已更新為 ${getStatusLabel(newStatus)}`);
+                await loadTrips(state.currentDate);
+                closeTripModal();
+            } catch (error) {
+                console.error('updateTripStatus error:', error);
+                showToast('更新失敗');
+            }
+        }
+
+        function cancelTrip() {
+            if (!confirm('確認取消派單?')) return;
+            updateTripStatus('pending');
+        }
+
+        // Photo upload with compression
+        async function handlePhotoUpload(event) {
+            const files = event.target.files;
+            if (!files.length) return;
+
+            try {
+                const trip = state.currentTrips.find(t => t.id === state.currentTripId);
+                if (!trip) return;
+
+                const photos = trip.photos || [];
+
+                for (const file of files) {
+                    const base64 = await compressImage(file);
+                    photos.push(base64);
+                }
+
+                await updateTripInFirebase(state.currentTripId, { photos });
+                showToast('照片已上傳');
+                renderPhotos(photos);
+
+                // Clear input
+                document.getElementById('photoInput').value = '';
+            } catch (error) {
+                console.error('Photo upload error:', error);
+                showToast('上傳失敗');
+            }
+        }
+
+        async function compressImage(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height && width > 800) {
+                            height = Math.round((height * 800) / width);
+                            width = 800;
+                        } else if (height > 800) {
+                            width = Math.round((width * 800) / height);
+                            height = 800;
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        const base64 = canvas.toDataURL('image/jpeg', 0.8);
+                        resolve(base64);
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function renderPhotos(photos) {
+            const container = document.getElementById('photoContainer');
+            container.innerHTML = (photos || []).map((photo, idx) => `
+                <div class="photo-item">
+                    <img src="${escapeHtml(photo)}" alt="photo">
+                    <button class="photo-delete" onclick="deletePhoto(${idx})">✕</button>
+                </div>
+            `).join('');
+        }
+
+        async function deletePhoto(idx) {
+            if (!state.currentTripId) return;
+
+            try {
+                const trip = state.currentTrips.find(t => t.id === state.currentTripId);
+                if (!trip) return;
+
+                const photos = (trip.photos || []).filter((_, i) => i !== idx);
+                await updateTripInFirebase(state.currentTripId, { photos });
+                renderPhotos(photos);
+            } catch (error) {
+                console.error('deletePhoto error:', error);
+            }
+        }
+
+        // Customer contact
+        function callCustomer() {
+            const trip = state.currentTrips.find(t => t.id === state.currentTripId);
+            if (!trip || !trip.orders || trip.orders.length === 0) {
+                showToast('沒有客戶資訊');
+                return;
+            }
+
+            const phone = trip.orders[0].phone;
+            if (phone) {
+                window.location.href = `tel:${phone}`;
+            }
+        }
+
+        // Route optimization
+        function optimizeRoute() {
+            const trip = state.currentTrips.find(t => t.id === state.currentTripId);
+            if (!trip || !trip.orders || trip.orders.length === 0) {
+                showToast('沒有地址');
+                return;
+            }
+
+            const addresses = trip.orders.map(o => o.address || '').filter(a => a);
+            if (addresses.length === 0) {
+                showToast('沒有有效的地址');
+                return;
+            }
+
+            const origin = encodeURIComponent(addresses[0]);
+            const destination = encodeURIComponent(addresses[addresses.length - 1]);
+            const waypoints = addresses.slice(1, -1).map(a => encodeURIComponent(a)).join('|');
+
+            let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=two-wheeler`;
+            if (waypoints) {
+                url += `&waypoints=${waypoints}`;
+            }
+
+            window.open(url, '_blank');
+        }
+
+        // Issue reporting
+        async function submitIssue() {
+            const issueType = document.getElementById('issueType').value;
+            const issueDesc = document.getElementById('issueDesc').value;
+
+            if (!issueType) {
+                showToast('請選擇問題類型');
+                return;
+            }
+
+            try {
+                const trip = state.currentTrips.find(t => t.id === state.currentTripId);
+                if (!trip) return;
+
+                const issues = trip.issues || [];
+                issues.push({
+                    type: issueType,
+                    description: issueDesc,
+                    timestamp: new Date().toISOString()
+                });
+
+                await updateTripInFirebase(state.currentTripId, { issues });
+                showToast('問題已提交');
+                document.getElementById('issueType').value = '';
+                document.getElementById('issueDesc').value = '';
+            } catch (error) {
+                console.error('submitIssue error:', error);
+                showToast('提交失敗');
+            }
+        }
+
+        // Chat functionality
+        async function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            try {
+                const dateStr = formatDate(new Date());
+                const msgId = Date.now().toString();
+                const msgData = {
+                    sender: state.driver,
+                    text: message,
+                    timestamp: new Date().toISOString()
+                };
+
+                await writeToFirebase(`/chat/${dateStr}/${msgId}`, msgData);
+                input.value = '';
+                loadChatMessages();
+                showToast('訊息已傳送');
+            } catch (error) {
+                console.error('sendChatMessage error:', error);
+                showToast('傳送失敗');
+            }
+        }
+
+        async function loadChatMessages() {
+            try {
+                const dateStr = formatDate(new Date());
+                const messages = await getFromFirebase(`/chat/${dateStr}`);
+
+                const container = document.getElementById('chatMessages');
+                if (!messages) {
+                    container.innerHTML = '';
+                    return;
+                }
+
+                const msgArray = Object.entries(messages)
+                    .map(([_, msg]) => msg)
+                    .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+                container.innerHTML = msgArray.map(msg => `
+                    <div class="chat-message ${msg.sender === state.driver ? 'sent' : ''}">
+                        <strong>${escapeHtml(msg.sender || '未知')}</strong>: ${escapeHtml(msg.text || '')}
+                        <div class="chat-message-time">${new Date(msg.timestamp).toLocaleTimeString('zh-TW')}</div>
+                    </div>
+                `).join('');
+
+                container.scrollTop = container.scrollHeight;
+            } catch (error) {
+                console.error('loadChatMessages error:', error);
+            }
+        }
+
+        // Statistics
+        async function loadStatistics() {
+            try {
+                const spinner = document.getElementById('statsSpinner');
+                spinner.style.display = 'inline-block';
+
+                const allTrips = await getFromFirebase('/trips');
+                if (!allTrips) {
+                    spinner.style.display = 'none';
+                    return;
+                }
+
+                const trips = Object.entries(allTrips)
+                    .map(([id, trip]) => ({ id, ...trip }))
+                    .filter(trip => {
+                        const tripDate = new Date(trip.date);
+                        const today = new Date();
+                        const diff = Math.floor((today - tripDate) / (1000 * 60 * 60 * 24));
+                        return diff >= 0 && diff < 7;
+                    });
+
+                const stats = {
+                    totalTrips: trips.length,
+                    completedTrips: trips.filter(t => t.status === 'done').length,
+                    totalOrders: trips.reduce((s, t) => s + (t.orders || []).length, 0),
+                    totalAmount: trips.reduce((s, t) => s + (t.orders || []).reduce((os, o) => os + (o.total || 0), 0), 0)
+                };
+
+                // Update stat cards
+                const cards = document.querySelectorAll('.stat-card');
+                cards[0].querySelector('.stat-value').textContent = stats.totalTrips;
+                cards[1].querySelector('.stat-value').textContent = stats.completedTrips;
+                cards[2].querySelector('.stat-value').textContent = stats.totalOrders;
+                cards[3].querySelector('.stat-value').textContent = stats.totalAmount;
+
+                // Stats by day
+                const byDay = {};
+                trips.forEach(trip => {
+                    const date = trip.date;
+                    if (!byDay[date]) byDay[date] = { trips: 0, orders: 0, amount: 0 };
+                    byDay[date].trips++;
+                    byDay[date].orders += (trip.orders || []).length;
+                    byDay[date].amount += (trip.orders || []).reduce((s, o) => s + (o.total || 0), 0);
+                });
+
+                const dayHtml = Object.entries(byDay)
+                    .sort(([a], [b]) => b.localeCompare(a))
+                    .map(([date, stats]) => `
+                        <div class="status-row">
+                            <span class="status-label">${date}</span>
+                            <span class="status-value">${stats.trips} 單 / ${stats.orders} 訂 / ${stats.amount}元</span>
+                        </div>
+                    `).join('');
+
+                document.getElementById('statsByDay').innerHTML = dayHtml || '<div class="empty-state-text">沒有資料</div>';
+
+                spinner.style.display = 'none';
+            } catch (error) {
+                console.error('loadStatistics error:', error);
+                document.getElementById('statsSpinner').style.display = 'none';
+            }
+        }
+
+        // Dashboard stats
+        function updateDashboardStats() {
+            const trips = state.currentTrips;
+            document.getElementById('todayTripsCount').textContent = trips.length;
+            document.getElementById('completedCount').textContent = trips.filter(t => t.status === 'done').length;
+            document.getElementById('ongoingCount').textContent = trips.filter(t => ['dispatched', 'out'].includes(t.status)).length;
+            document.getElementById('pendingCount').textContent = trips.filter(t => !t.status || t.status === 'pending').length;
+        }
+
+        // Tab switching
+        function switchTab(tab) {
+            // Hide all sections
+            document.getElementById('dashboard').classList.remove('active');
+            document.getElementById('statistics').classList.remove('active');
+            document.getElementById('chatSection').classList.remove('active');
+            document.getElementById('settings').classList.remove('active');
+
+            // Deactivate all nav buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+
+            // Show selected section
+            const sections = {
+                'dashboard': 'dashboard',
+                'statistics': 'statistics',
+                'chat': 'chatSection',
+                'settings': 'settings'
+            };
+
+            if (sections[tab]) {
+                document.getElementById(sections[tab]).classList.add('active');
+                event.target.closest('.nav-btn').classList.add('active');
+
+                if (tab === 'statistics') {
+                    loadStatistics();
+                } else if (tab === 'chat') {
+                    loadChatMessages();
+                }
+            }
+        }
+
+        // Date helpers
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function getDateLabel(date) {
+            const today = new Date();
+            const targetDate = new Date(date);
+            today.setHours(0, 0, 0, 0);
+            targetDate.setHours(0, 0, 0, 0);
+
+            const diff = Math.floor((targetDate - today) / (1000 * 60 * 60 * 24));
+
+            if (diff === 0) return '今天';
+            if (diff === 1) return '明天';
+            if (diff === -1) return '昨天';
+            if (diff > 1 && diff <= 6) return `${diff} 天後`;
+            if (diff < -1 && diff >= -6) return `${Math.abs(diff)} 天前`;
+
+            return formatDate(date);
+        }
+
+        // Real-time listeners
+        function setupRealtimeListeners() {
+            try {
+                const today = formatDate(new Date());
+                const tripsRef = state.db ? window.firebase.database.ref(state.db, `/trips`) : null;
+
+                if (tripsRef && window.firebase.database.onValue) {
+                    const unsubscribe = window.firebase.database.onValue(tripsRef, (snapshot) => {
+                        if (snapshot.exists()) {
+                            const allTrips = Object.entries(snapshot.val())
+                                .map(([id, trip]) => ({ id, ...trip }));
+                            const todayTrips = allTrips.filter(t => t.date === today);
+                            state.currentTrips = todayTrips.sort((a, b) => (a.timeslot || '').localeCompare(b.timeslot || ''));
+                            renderTrips();
+                            updateDashboardStats();
+                        }
+                    });
+
+                    state.unsubscribers.push(unsubscribe);
+                }
+            } catch (error) {
+                console.error('setupRealtimeListeners error:', error);
+            }
+        }
+
+        function unsubscribeAllListeners() {
+            state.unsubscribers.forEach(unsub => {
+                if (typeof unsub === 'function') unsub();
+            });
+            state.unsubscribers = [];
+        }
+
+        // Initialize app
+        async function initializeApp() {
+            try {
+                document.getElementById('topDriverName').textContent = state.driver;
+                initTheme();
+                await initializeFirebase();
+                await loadTrips(state.currentDate);
+                loadAnnouncements();
+                setupConnectionMonitoring();
+
+                // Setup date tabs
+                const container = document.getElementById('tripsContainer');
+                container.innerHTML = '';
+                for (let i = -1; i <= 5; i++) {
+                    const date = new Date();
+                    date.setDate(date.getDate() + i);
+                    const dateStr = formatDate(date);
+                    const label = getDateLabel(date);
+                    const btn = document.createElement('button');
+                    btn.className = 'date-tab' + (i === 0 ? ' active' : '');
+                    btn.textContent = label;
+                    btn.onclick = () => switchDate(date, btn);
+                    container.appendChild(btn);
+                }
+            } catch (error) {
+                console.error('initializeApp error:', error);
+                showToast('初始化失敗');
+            }
+        }
+
+        function switchDate(date, btn) {
+            state.currentDate = date;
+            document.querySelectorAll('.date-tab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            loadTrips(date);
+        }
+
+        // Connection monitoring
+        function setupConnectionMonitoring() {
+            const indicator = document.getElementById('connectionIndicator');
+            const status = document.getElementById('connectionStatus');
+
+            // Poll Firebase connection
+            setInterval(async () => {
+                try {
+                    const result = await getFromFirebase('/trips');
+                    if (result !== null) {
+                        state.isOffline = false;
+                        indicator.style.backgroundColor = '#10b981';
+                        status.textContent = '連線中';
+                    } else {
+                        throw new Error('No response');
+                    }
+                } catch (error) {
+                    state.isOffline = true;
+                    indicator.style.backgroundColor = '#ef4444';
+                    status.textContent = '離線';
+                }
+            }, 15000);
+        }
+
+        // ── Announcements / 公告系統 ──
+        async function loadAnnouncements() {
+            try {
+                const data = await getFromFirebase('/announcements');
+                if (data) {
+                    state.announcements = Object.keys(data).map(k => ({ id: k, ...data[k] }))
+                        .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+                } else {
+                    state.announcements = [];
+                }
+                updateAnnounceBadge();
+            } catch (e) {
+                console.warn('Announcements load error:', e);
+            }
+        }
+
+        function updateAnnounceBadge() {
+            const readIds = JSON.parse(localStorage.getItem('readAnnouncements') || '[]');
+            const unread = (state.announcements || []).filter(a => !readIds.includes(a.id)).length;
+            const badge = document.getElementById('announceBadge');
+            if (badge) {
+                badge.textContent = unread;
+                badge.style.display = unread > 0 ? 'flex' : 'none';
+            }
+        }
+
+        function toggleAnnouncements() {
+            const panel = document.getElementById('announcementsPanel');
+            if (panel.style.display === 'none') {
+                const readIds = JSON.parse(localStorage.getItem('readAnnouncements') || '[]');
+                const content = document.getElementById('announcementsContent');
+                if (!state.announcements || state.announcements.length === 0) {
+                    content.innerHTML = '<div style="text-align:center; color:var(--text-sub); padding:20px;">目前沒有公告</div>';
+                } else {
+                    content.innerHTML = state.announcements.map(a => {
+                        const isUnread = !readIds.includes(a.id);
+                        if (isUnread) readIds.push(a.id);
+                        const priority = a.priority === 'high' ? 'border-left: 4px solid var(--orange); background: var(--orange-light);' : 'border-left: 4px solid var(--green); background: var(--green-light);';
+                        return `<div style="${priority} padding:12px; margin-bottom:8px; border-radius:6px; ${isUnread ? 'font-weight:600;' : 'opacity:0.8;'}">
+                            <div style="font-size:14px; margin-bottom:4px;">${escapeHtml(a.title || '')}</div>
+                            <div style="font-size:13px; color:var(--text-sub);">${escapeHtml(a.body || '')}</div>
+                            <div style="font-size:11px; color:var(--text-sub); margin-top:6px;">${a.date ? new Date(a.date).toLocaleDateString('zh-TW') : ''}</div>
+                        </div>`;
+                    }).join('');
+                    localStorage.setItem('readAnnouncements', JSON.stringify(readIds));
+                    updateAnnounceBadge();
+                }
+                panel.style.display = 'block';
+            } else {
+                panel.style.display = 'none';
+            }
+        }
+
+        function closeAnnouncements() {
+            document.getElementById('announcementsPanel').style.display = 'none';
+        }
+
+        // ── GPS 追蹤 ──
+        let gpsWatchId = null;
+
+        function startGPSTracking(tripId) {
+            if (!navigator.geolocation) { console.warn('Geolocation not supported'); return; }
+            if (gpsWatchId !== null) navigator.geolocation.clearWatch(gpsWatchId);
+            gpsWatchId = navigator.geolocation.watchPosition(
+                async (pos) => {
+                    const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude, ts: Date.now() };
+                    try { await patchFirebase(`/trips/${tripId}`, { location: loc }); } catch(e) {}
+                },
+                (err) => console.warn('GPS error:', err.message),
+                { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+            );
+            showToast('📍 GPS 追蹤已開啟');
+        }
+
+        function stopGPSTracking() {
+            if (gpsWatchId !== null) {
+                navigator.geolocation.clearWatch(gpsWatchId);
+                gpsWatchId = null;
+            }
+        }
+
+        async function patchFirebase(path, data) {
+            try {
+                const url = `https://goood-orders-default-rtdb.asia-southeast1.firebasedatabase.app${path}.json`;
+                await fetch(url, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            } catch (e) { console.warn('Patch error:', e); }
+        }
+
+        // HTML escape
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // Check if logged in
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedDriver = localStorage.getItem('driver');
+            if (savedDriver && PASSWORDS[savedDriver]) {
+                state.driver = savedDriver;
+                showLoginPage(false);
+                initializeApp();
+            } else {
+                showLoginPage(true);
+                initTheme();
+            }
+
+            // Add Enter key support for chat input
+            document.getElementById('chatInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendChatMessage();
+                }
+            });
+        });
+    </script>
 </body>
 </html>
