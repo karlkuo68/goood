@@ -920,6 +920,69 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Schedule & Clock */
+        .schedule-section { display: none; }
+        .schedule-section.active { display: block; }
+
+        .clock-card {
+            background: var(--card); border-radius: 12px; padding: 20px;
+            margin-bottom: 16px; border: 1px solid var(--border);
+            box-shadow: var(--shadow); text-align: center;
+        }
+        .clock-status { font-size: 14px; color: var(--text-sub); margin-bottom: 8px; }
+        .clock-time { font-size: 32px; font-weight: 700; color: var(--green); margin-bottom: 16px; font-variant-numeric: tabular-nums; }
+        .clock-btn {
+            padding: 16px 32px; border: none; border-radius: 12px;
+            font-size: 18px; font-weight: 700; cursor: pointer;
+            min-height: 56px; min-width: 160px; color: white;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .clock-btn:active { transform: scale(0.96); }
+        .clock-btn.clock-in { background: var(--green); box-shadow: 0 4px 12px rgba(26,122,74,0.3); }
+        .clock-btn.clock-out { background: var(--orange); box-shadow: 0 4px 12px rgba(234,88,12,0.3); }
+        .clock-btn:disabled { background: var(--gray-400); box-shadow: none; cursor: not-allowed; }
+        .clock-record { display: flex; justify-content: space-around; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+        .clock-record-item { text-align: center; }
+        .clock-record-label { font-size: 12px; color: var(--text-sub); margin-bottom: 4px; }
+        .clock-record-value { font-size: 16px; font-weight: 600; }
+
+        .schedule-month-nav {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
+        }
+        .schedule-month-nav button {
+            background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+            padding: 8px 12px; cursor: pointer; color: var(--text); min-height: 44px; min-width: 44px; font-size: 16px;
+        }
+        .schedule-month-title { font-size: 18px; font-weight: 700; }
+        .schedule-calendar {
+            background: var(--card); border-radius: 12px; border: 1px solid var(--border);
+            box-shadow: var(--shadow); overflow: hidden;
+        }
+        .schedule-weekdays {
+            display: grid; grid-template-columns: repeat(7, 1fr);
+            background: var(--gray-100); border-bottom: 1px solid var(--border);
+        }
+        .schedule-weekday { text-align: center; padding: 8px 4px; font-size: 12px; font-weight: 600; color: var(--text-sub); }
+        .schedule-days { display: grid; grid-template-columns: repeat(7, 1fr); }
+        .schedule-day {
+            aspect-ratio: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; font-size: 14px;
+            cursor: pointer; border: 1px solid transparent; position: relative;
+            transition: background 0.2s;
+        }
+        .schedule-day:hover { background: var(--gray-50); }
+        .schedule-day.other-month { color: var(--gray-400); }
+        .schedule-day.today { font-weight: 700; color: var(--green); }
+        .schedule-day.scheduled::after {
+            content: ''; width: 6px; height: 6px; border-radius: 50%;
+            background: var(--green); position: absolute; bottom: 4px;
+        }
+        .schedule-day.pending-change::after { background: var(--orange); }
+        .schedule-day.selected { background: var(--green-light); border-color: var(--green); border-radius: 8px; }
+        .schedule-legend { display: flex; gap: 16px; margin-top: 12px; justify-content: center; flex-wrap: wrap; }
+        .schedule-legend-item { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-sub); }
+        .schedule-legend-dot { width: 8px; height: 8px; border-radius: 50%; }
     </style>
 </head>
 <body>
@@ -1056,6 +1119,63 @@
                 </div>
             </div>
 
+            <!-- Schedule & Clock -->
+            <div id="scheduleSection" class="schedule-section">
+                <!-- Clock In/Out -->
+                <div class="clock-card">
+                    <div class="clock-status" id="clockStatus">尚未打卡</div>
+                    <div class="clock-time" id="clockCurrentTime">--:--:--</div>
+                    <button class="clock-btn clock-in" id="clockBtn" onclick="handleClockAction()">打卡上班</button>
+                    <div class="clock-record" id="clockRecord" style="display:none;">
+                        <div class="clock-record-item">
+                            <div class="clock-record-label">上班時間</div>
+                            <div class="clock-record-value" id="clockInTime">--:--</div>
+                        </div>
+                        <div class="clock-record-item">
+                            <div class="clock-record-label">下班時間</div>
+                            <div class="clock-record-value" id="clockOutTime">--:--</div>
+                        </div>
+                        <div class="clock-record-item">
+                            <div class="clock-record-label">工時</div>
+                            <div class="clock-record-value" id="clockDuration">--</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Monthly Schedule -->
+                <div class="schedule-month-nav">
+                    <button onclick="changeScheduleMonth(-1)">◀</button>
+                    <div class="schedule-month-title" id="scheduleMonthTitle"></div>
+                    <button onclick="changeScheduleMonth(1)">▶</button>
+                </div>
+                <div class="schedule-calendar">
+                    <div class="schedule-weekdays">
+                        <div class="schedule-weekday">日</div>
+                        <div class="schedule-weekday">一</div>
+                        <div class="schedule-weekday">二</div>
+                        <div class="schedule-weekday">三</div>
+                        <div class="schedule-weekday">四</div>
+                        <div class="schedule-weekday">五</div>
+                        <div class="schedule-weekday">六</div>
+                    </div>
+                    <div class="schedule-days" id="scheduleDays"></div>
+                </div>
+                <div class="schedule-legend">
+                    <div class="schedule-legend-item"><div class="schedule-legend-dot" style="background:var(--green);"></div>已排班</div>
+                    <div class="schedule-legend-item"><div class="schedule-legend-dot" style="background:var(--orange);"></div>申請調整中</div>
+                    <div class="schedule-legend-item"><div class="schedule-legend-dot" style="background:var(--gray-400);"></div>未排班</div>
+                </div>
+                <div class="schedule-info" style="margin-top:16px;">
+                    <div class="schedule-info-title">排班規則</div>
+                    <div class="schedule-info-text">
+                        • 排班以月為單位，每月初排定當月班表<br>
+                        • <strong>3 天以上</strong>的班次可自由調整<br>
+                        • <strong>3 天內</strong>的班次需提出申請，待管理員核准<br>
+                        • 點擊日期可新增或取消排班
+                    </div>
+                </div>
+            </div>
+
             <!-- Settings -->
             <div id="settings" class="settings">
                 <div class="settings-group">
@@ -1089,6 +1209,10 @@
             <button class="nav-btn active" onclick="switchTab('dashboard')">
                 <span>🏠</span>
                 <span>首頁</span>
+            </button>
+            <button class="nav-btn" onclick="switchTab('schedule')">
+                <span>📅</span>
+                <span>排班</span>
             </button>
             <button class="nav-btn" onclick="switchTab('statistics')">
                 <span>📊</span>
@@ -1807,6 +1931,7 @@
             document.getElementById('dashboard').classList.remove('active');
             document.getElementById('statistics').classList.remove('active');
             document.getElementById('chatSection').classList.remove('active');
+            document.getElementById('scheduleSection').classList.remove('active');
             document.getElementById('settings').classList.remove('active');
 
             // Deactivate all nav buttons
@@ -1817,6 +1942,7 @@
                 'dashboard': 'dashboard',
                 'statistics': 'statistics',
                 'chat': 'chatSection',
+                'schedule': 'scheduleSection',
                 'settings': 'settings'
             };
 
@@ -1828,6 +1954,9 @@
                     loadStatistics();
                 } else if (tab === 'chat') {
                     loadChatMessages();
+                } else if (tab === 'schedule') {
+                    loadScheduleData();
+                    loadClockData();
                 }
             }
         }
@@ -2048,6 +2177,240 @@
                 "'": '&#039;'
             };
             return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // ===== Schedule & Clock Functions =====
+        let scheduleViewDate = new Date();
+        let scheduleData = {};
+        let clockState = { clockedIn: false, clockInTime: null, clockOutTime: null };
+        let clockTimer = null;
+
+        // Clock - live time display
+        function startClockTimer() {
+            if (clockTimer) clearInterval(clockTimer);
+            clockTimer = setInterval(() => {
+                const now = new Date();
+                const el = document.getElementById('clockCurrentTime');
+                if (el) el.textContent = now.toLocaleTimeString('zh-TW', { hour12: false });
+            }, 1000);
+            // Immediate update
+            const now = new Date();
+            const el = document.getElementById('clockCurrentTime');
+            if (el) el.textContent = now.toLocaleTimeString('zh-TW', { hour12: false });
+        }
+
+        // Load today's clock data from Firebase
+        async function loadClockData() {
+            startClockTimer();
+            const today = formatDate(new Date());
+            const data = await getFromFirebase(`/attendance/${state.driver}/${today}`);
+            if (data) {
+                clockState.clockInTime = data.clockIn || null;
+                clockState.clockOutTime = data.clockOut || null;
+                clockState.clockedIn = !!data.clockIn && !data.clockOut;
+            } else {
+                clockState = { clockedIn: false, clockInTime: null, clockOutTime: null };
+            }
+            renderClockUI();
+        }
+
+        function renderClockUI() {
+            const btn = document.getElementById('clockBtn');
+            const statusEl = document.getElementById('clockStatus');
+            const recordEl = document.getElementById('clockRecord');
+            const inEl = document.getElementById('clockInTime');
+            const outEl = document.getElementById('clockOutTime');
+            const durEl = document.getElementById('clockDuration');
+
+            if (clockState.clockInTime && clockState.clockOutTime) {
+                // Already clocked out
+                statusEl.textContent = '今日已完成打卡';
+                btn.textContent = '已完成';
+                btn.disabled = true;
+                btn.className = 'clock-btn';
+                btn.style.background = 'var(--gray-400)';
+                recordEl.style.display = 'flex';
+                inEl.textContent = clockState.clockInTime;
+                outEl.textContent = clockState.clockOutTime;
+                // Calculate duration
+                const [ih, im] = clockState.clockInTime.split(':').map(Number);
+                const [oh, om] = clockState.clockOutTime.split(':').map(Number);
+                const mins = (oh * 60 + om) - (ih * 60 + im);
+                const hrs = Math.floor(mins / 60);
+                const rmins = mins % 60;
+                durEl.textContent = `${hrs}h ${rmins}m`;
+            } else if (clockState.clockedIn) {
+                statusEl.textContent = '已上班，工作中';
+                btn.textContent = '打卡下班';
+                btn.disabled = false;
+                btn.className = 'clock-btn clock-out';
+                recordEl.style.display = 'flex';
+                inEl.textContent = clockState.clockInTime;
+                outEl.textContent = '--:--';
+                durEl.textContent = '進行中';
+            } else {
+                statusEl.textContent = '尚未打卡';
+                btn.textContent = '打卡上班';
+                btn.disabled = false;
+                btn.className = 'clock-btn clock-in';
+                recordEl.style.display = 'none';
+            }
+        }
+
+        async function handleClockAction() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('zh-TW', { hour12: false, hour: '2-digit', minute: '2-digit' });
+            const today = formatDate(now);
+
+            if (!clockState.clockedIn) {
+                // Clock in
+                clockState.clockedIn = true;
+                clockState.clockInTime = timeStr;
+                clockState.clockOutTime = null;
+                await patchFirebase(`/attendance/${state.driver}/${today}`, {
+                    clockIn: timeStr,
+                    clockInTimestamp: now.toISOString()
+                });
+                showToast('打卡上班成功 ' + timeStr);
+            } else {
+                // Clock out
+                clockState.clockedIn = false;
+                clockState.clockOutTime = timeStr;
+                await patchFirebase(`/attendance/${state.driver}/${today}`, {
+                    clockOut: timeStr,
+                    clockOutTimestamp: now.toISOString()
+                });
+                showToast('打卡下班成功 ' + timeStr);
+            }
+            renderClockUI();
+        }
+
+        // Schedule - load data
+        async function loadScheduleData() {
+            const year = scheduleViewDate.getFullYear();
+            const month = scheduleViewDate.getMonth() + 1;
+            const key = `${year}-${String(month).padStart(2, '0')}`;
+            const data = await getFromFirebase(`/schedules/${state.driver}/${key}`);
+            scheduleData = data || {};
+            renderScheduleCalendar();
+        }
+
+        function changeScheduleMonth(delta) {
+            scheduleViewDate.setMonth(scheduleViewDate.getMonth() + delta);
+            loadScheduleData();
+        }
+
+        function renderScheduleCalendar() {
+            const year = scheduleViewDate.getFullYear();
+            const month = scheduleViewDate.getMonth();
+            const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+
+            document.getElementById('scheduleMonthTitle').textContent = `${year} 年 ${month + 1} 月`;
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const container = document.getElementById('scheduleDays');
+            container.innerHTML = '';
+
+            // Fill empty days before first day of month
+            for (let i = 0; i < firstDay; i++) {
+                const prevMonthDays = new Date(year, month, 0).getDate();
+                const dayNum = prevMonthDays - firstDay + i + 1;
+                const div = document.createElement('div');
+                div.className = 'schedule-day other-month';
+                div.textContent = dayNum;
+                container.appendChild(div);
+            }
+
+            // Fill days of month
+            for (let d = 1; d <= daysInMonth; d++) {
+                const div = document.createElement('div');
+                div.className = 'schedule-day';
+                div.textContent = d;
+
+                const dateObj = new Date(year, month, d);
+                dateObj.setHours(0, 0, 0, 0);
+                const dateKey = String(d);
+
+                if (dateObj.getTime() === today.getTime()) {
+                    div.classList.add('today');
+                }
+
+                const dayData = scheduleData[dateKey];
+                if (dayData) {
+                    if (dayData.status === 'scheduled') {
+                        div.classList.add('scheduled');
+                    } else if (dayData.status === 'pending') {
+                        div.classList.add('pending-change');
+                    }
+                }
+
+                div.onclick = () => toggleScheduleDay(d, dateObj);
+                container.appendChild(div);
+            }
+
+            // Fill remaining days
+            const totalCells = firstDay + daysInMonth;
+            const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+            for (let i = 1; i <= remaining; i++) {
+                const div = document.createElement('div');
+                div.className = 'schedule-day other-month';
+                div.textContent = i;
+                container.appendChild(div);
+            }
+        }
+
+        async function toggleScheduleDay(day, dateObj) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const diffDays = Math.ceil((dateObj - today) / (1000 * 60 * 60 * 24));
+
+            // Can't modify past dates
+            if (diffDays < 0) {
+                showToast('無法修改過去的排班');
+                return;
+            }
+
+            const year = scheduleViewDate.getFullYear();
+            const month = scheduleViewDate.getMonth() + 1;
+            const monthKey = `${year}-${String(month).padStart(2, '0')}`;
+            const dayKey = String(day);
+            const current = scheduleData[dayKey];
+
+            if (diffDays <= 3) {
+                // Within 3 days - need approval
+                if (current && current.status === 'scheduled') {
+                    // Request to cancel
+                    scheduleData[dayKey] = { status: 'pending', action: 'cancel', requestedAt: new Date().toISOString() };
+                    await patchFirebase(`/schedules/${state.driver}/${monthKey}/${dayKey}`, scheduleData[dayKey]);
+                    showToast('已申請取消排班（3天內需核准）');
+                } else if (current && current.status === 'pending') {
+                    // Cancel the pending request
+                    scheduleData[dayKey] = null;
+                    await writeToFirebase(`/schedules/${state.driver}/${monthKey}/${dayKey}`, null);
+                    showToast('已撤銷申請');
+                } else {
+                    // Request to add
+                    scheduleData[dayKey] = { status: 'pending', action: 'add', requestedAt: new Date().toISOString() };
+                    await patchFirebase(`/schedules/${state.driver}/${monthKey}/${dayKey}`, scheduleData[dayKey]);
+                    showToast('已申請排班（3天內需核准）');
+                }
+            } else {
+                // More than 3 days - free to change
+                if (current && (current.status === 'scheduled' || current.status === 'pending')) {
+                    scheduleData[dayKey] = null;
+                    await writeToFirebase(`/schedules/${state.driver}/${monthKey}/${dayKey}`, null);
+                    showToast(`已取消 ${month}/${day} 排班`);
+                } else {
+                    scheduleData[dayKey] = { status: 'scheduled', updatedAt: new Date().toISOString() };
+                    await patchFirebase(`/schedules/${state.driver}/${monthKey}/${dayKey}`, scheduleData[dayKey]);
+                    showToast(`已排班 ${month}/${day}`);
+                }
+            }
+            renderScheduleCalendar();
         }
 
         // Check if logged in
