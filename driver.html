@@ -226,7 +226,7 @@
             flex: 1;
             overflow-y: auto;
             padding: 16px;
-            padding-bottom: calc(120px + max(12px, env(safe-area-inset-bottom)));
+            padding-bottom: calc(160px + max(12px, env(safe-area-inset-bottom)));
         }
 
         .bottom-nav {
@@ -740,6 +740,7 @@
         /* Settings */
         .settings {
             display: none;
+            padding-bottom: 160px;
         }
 
         .settings.active {
@@ -966,7 +967,7 @@
         }
 
         /* Schedule & Clock */
-        .schedule-section { display: none; }
+        .schedule-section { display: none; padding-bottom: 160px; }
         .schedule-section.active { display: block; }
 
         .clock-card {
@@ -1003,29 +1004,29 @@
         .shift-grid {
             background: var(--card); border-radius: 12px; border: 1px solid var(--border);
             box-shadow: var(--shadow); overflow-x: auto; -webkit-overflow-scrolling: touch;
+            margin-bottom: 12px;
         }
         .shift-grid table { width: 100%; border-collapse: collapse; min-width: 500px; }
         .shift-grid th {
-            padding: 10px 4px; font-size: 12px; font-weight: 600; color: var(--text-sub);
+            padding: 8px 4px; font-size: 12px; font-weight: 600; color: var(--text-sub);
             background: var(--gray-100); border-bottom: 1px solid var(--border); text-align: center;
             position: sticky; top: 0; z-index: 1;
         }
         .shift-grid th.today-col { color: var(--green); font-weight: 700; }
         .shift-grid th small { display: block; font-size: 10px; font-weight: 400; }
         .shift-grid td {
-            padding: 6px 4px; text-align: center; border-bottom: 1px solid var(--border);
+            padding: 2px; text-align: center; border-bottom: 1px solid var(--border);
             border-right: 1px solid var(--border); vertical-align: middle;
         }
         .shift-grid td:first-child {
-            font-size: 12px; font-weight: 600; color: var(--text-sub); white-space: nowrap;
-            padding: 8px 8px; background: var(--gray-50); text-align: left; min-width: 90px;
+            font-size: 11px; font-weight: 600; color: var(--text-sub); white-space: nowrap;
+            padding: 4px 6px; background: var(--gray-50); text-align: right; min-width: 55px;
             position: sticky; left: 0; z-index: 1;
         }
         .shift-cell {
-            width: 100%; min-height: 44px; border: 2px solid transparent; border-radius: 8px;
-            cursor: pointer; display: flex; flex-direction: column; align-items: center;
-            justify-content: center; gap: 2px; transition: all 0.2s; padding: 4px 2px;
-            font-size: 11px; color: var(--text-sub); background: var(--bg);
+            width: 100%; min-height: 32px; border: 2px solid transparent; border-radius: 6px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: all 0.15s; padding: 2px; font-size: 10px; color: var(--text-sub); background: var(--bg);
         }
         .shift-cell:hover { border-color: var(--green); background: var(--green-light); }
         .shift-cell.booked {
@@ -1034,9 +1035,17 @@
         .shift-cell.pending {
             background: var(--orange-light); border-color: var(--orange); color: var(--orange); font-weight: 600;
         }
-        .shift-cell.full-slot { opacity: 0.5; cursor: not-allowed; background: var(--gray-100); } /* 保留但不再使用 */
         .shift-cell.past-slot { opacity: 0.4; cursor: not-allowed; }
-        .shift-cell-count { font-size: 10px; }
+        .shift-quick-btns {
+            display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; justify-content: center;
+        }
+        .shift-quick-btn {
+            padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);
+            background: var(--bg); color: var(--text); font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s; font-family: 'Noto Sans TC', sans-serif;
+        }
+        .shift-quick-btn:hover { border-color: var(--green); background: var(--green-light); }
+        .shift-quick-btn.active { background: var(--green); color: white; border-color: var(--green); }
         .shift-legend { display: flex; gap: 12px; margin-top: 12px; justify-content: center; flex-wrap: wrap; }
         .shift-legend-item { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-sub); }
         .shift-legend-dot { width: 10px; height: 10px; border-radius: 4px; border: 2px solid; }
@@ -1271,6 +1280,12 @@
                     <div class="schedule-week-title" id="shiftWeekTitle"></div>
                     <button onclick="changeShiftWeek(1)">▶</button>
                 </div>
+                <div class="shift-quick-btns">
+                    <button class="shift-quick-btn" onclick="quickSelectSlots('all')">全選 11-17</button>
+                    <button class="shift-quick-btn" onclick="quickSelectSlots('lunch')">午餐 11-14</button>
+                    <button class="shift-quick-btn" onclick="quickSelectSlots('afternoon')">下午 14-17</button>
+                    <button class="shift-quick-btn" onclick="quickSelectSlots('clear')">清除全部</button>
+                </div>
                 <div class="shift-grid" id="shiftGrid"></div>
                 <div class="shift-legend">
                     <div class="shift-legend-item"><div class="shift-legend-dot" style="background:var(--green-light); border-color:var(--green);"></div>已報名</div>
@@ -1298,7 +1313,8 @@
                 <div class="schedule-info" style="margin-top:12px;">
                     <div class="schedule-info-title">排班說明</div>
                     <div class="schedule-info-text">
-                        • 點擊時段格子即可報名/取消<br>
+                        • 以半小時為單位，點擊格子即可報名/取消<br>
+                        • 快捷按鈕：全選、午餐(11-14)、下午(14-17)、清除<br>
                         • 每個時段不限人數，歡迎報名<br>
                         • 報名後可隨時取消（當天時段除外）
                     </div>
@@ -2543,15 +2559,14 @@
         let clockState = { clockedIn: false, clockInTime: null, clockOutTime: null };
         let clockTimer = null;
 
-        // Foodpanda-style shift scheduling
+        // Half-hour shift scheduling
         let shiftWeekStart = getMonday(new Date());
-        const DEFAULT_SLOTS = [
-            { id: 'lunch', label: '午餐', time: '11:00-14:00', icon: '🍱' },
-            { id: 'afternoon', label: '下午', time: '14:00-17:00', icon: '☀️' },
-            { id: 'allday', label: '全天', time: '11:00-17:00', icon: '📦' }
+        const HALF_HOUR_SLOTS = [
+            '11:00','11:30','12:00','12:30','13:00','13:30',
+            '14:00','14:30','15:00','15:30','16:00','16:30'
         ];
-        let shiftSlotConfig = {}; // loaded from Firebase
-        let shiftBookings = {}; // all bookings for the week
+        let shiftSlotConfig = {};
+        let shiftBookings = {};
 
         function getMonday(d) {
             const date = new Date(d);
@@ -2569,24 +2584,6 @@
         }
 
         async function loadShiftWeekData() {
-            // Load slot config from admin
-            const config = await getFromFirebase('/settings/shiftSlots');
-            if (config && Object.keys(config).length > 0) {
-                shiftSlotConfig = config;
-            } else {
-                // Use defaults with no capacity limit
-                shiftSlotConfig = {};
-                DEFAULT_SLOTS.forEach(s => {
-                    shiftSlotConfig[s.id] = { label: s.label, time: s.time, icon: s.icon, maxDrivers: 999 };
-                });
-            }
-
-            // Load all bookings for the week range
-            const weekKey = formatDate(shiftWeekStart);
-            const endDate = new Date(shiftWeekStart);
-            endDate.setDate(endDate.getDate() + 6);
-
-            // Load bookings for each day
             shiftBookings = {};
             const promises = [];
             for (let i = 0; i < 7; i++) {
@@ -2594,7 +2591,7 @@
                 d.setDate(d.getDate() + i);
                 const dateKey = formatDate(d);
                 promises.push(
-                    getFromFirebase(`/shiftBookings/${dateKey}`).then(data => {
+                    getFromFirebase('/shiftBookings/' + dateKey).then(data => {
                         shiftBookings[dateKey] = data || {};
                     })
                 );
@@ -2609,87 +2606,69 @@
             const endDate = new Date(shiftWeekStart);
             endDate.setDate(endDate.getDate() + 6);
 
-            // Week title
-            const startStr = `${shiftWeekStart.getMonth() + 1}/${shiftWeekStart.getDate()}`;
-            const endStr = `${endDate.getMonth() + 1}/${endDate.getDate()}`;
-            document.getElementById('shiftWeekTitle').textContent = `${startStr} - ${endStr}`;
+            const startStr = (shiftWeekStart.getMonth()+1) + '/' + shiftWeekStart.getDate();
+            const endStr = (endDate.getMonth()+1) + '/' + endDate.getDate();
+            document.getElementById('shiftWeekTitle').textContent = startStr + ' - ' + endStr;
 
-            const slots = Object.entries(shiftSlotConfig);
-            const dayNames = ['日', '一', '二', '三', '四', '五', '六'];
+            const dayNames = ['日','一','二','三','四','五','六'];
 
             let html = '<table><thead><tr><th>時段</th>';
-            // Day headers
             for (let i = 0; i < 7; i++) {
                 const d = new Date(shiftWeekStart);
                 d.setDate(d.getDate() + i);
                 const isToday = d.getTime() === today.getTime();
-                html += `<th class="${isToday ? 'today-col' : ''}">${dayNames[d.getDay()]}<small>${d.getMonth() + 1}/${d.getDate()}</small></th>`;
+                html += '<th class="' + (isToday ? 'today-col' : '') + '">' + dayNames[d.getDay()] + '<small>' + (d.getMonth()+1) + '/' + d.getDate() + '</small></th>';
             }
             html += '</tr></thead><tbody>';
 
-            // Slot rows
-            for (const [slotId, slotInfo] of slots) {
-                html += `<td>${slotInfo.icon || ''} ${slotInfo.label}<br><span style="font-size:10px;font-weight:400;">${slotInfo.time}</span></td>`;
+            for (const slot of HALF_HOUR_SLOTS) {
+                html += '<tr><td>' + slot + '</td>';
                 for (let i = 0; i < 7; i++) {
                     const d = new Date(shiftWeekStart);
                     d.setDate(d.getDate() + i);
                     const dateKey = formatDate(d);
+                    const slotId = 'h' + slot.replace(':', '');
                     const dayBookings = shiftBookings[dateKey] || {};
                     const slotBookings = dayBookings[slotId] || {};
 
-                    // Count booked drivers
-                    const bookedDrivers = Object.entries(slotBookings).filter(([_, v]) => v && (v.status === 'booked' || v.status === 'pending'));
-                    const totalBooked = bookedDrivers.length;
-                    const maxDrivers = slotInfo.maxDrivers || 999;
                     const myBooking = slotBookings[state.driver];
                     const isBooked = myBooking && myBooking.status === 'booked';
                     const isPending = myBooking && myBooking.status === 'pending';
-                    const isFull = false; // 不限人數
                     const isPast = d < today;
 
                     let cellClass = 'shift-cell';
                     if (isBooked) cellClass += ' booked';
                     else if (isPending) cellClass += ' pending';
-                    else if (isFull) cellClass += ' full-slot';
                     if (isPast) cellClass += ' past-slot';
 
-                    const statusText = isBooked ? '✓ 已報名' : isPending ? '⏳ 待核准' : '可報名';
+                    const icon = isBooked ? '✓' : isPending ? '⏳' : '';
 
-                    html += `<td><div class="${cellClass}" onclick="toggleShiftSlot('${dateKey}','${slotId}',${isPast},${isFull})" data-date="${dateKey}" data-slot="${slotId}">`;
-                    html += `<span>${statusText}</span>`;
-                    html += `<span class="shift-cell-count">${totalBooked} 人</span>`;
-                    html += `</div></td>`;
+                    html += '<td><div class="' + cellClass + '" onclick="toggleShiftSlot(\'' + dateKey + '\',\'' + slotId + '\',' + isPast + ')" data-date="' + dateKey + '" data-slot="' + slotId + '">';
+                    html += '<span>' + icon + '</span>';
+                    html += '</div></td>';
                 }
                 html += '</tr>';
             }
 
             html += '</tbody></table>';
             document.getElementById('shiftGrid').innerHTML = html;
-
-            // Also update mini calendar
             renderScheduleCalendar();
         }
 
-        async function toggleShiftSlot(dateKey, slotId, isPast, isFull) {
-            if (isPast) {
-                showToast('無法修改過去的時段');
-                return;
-            }
+        async function toggleShiftSlot(dateKey, slotId, isPast) {
+            if (isPast) { showToast('無法修改過去的時段'); return; }
 
             const dayBookings = shiftBookings[dateKey] || {};
             const slotBookings = dayBookings[slotId] || {};
             const myBooking = slotBookings[state.driver];
 
             if (myBooking && (myBooking.status === 'booked' || myBooking.status === 'pending')) {
-                // Cancel booking
-                await writeToFirebase(`/shiftBookings/${dateKey}/${slotId}/${state.driver}`, null);
+                await writeToFirebase('/shiftBookings/' + dateKey + '/' + slotId + '/' + state.driver, null);
                 if (!shiftBookings[dateKey]) shiftBookings[dateKey] = {};
                 if (!shiftBookings[dateKey][slotId]) shiftBookings[dateKey][slotId] = {};
                 delete shiftBookings[dateKey][slotId][state.driver];
                 showToast('已取消報名');
             } else {
-                // 不限人數，移除額滿檢查
-                // Check if within 24 hours - needs approval
                 const slotDate = new Date(dateKey + 'T00:00:00');
                 const now = new Date();
                 const hoursUntil = (slotDate - now) / (1000 * 60 * 60);
@@ -2700,7 +2679,7 @@
                     bookedAt: new Date().toISOString(),
                     driverName: state.driver
                 };
-                await writeToFirebase(`/shiftBookings/${dateKey}/${slotId}/${state.driver}`, bookingData);
+                await writeToFirebase('/shiftBookings/' + dateKey + '/' + slotId + '/' + state.driver, bookingData);
                 if (!shiftBookings[dateKey]) shiftBookings[dateKey] = {};
                 if (!shiftBookings[dateKey][slotId]) shiftBookings[dateKey][slotId] = {};
                 shiftBookings[dateKey][slotId][state.driver] = bookingData;
@@ -2711,6 +2690,56 @@
                     showToast('已成功報名');
                 }
             }
+            renderShiftGrid();
+        }
+
+        async function quickSelectSlots(mode) {
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            let targetSlots = [];
+            if (mode === 'all') targetSlots = HALF_HOUR_SLOTS.slice();
+            else if (mode === 'lunch') targetSlots = HALF_HOUR_SLOTS.filter(s => parseInt(s) < 14);
+            else if (mode === 'afternoon') targetSlots = HALF_HOUR_SLOTS.filter(s => parseInt(s) >= 14);
+
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(shiftWeekStart);
+                d.setDate(d.getDate() + i);
+                if (d < today) continue;
+                const dateKey = formatDate(d);
+
+                if (mode === 'clear') {
+                    for (const slot of HALF_HOUR_SLOTS) {
+                        const slotId = 'h' + slot.replace(':', '');
+                        const dayBookings = shiftBookings[dateKey] || {};
+                        const slotBookings = dayBookings[slotId] || {};
+                        if (slotBookings[state.driver]) {
+                            await writeToFirebase('/shiftBookings/' + dateKey + '/' + slotId + '/' + state.driver, null);
+                            if (shiftBookings[dateKey] && shiftBookings[dateKey][slotId]) {
+                                delete shiftBookings[dateKey][slotId][state.driver];
+                            }
+                        }
+                    }
+                } else {
+                    for (const slot of targetSlots) {
+                        const slotId = 'h' + slot.replace(':', '');
+                        const dayBookings = shiftBookings[dateKey] || {};
+                        const slotBookings = dayBookings[slotId] || {};
+                        if (!slotBookings[state.driver]) {
+                            const slotDate = new Date(dateKey + 'T00:00:00');
+                            const now = new Date();
+                            const hoursUntil = (slotDate - now) / (1000 * 60 * 60);
+                            const status = hoursUntil < 24 ? 'pending' : 'booked';
+                            const bookingData = { status: status, bookedAt: new Date().toISOString(), driverName: state.driver };
+                            await writeToFirebase('/shiftBookings/' + dateKey + '/' + slotId + '/' + state.driver, bookingData);
+                            if (!shiftBookings[dateKey]) shiftBookings[dateKey] = {};
+                            if (!shiftBookings[dateKey][slotId]) shiftBookings[dateKey][slotId] = {};
+                            shiftBookings[dateKey][slotId][state.driver] = bookingData;
+                        }
+                    }
+                }
+            }
+            const msgs = { all: '已全選 11:00-17:00', lunch: '已選午餐 11:00-14:00', afternoon: '已選下午 14:00-17:00', clear: '已清除全部排班' };
+            showToast(msgs[mode]);
             renderShiftGrid();
         }
 
