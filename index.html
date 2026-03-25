@@ -1194,6 +1194,11 @@ textarea { resize: vertical; min-height: 60px; }
 
 <script>
 // ════════════════════════════════════════════════
+// AI Proxy URL（Cloud Function）
+// ════════════════════════════════════════════════
+const AI_PROXY_URL = 'https://asia-east1-invoice-scanner-33a68.cloudfunctions.net/aiProxy';
+
+// ════════════════════════════════════════════════
 // 常數 & 商家定義
 // ════════════════════════════════════════════════
 const VENDOR_ZONES = [
@@ -2363,7 +2368,7 @@ async function runParseAI(fileData, rawBoxId, rawTextId) {
     }
 
     barEl.style.width = '40%';
-    const resp = await fetch('https://asia-east1-invoice-scanner-33a68.cloudfunctions.net/aiProxy', {
+    const resp = await fetch(AI_PROXY_URL, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514', max_tokens: 2000,
@@ -2402,7 +2407,7 @@ async function parseOrderAI() {
   progEl.classList.remove('hidden');
   stEl.textContent = '🤖 AI 解析中，請稍候…'; barEl.style.width = '20%';
   try {
-    const resp = await fetch('https://asia-east1-invoice-scanner-33a68.cloudfunctions.net/aiProxy', {
+    const resp = await fetch(AI_PROXY_URL, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514', max_tokens: 2000,
@@ -2540,7 +2545,7 @@ async function handleVendorUpload(input) {
   const b64 = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result.split(',')[1]); r.onerror = () => rej(); r.readAsDataURL(file); });
   barEl.style.width = '30%'; stEl.textContent = 'AI 辨識中…';
   try {
-    const resp = await fetch('https://asia-east1-invoice-scanner-33a68.cloudfunctions.net/aiProxy', {
+    const resp = await fetch(AI_PROXY_URL, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514', max_tokens: 4000,
