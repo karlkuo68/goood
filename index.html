@@ -432,6 +432,63 @@ textarea { resize: vertical; min-height: 60px; }
 .sync-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;flex-shrink:0}
 .sync-dot.off{background:#f87171}
 .fb-loading{text-align:center;padding:24px;color:var(--text-hint);font-size:13px}
+
+/* ═══ 右下角聊天視窗 ═══ */
+#cw-fab{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:var(--green);color:#fff;border:none;cursor:pointer;z-index:99990;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.25);transition:transform .2s}
+#cw-fab:hover{transform:scale(1.08)}
+#cw-fab svg{width:28px;height:28px;fill:#fff;pointer-events:none}
+#cw-badge{position:absolute;top:-2px;right:-2px;min-width:20px;height:20px;border-radius:10px;background:var(--red);color:#fff;font-size:11px;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 5px;line-height:1;pointer-events:none}
+#cw-badge.show{display:flex}
+#cw-win{position:fixed;bottom:24px;right:24px;width:380px;height:500px;min-width:300px;min-height:360px;max-width:90vw;max-height:85vh;background:#fff;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.18);z-index:99999;display:none;flex-direction:column;overflow:hidden;resize:both;direction:rtl}
+#cw-win.open{display:flex}
+#cw-win>*{direction:ltr}
+#cw-head{display:flex;align-items:center;padding:10px 14px;background:var(--green);color:#fff;gap:8px;cursor:move;flex-shrink:0;user-select:none}
+#cw-head-title{flex:1;font-size:15px;font-weight:700}
+.cw-hbtn{background:none;border:none;color:#fff;cursor:pointer;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;font-size:18px;opacity:.85;padding:0}
+.cw-hbtn:hover{opacity:1;background:rgba(255,255,255,.15)}
+#cw-body{display:flex;flex:1;overflow:hidden}
+#cw-list{width:100%;display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border)}
+#cw-list.side{width:160px;min-width:120px;flex-shrink:0}
+#cw-list-hd{display:flex;align-items:center;padding:8px 10px;border-bottom:1px solid var(--border);gap:6px}
+#cw-list-hd span{flex:1;font-size:13px;font-weight:700;color:var(--gray-700)}
+#cw-new-btn{background:var(--green);color:#fff;border:none;border-radius:6px;font-size:12px;padding:4px 10px;cursor:pointer;white-space:nowrap}
+#cw-convs{flex:1;overflow-y:auto}
+.cw-conv{display:flex;align-items:center;gap:8px;padding:10px;cursor:pointer;border-bottom:1px solid var(--gray-100);transition:background .15s}
+.cw-conv:hover,.cw-conv.active{background:var(--green-light)}
+.cw-conv-avatar{width:34px;height:34px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
+.cw-conv-info{flex:1;min-width:0}
+.cw-conv-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cw-conv-last{font-size:11px;color:var(--gray-500);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cw-conv-badge{min-width:18px;height:18px;border-radius:9px;background:var(--red);color:#fff;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 4px;flex-shrink:0}
+.cw-conv-badge.show{display:flex}
+#cw-detail{display:none;flex-direction:column;flex:1;overflow:hidden}
+#cw-detail.open{display:flex}
+#cw-det-hd{display:flex;align-items:center;padding:8px 10px;border-bottom:1px solid var(--border);gap:6px}
+#cw-back{background:none;border:none;cursor:pointer;font-size:18px;padding:0 4px;display:none;color:var(--gray-700)}
+#cw-det-name{font-size:14px;font-weight:700;flex:1}
+#cw-msgs{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:6px;background:var(--gray-50)}
+.cw-msg{max-width:78%;padding:8px 12px;border-radius:12px;font-size:13px;line-height:1.45;word-break:break-word}
+.cw-msg.sent{align-self:flex-end;background:var(--green);color:#fff;border-bottom-right-radius:4px}
+.cw-msg.recv{align-self:flex-start;background:#fff;color:var(--gray-900);border:1px solid var(--gray-200);border-bottom-left-radius:4px}
+.cw-msg-time{font-size:10px;margin-top:3px;opacity:.7}
+.cw-msg.sent .cw-msg-time{text-align:right}
+#cw-input-bar{display:flex;align-items:center;gap:6px;padding:8px 10px;border-top:1px solid var(--border);background:#fff}
+#cw-input{flex:1;border:1px solid var(--gray-200);border-radius:8px;padding:8px 10px;font-size:13px;outline:none;resize:none;max-height:60px;font-family:inherit}
+#cw-input:focus{border-color:var(--green)}
+#cw-send{background:var(--green);color:#fff;border:none;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap}
+#cw-send:hover{background:var(--green-dark)}
+#cw-empty{text-align:center;padding:40px 20px;color:var(--gray-400);font-size:13px}
+#cw-contact-modal{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100000;display:none;align-items:center;justify-content:center}
+#cw-contact-modal.open{display:flex}
+#cw-contact-box{background:#fff;border-radius:14px;width:300px;max-height:70vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+#cw-contact-box h3{padding:14px 16px;margin:0;font-size:16px;border-bottom:1px solid var(--border)}
+#cw-contacts{flex:1;overflow-y:auto}
+.cw-ct{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--gray-100);transition:background .15s}
+.cw-ct:hover{background:var(--green-light)}
+.cw-ct-avatar{width:36px;height:36px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0}
+.cw-ct-name{font-size:14px;font-weight:600}
+.cw-ct-role{font-size:11px;color:var(--gray-500)}
+#cw-contact-close{display:block;margin:10px auto;background:none;border:1px solid var(--border);border-radius:8px;padding:6px 24px;cursor:pointer;font-size:13px;color:var(--gray-600)}
 </style>
 </head>
 <body>
@@ -3257,7 +3314,333 @@ document.addEventListener('DOMContentLoaded', () => {
   renderVendorPicker('parse');
   renderVendorMgmt();
   populateUploadSel();
+  cwInit();
 });
+
+// ════════════════════════════════════════════════
+// 客服聊天視窗
+// ════════════════════════════════════════════════
+(function(){
+  /* ── 建立 DOM ── */
+  var fabHtml = '<button id="cw-fab" type="button"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"/><path d="M7 9h10v2H7zm0-3h10v2H7zm0 6h7v2H7z"/></svg><span id="cw-badge">0</span></button>';
+  var winHtml = '<div id="cw-win"><div id="cw-head"><span id="cw-head-title">客服聊天</span><button class="cw-hbtn" id="cw-min" type="button" title="最小化">─</button><button class="cw-hbtn" id="cw-close" type="button" title="關閉">✕</button></div>'
+    + '<div id="cw-body"><div id="cw-list"><div id="cw-list-hd"><span>對話列表</span><button id="cw-new-btn" type="button">＋ 新對話</button></div><div id="cw-convs"></div></div>'
+    + '<div id="cw-detail"><div id="cw-det-hd"><button id="cw-back" type="button">◀</button><span id="cw-det-name"></span></div><div id="cw-msgs"><div id="cw-empty">選擇對話開始聊天</div></div>'
+    + '<div id="cw-input-bar"><textarea id="cw-input" rows="1" placeholder="輸入訊息…"></textarea><button id="cw-send" type="button">送出</button></div></div></div></div>';
+  var modalHtml = '<div id="cw-contact-modal"><div id="cw-contact-box"><h3>選擇外送員</h3><div id="cw-contacts"></div><button id="cw-contact-close" type="button">取消</button></div></div>';
+
+  var frag = document.createElement('div');
+  frag.innerHTML = fabHtml + winHtml + modalHtml;
+  while(frag.firstChild) document.body.appendChild(frag.firstChild);
+
+  /* ── 狀態 ── */
+  var ADMIN_UID = 'admin';
+  var cwDrivers = {};
+  var cwConvs = [];
+  var cwCurrentChatId = '';
+  var cwCurrentPartner = '';
+  var cwPollTimer = null;
+  var cwIsWide = false;
+
+  /* ── 元素快取 ── */
+  var $fab = document.getElementById('cw-fab');
+  var $badge = document.getElementById('cw-badge');
+  var $win = document.getElementById('cw-win');
+  var $head = document.getElementById('cw-head');
+  var $list = document.getElementById('cw-list');
+  var $detail = document.getElementById('cw-detail');
+  var $convs = document.getElementById('cw-convs');
+  var $msgs = document.getElementById('cw-msgs');
+  var $input = document.getElementById('cw-input');
+  var $detName = document.getElementById('cw-det-name');
+  var $modal = document.getElementById('cw-contact-modal');
+  var $contacts = document.getElementById('cw-contacts');
+
+  /* ── Firebase helpers (reuse existing FB_URL) ── */
+  function cwFbGet(path){ return fetch(FB_URL+path+'.json').then(function(r){if(!r.ok)throw new Error(r.status);return r.json();}); }
+  function cwFbPut(path,data){ return fetch(FB_URL+path+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(function(r){if(!r.ok)throw new Error(r.status);return r.json();}); }
+  function cwFbPatch(path,data){ return fetch(FB_URL+path+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(function(r){if(!r.ok)throw new Error(r.status);return r.json();}); }
+
+  function cwChatId(a,b){ return [a,b].sort().join('_'); }
+  function cwEsc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function cwTimeStr(ts){ try{return new Date(ts).toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});}catch(e){return '';} }
+
+  /* ── 載入外送員列表 ── */
+  function cwLoadDrivers(){
+    cwFbGet('/accounts').then(function(accs){
+      if(!accs) return;
+      cwDrivers = {};
+      Object.keys(accs).forEach(function(uid){
+        var a = accs[uid];
+        if(a && a.role === 'driver') cwDrivers[uid] = a.name || uid;
+      });
+    }).catch(function(e){ console.error('cwLoadDrivers',e); });
+  }
+
+  /* ── 載入對話列表 ── */
+  function cwLoadConvs(){
+    cwFbGet('/chats').then(function(all){
+      if(!all){ cwConvs=[]; cwRenderConvs(); cwUpdateBadge(); return; }
+      var list = [];
+      Object.keys(all).forEach(function(chatId){
+        var parts = chatId.split('_');
+        if(parts.indexOf(ADMIN_UID) === -1) return;
+        var partnerId = parts[0] === ADMIN_UID ? parts[1] : parts[0];
+        var meta = (all[chatId] && all[chatId].meta) || {};
+        var msgs = (all[chatId] && all[chatId].messages) || {};
+        var unread = 0;
+        Object.keys(msgs).forEach(function(mid){
+          var m = msgs[mid];
+          if(m && m.to === ADMIN_UID && !m.read) unread++;
+        });
+        list.push({
+          chatId: chatId,
+          partnerId: partnerId,
+          partnerName: cwDrivers[partnerId] || partnerId,
+          lastMsg: meta.lastMessage || '',
+          lastTs: meta.lastTimestamp || '',
+          unread: unread
+        });
+      });
+      list.sort(function(a,b){ return (b.lastTs||'').localeCompare(a.lastTs||''); });
+      cwConvs = list;
+      cwRenderConvs();
+      cwUpdateBadge();
+      if(cwCurrentChatId) cwLoadMessages();
+    }).catch(function(e){ console.error('cwLoadConvs',e); });
+  }
+
+  /* ── 渲染對話列表 ── */
+  function cwRenderConvs(){
+    if(!$convs) return;
+    if(cwConvs.length === 0){
+      $convs.innerHTML = '<div style="text-align:center;padding:30px;color:var(--gray-400);font-size:13px">尚無對話</div>';
+      return;
+    }
+    var h = '';
+    cwConvs.forEach(function(c){
+      var initial = (c.partnerName||'?').charAt(0);
+      var active = c.chatId === cwCurrentChatId ? ' active' : '';
+      var badgeCls = c.unread > 0 ? ' show' : '';
+      h += '<div class="cw-conv'+active+'" data-cid="'+cwEsc(c.chatId)+'" data-pid="'+cwEsc(c.partnerId)+'" data-pname="'+cwEsc(c.partnerName)+'">'
+        + '<div class="cw-conv-avatar">'+cwEsc(initial)+'</div>'
+        + '<div class="cw-conv-info"><div class="cw-conv-name">'+cwEsc(c.partnerName)+'</div><div class="cw-conv-last">'+cwEsc(c.lastMsg)+'</div></div>'
+        + '<div class="cw-conv-badge'+badgeCls+'">'+c.unread+'</div>'
+        + '</div>';
+    });
+    $convs.innerHTML = h;
+    /* 綁定點擊 */
+    var items = $convs.querySelectorAll('.cw-conv');
+    for(var i=0;i<items.length;i++){
+      items[i].addEventListener('click', function(){
+        cwOpenConv(this.getAttribute('data-cid'), this.getAttribute('data-pname'));
+      });
+    }
+  }
+
+  /* ── 更新 FAB 未讀 badge ── */
+  function cwUpdateBadge(){
+    var total = 0;
+    cwConvs.forEach(function(c){ total += c.unread; });
+    if($badge){
+      $badge.textContent = total > 99 ? '99+' : String(total);
+      $badge.classList.toggle('show', total > 0);
+    }
+  }
+
+  /* ── 開啟對話 ── */
+  function cwOpenConv(chatId, partnerName){
+    cwCurrentChatId = chatId;
+    cwCurrentPartner = partnerName;
+    if($detName) $detName.textContent = partnerName;
+    $detail.classList.add('open');
+    cwRenderConvs();
+    cwCheckLayout();
+    cwLoadMessages();
+    cwMarkRead(chatId);
+  }
+
+  /* ── 載入訊息 ── */
+  function cwLoadMessages(){
+    if(!cwCurrentChatId) return;
+    cwFbGet('/chats/'+cwCurrentChatId+'/messages').then(function(msgs){
+      if(!msgs){
+        $msgs.innerHTML = '<div id="cw-empty">尚無訊息，開始對話吧！</div>';
+        return;
+      }
+      var arr = [];
+      Object.keys(msgs).forEach(function(id){
+        var m = msgs[id];
+        if(m && m.timestamp) arr.push(m);
+      });
+      arr.sort(function(a,b){ return new Date(a.timestamp)-new Date(b.timestamp); });
+      var h = '';
+      arr.forEach(function(m){
+        var isSent = m.from === ADMIN_UID;
+        var cls = isSent ? 'sent' : 'recv';
+        h += '<div class="cw-msg '+cls+'">'+cwEsc(m.text)+'<div class="cw-msg-time">'+cwTimeStr(m.timestamp)+(isSent && m.read ? ' ✓':'')+'</div></div>';
+      });
+      $msgs.innerHTML = h;
+      $msgs.scrollTop = $msgs.scrollHeight;
+    }).catch(function(e){ console.error('cwLoadMessages',e); });
+  }
+
+  /* ── 發送訊息 ── */
+  function cwSendMsg(){
+    var text = ($input.value||'').trim();
+    if(!text || !cwCurrentChatId) return;
+    var parts = cwCurrentChatId.split('_');
+    var toUser = parts[0] === ADMIN_UID ? parts[1] : parts[0];
+    var msgId = Date.now().toString();
+    var msgData = { from: ADMIN_UID, to: toUser, text: text, timestamp: new Date().toISOString(), read: false };
+    $input.value = '';
+    cwFbPut('/chats/'+cwCurrentChatId+'/messages/'+msgId, msgData).then(function(){
+      cwFbPatch('/chats/'+cwCurrentChatId+'/meta', { lastMessage: text.substring(0,50), lastTimestamp: new Date().toISOString() });
+      cwLoadMessages();
+      cwLoadConvs();
+    }).catch(function(e){ console.error('cwSendMsg',e); });
+  }
+
+  /* ── 標記已讀 ── */
+  function cwMarkRead(chatId){
+    cwFbGet('/chats/'+chatId+'/messages').then(function(msgs){
+      if(!msgs) return;
+      var promises = [];
+      Object.keys(msgs).forEach(function(mid){
+        var m = msgs[mid];
+        if(m && m.to === ADMIN_UID && !m.read){
+          promises.push(cwFbPatch('/chats/'+chatId+'/messages/'+mid, {read:true}));
+        }
+      });
+      if(promises.length) Promise.all(promises).then(function(){ cwLoadConvs(); });
+    });
+  }
+
+  /* ── 新對話 modal ── */
+  function cwShowContacts(){
+    var h = '';
+    Object.keys(cwDrivers).forEach(function(uid){
+      var name = cwDrivers[uid];
+      h += '<div class="cw-ct" data-uid="'+cwEsc(uid)+'" data-name="'+cwEsc(name)+'">'
+        + '<div class="cw-ct-avatar">'+cwEsc(name.charAt(0))+'</div>'
+        + '<div><div class="cw-ct-name">'+cwEsc(name)+'</div><div class="cw-ct-role">外送員</div></div></div>';
+    });
+    if(!h) h = '<div style="padding:20px;text-align:center;color:var(--gray-400)">沒有外送員帳號</div>';
+    $contacts.innerHTML = h;
+    var items = $contacts.querySelectorAll('.cw-ct');
+    for(var i=0;i<items.length;i++){
+      items[i].addEventListener('click', function(){
+        cwStartChat(this.getAttribute('data-uid'), this.getAttribute('data-name'));
+      });
+    }
+    $modal.classList.add('open');
+  }
+
+  function cwStartChat(partnerUid, partnerName){
+    $modal.classList.remove('open');
+    var chatId = cwChatId(ADMIN_UID, partnerUid);
+    cwFbGet('/chats/'+chatId+'/meta').then(function(meta){
+      if(!meta){
+        return cwFbPut('/chats/'+chatId+'/meta', {
+          participants: [ADMIN_UID, partnerUid].sort(),
+          lastMessage: '', lastTimestamp: new Date().toISOString()
+        });
+      }
+    }).then(function(){
+      cwOpenConv(chatId, partnerName);
+      cwLoadConvs();
+    });
+  }
+
+  /* ── Layout：寬度自適應 ── */
+  function cwCheckLayout(){
+    var w = $win.offsetWidth;
+    cwIsWide = w >= 500;
+    if(cwIsWide){
+      $list.classList.add('side');
+      $list.style.display = '';
+      document.getElementById('cw-back').style.display = 'none';
+    } else {
+      $list.classList.remove('side');
+      if(cwCurrentChatId && $detail.classList.contains('open')){
+        $list.style.display = 'none';
+        document.getElementById('cw-back').style.display = '';
+      } else {
+        $list.style.display = '';
+        document.getElementById('cw-back').style.display = 'none';
+      }
+    }
+  }
+
+  /* ── 視窗拖曳 (header) ── */
+  (function(){
+    var dragging = false, dx=0, dy=0;
+    $head.addEventListener('mousedown', function(e){
+      if(e.target.closest('.cw-hbtn')) return;
+      dragging = true;
+      var rect = $win.getBoundingClientRect();
+      dx = e.clientX - rect.left; dy = e.clientY - rect.top;
+      e.preventDefault();
+    });
+    document.addEventListener('mousemove', function(e){
+      if(!dragging) return;
+      var x = e.clientX - dx, y = e.clientY - dy;
+      x = Math.max(0, Math.min(x, window.innerWidth - 100));
+      y = Math.max(0, Math.min(y, window.innerHeight - 60));
+      $win.style.left = x+'px'; $win.style.top = y+'px';
+      $win.style.right = 'auto'; $win.style.bottom = 'auto';
+    });
+    document.addEventListener('mouseup', function(){ dragging = false; });
+  })();
+
+  /* ── Resize observer ── */
+  if(window.ResizeObserver){
+    new ResizeObserver(function(){ if($win.classList.contains('open')) cwCheckLayout(); }).observe($win);
+  }
+
+  /* ── 事件綁定 ── */
+  $fab.addEventListener('click', function(){
+    $win.classList.add('open');
+    $fab.style.display = 'none';
+    cwCheckLayout();
+    cwLoadConvs();
+  });
+  document.getElementById('cw-min').addEventListener('click', function(){
+    $win.classList.remove('open');
+    $win.style.left=''; $win.style.top=''; $win.style.right='24px'; $win.style.bottom='24px';
+    $fab.style.display = 'flex';
+  });
+  document.getElementById('cw-close').addEventListener('click', function(){
+    $win.classList.remove('open');
+    $win.style.left=''; $win.style.top=''; $win.style.right='24px'; $win.style.bottom='24px';
+    $fab.style.display = 'flex';
+    cwCurrentChatId = '';
+    cwCurrentPartner = '';
+    $detail.classList.remove('open');
+    if(cwPollTimer) clearInterval(cwPollTimer);
+  });
+  document.getElementById('cw-back').addEventListener('click', function(){
+    cwCurrentChatId = '';
+    cwCurrentPartner = '';
+    $detail.classList.remove('open');
+    cwCheckLayout();
+  });
+  document.getElementById('cw-new-btn').addEventListener('click', cwShowContacts);
+  document.getElementById('cw-contact-close').addEventListener('click', function(){ $modal.classList.remove('open'); });
+  $modal.addEventListener('click', function(e){ if(e.target === $modal) $modal.classList.remove('open'); });
+  document.getElementById('cw-send').addEventListener('click', cwSendMsg);
+  $input.addEventListener('keydown', function(e){
+    if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); cwSendMsg(); }
+  });
+
+  /* ── 初始化 & 輪詢 ── */
+  function cwInit(){
+    cwLoadDrivers();
+    setTimeout(cwLoadConvs, 800);
+    cwPollTimer = setInterval(cwLoadConvs, 10000);
+  }
+  window.cwInit = cwInit;
+})();
 </script>
 </body>
 </html>
