@@ -1001,6 +1001,20 @@ textarea { resize: vertical; min-height: 60px; }
 <div id="page-dispatch" class="page">
   <div class="page-title">派單管理</div>
   <div class="sync-status"><span class="sync-dot" id="fb-dot"></span><span id="fb-txt">連接 Firebase…</span></div>
+
+  <!-- 排除外送員設定 -->
+  <div class="card" id="exclude-drivers-card" style="margin-bottom:12px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="toggleExcludePanel()">
+      <div class="card-title" style="margin-bottom:0;">排除外送員</div>
+      <span id="exclude-toggle-icon" style="font-size:14px;color:var(--text-hint);">▸</span>
+    </div>
+    <div id="exclude-drivers-panel" style="display:none;margin-top:10px;">
+      <div style="font-size:12px;color:var(--text-sub);margin-bottom:8px;">勾選的外送員將不會出現在本次派單的指派選項中</div>
+      <div id="exclude-drivers-list" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+      <div id="exclude-driver-profiles" style="margin-top:10px;font-size:12px;color:var(--text-sub);"></div>
+    </div>
+  </div>
+
   <div class="dispatch-date-tabs" id="dispatch-date-tabs"></div>
   <div id="dispatch-content"><div class="fb-loading">載入中…</div></div>
 </div>
@@ -2778,6 +2792,56 @@ async function fbPatch(path,data) { const r = await fetch(FB_URL+path+'.json',{m
 async function fbPush(path,data) { const r = await fetch(FB_URL+path+'.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}); if(!r.ok) throw new Error(r.status); return r.json(); }
 async function fbDelete(path) { await fetch(FB_URL+path+'.json',{method:'DELETE'}); }
 
+// 排除外送員
+let excludedDrivers = new Set();
+let driverProfiles = {};
+
+function toggleExcludePanel() {
+  const panel = document.getElementById('exclude-drivers-panel');
+  const icon = document.getElementById('exclude-toggle-icon');
+  if (panel.style.display === 'none') { panel.style.display = 'block'; icon.textContent = '▾'; loadExcludeDriverList(); }
+  else { panel.style.display = 'none'; icon.textContent = '▸'; }
+}
+
+async function loadExcludeDriverList() {
+  const el = document.getElementById('exclude-drivers-list');
+  // Load driver profiles for notes/areas display
+  try { driverProfiles = await fbGet('/data/driverProfiles') || {}; } catch(e) { driverProfiles = {}; }
+  el.innerHTML = DRIVERS.map(d => {
+    const checked = excludedDrivers.has(d) ? 'checked' : '';
+    return `<label style="display:flex;align-items:center;gap:4px;padding:6px 10px;background:${excludedDrivers.has(d)?'#fee2e2':'var(--gray-50)'};border:1px solid ${excludedDrivers.has(d)?'#fca5a5':'var(--border)'};border-radius:8px;cursor:pointer;font-size:13px;white-space:nowrap;">
+      <input type="checkbox" ${checked} onchange="toggleExcludeDriver('${esc(d)}', this.checked)" style="accent-color:#dc2626;"> ${esc(d)}
+    </label>`;
+  }).join('');
+  renderDriverProfileInfo();
+}
+
+function toggleExcludeDriver(name, excluded) {
+  if (excluded) excludedDrivers.add(name);
+  else excludedDrivers.delete(name);
+  loadExcludeDriverList();
+  renderDispatchContent();
+}
+
+function getAvailableDrivers() {
+  return DRIVERS.filter(d => !excludedDrivers.has(d));
+}
+
+function renderDriverProfileInfo() {
+  const el = document.getElementById('exclude-driver-profiles');
+  if (!el) return;
+  const infos = [];
+  DRIVERS.forEach(d => {
+    const p = driverProfiles[d];
+    if (!p) return;
+    const parts = [];
+    if (p.preferredAreas && p.preferredAreas.length) parts.push('商圈：' + p.preferredAreas.join('、'));
+    if (p.note) parts.push('備註：' + p.note);
+    if (parts.length) infos.push(`<div style="padding:4px 0;border-bottom:1px solid var(--border);"><strong>${esc(d)}</strong> — ${esc(parts.join(' | '))}</div>`);
+  });
+  el.innerHTML = infos.length ? '<div style="font-weight:600;margin-bottom:4px;">外送員資訊</div>' + infos.join('') : '';
+}
+
 async function loadFbTrips() {
   const dot = document.getElementById('fb-dot'), txt = document.getElementById('fb-txt');
   try { fbTrips = await fbGet('/trips') || {}; dot.classList.remove('off'); txt.textContent='已連線'; }
@@ -2979,7 +3043,7 @@ function buildTripBuilderCard(slot, orders, defaultDepart) {
       const driverLabel = document.createElement('label'); driverLabel.style.cssText = 'font-size:12px;white-space:nowrap;font-weight:500';
       driverLabel.textContent = '指派：';
       const driverSel = document.createElement('select'); driverSel.id = gid+'-driver';
-      driverSel.innerHTML = '<option value="">— 選擇外送員 —</option>' + DRIVERS.map(d=>`<option>${esc(d)}</option>`).join('');
+      driverSel.innerHTML = '<option value="">— 選擇外送員 —</option>' + getAvailableDrivers().map(d=>`<option>${esc(d)}</option>`).join('');
       driverRow.appendChild(driverLabel); driverRow.appendChild(driverSel);
       gDiv.appendChild(driverRow);
 
@@ -3043,11 +3107,11 @@ function buildDispatchedTripCard(tripId, trip) {
   const card = document.createElement('div');
   card.className = 'dispatched-trip';
   const s = trip.status || 'dispatched';
-  if (s === 'out') card.classList.add('status-out');
+  if (['out','arrived','photo_before','photo_after','returning'].includes(s)) card.classList.add('status-out');
   if (s === 'done') card.classList.add('status-done');
 
-  const sLabel = { pending:'待派單', dispatched:'✅ 已派單', out:'🛵 出發中', done:'🏁 已完成' };
-  const sClass = { pending:'dts-pending', dispatched:'dts-dispatched', out:'dts-out', done:'dts-done' };
+  const sLabel = { pending:'待派單', dispatched:'✅ 已接單', photo_before:'📷 已拍照', out:'🛵 出發中', arrived:'📍 已抵達', photo_after:'📷 交貨拍照', returning:'🏪 回程中', done:'🏁 已完成' };
+  const sClass = { pending:'dts-pending', dispatched:'dts-dispatched', photo_before:'dts-dispatched', out:'dts-out', arrived:'dts-out', photo_after:'dts-out', returning:'dts-out', done:'dts-done' };
   const totalBags = (trip.orders||[]).reduce((s,o) => s+(o.totalBags||0), 0).toFixed(1);
   const totalAmt  = (trip.orders||[]).reduce((s,o) => s+(o.total||0), 0);
   const photos    = trip.photos || [];

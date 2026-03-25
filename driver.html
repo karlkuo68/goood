@@ -1324,6 +1324,35 @@
             <!-- Settings -->
             <div id="settings" class="settings">
                 <div class="settings-group">
+                    <div class="settings-title">接單商圈</div>
+                    <div style="padding: 0 4px;">
+                        <div style="font-size: 12px; color: var(--text-sub); margin-bottom: 8px;">選擇你想接單的商圈（可複選）</div>
+                        <label style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;font-size:14px;color:var(--text);">
+                            <input type="checkbox" id="area-all" onchange="handleAreaAllToggle()" style="width:18px;height:18px;accent-color:var(--green);"> 皆可（全選）
+                        </label>
+                        <label style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;font-size:14px;color:var(--text);">
+                            <input type="checkbox" class="area-cb" value="東南商圈" onchange="handleAreaCheckChange()" style="width:18px;height:18px;accent-color:var(--green);"> 東南商圈
+                        </label>
+                        <label style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;font-size:14px;color:var(--text);">
+                            <input type="checkbox" class="area-cb" value="湳雅商圈" onchange="handleAreaCheckChange()" style="width:18px;height:18px;accent-color:var(--green);"> 湳雅商圈
+                        </label>
+                        <label style="display:flex;align-items:center;gap:8px;padding:10px 0;cursor:pointer;font-size:14px;color:var(--text);">
+                            <input type="checkbox" class="area-cb" value="竹北商圈" onchange="handleAreaCheckChange()" style="width:18px;height:18px;accent-color:var(--green);"> 竹北商圈
+                        </label>
+                        <button class="btn btn-primary" onclick="savePreferredAreas()" style="width:100%;margin-top:10px;padding:10px;font-size:14px;">儲存商圈設定</button>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <div class="settings-title">備註</div>
+                    <div style="padding: 0 4px;">
+                        <div style="font-size: 12px; color: var(--text-sub); margin-bottom: 8px;">填寫今日備註，例如「今天只能跑東南」「機車維修中，用腳踏車」</div>
+                        <textarea id="driverNoteInput" placeholder="輸入備註..." style="width:100%;min-height:60px;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;background:var(--bg);color:var(--text);resize:vertical;"></textarea>
+                        <button class="btn btn-primary" onclick="saveDriverNote()" style="width:100%;margin-top:10px;padding:10px;font-size:14px;">儲存備註</button>
+                    </div>
+                </div>
+
+                <div class="settings-group">
                     <div class="settings-title">帳號</div>
                     <div class="settings-item">
                         <span class="settings-label">登出</span>
@@ -1675,8 +1704,12 @@
         function getStatusLabel(status) {
             const labels = {
                 'pending': '待派',
-                'dispatched': '已派',
-                'out': '進行中',
+                'dispatched': '已接單',
+                'photo_before': '已拍照',
+                'out': '配送中',
+                'arrived': '已抵達',
+                'photo_after': '已拍照',
+                'returning': '回程中',
                 'done': '已完成'
             };
             return labels[status] || '待派';
@@ -1741,19 +1774,37 @@
             const buttons = [];
             const status = trip.status || 'pending';
 
+            // 完整接單流程：
+            // dispatched → photo_before → out → arrived → photo_after → returning → done
             if (status === 'pending') {
-                buttons.push('<button class="btn btn-primary" onclick="updateTripStatus(\'dispatched\')">派出</button>');
+                buttons.push('<button class="btn btn-primary" onclick="updateTripStatus(\'dispatched\')" style="font-size:15px;padding:14px;">✅ 接受派單</button>');
             } else if (status === 'dispatched') {
-                buttons.push('<button class="btn btn-orange" onclick="updateTripStatus(\'out\')">開始配送</button>');
+                buttons.push('<button class="btn btn-orange" onclick="triggerStepPhoto(\'before\')" style="font-size:15px;padding:14px;">📷 出發前拍照確認</button>');
+            } else if (status === 'photo_before') {
+                buttons.push('<button class="btn btn-orange" onclick="updateTripStatus(\'out\')" style="font-size:15px;padding:14px;">🚀 出發</button>');
             } else if (status === 'out') {
-                buttons.push('<button class="btn btn-primary" onclick="updateTripStatus(\'done\')">完成</button>');
+                buttons.push('<button class="btn btn-primary" onclick="updateTripStatus(\'arrived\')" style="font-size:15px;padding:14px;">📍 抵達交貨</button>');
+            } else if (status === 'arrived') {
+                buttons.push('<button class="btn btn-orange" onclick="triggerStepPhoto(\'after\')" style="font-size:15px;padding:14px;">📷 交貨拍照確認</button>');
+            } else if (status === 'photo_after') {
+                buttons.push('<button class="btn btn-orange" onclick="updateTripStatus(\'returning\')" style="font-size:15px;padding:14px;">🏪 回到商家</button>');
+            } else if (status === 'returning') {
+                buttons.push('<button class="btn btn-primary" onclick="updateTripStatus(\'done\')" style="font-size:15px;padding:14px;">✅ 完成訂單</button>');
             }
 
-            if (status !== 'done') {
+            // 進度條
+            const steps = ['dispatched','photo_before','out','arrived','photo_after','returning','done'];
+            const stepLabels = ['接單','拍照','出發','抵達','拍照','回程','完成'];
+            const currentIdx = steps.indexOf(status);
+            const progressHtml = `<div style="display:flex;align-items:center;gap:2px;margin-bottom:10px;padding:8px;background:var(--gray-50);border-radius:8px;">
+                ${steps.map((s, i) => `<div style="flex:1;text-align:center;font-size:10px;padding:4px 0;border-radius:4px;${i <= currentIdx ? 'background:var(--green);color:white;font-weight:600;' : 'color:var(--text-sub);'}">${stepLabels[i]}</div>`).join('<div style="color:var(--gray-400);">›</div>')}
+            </div>`;
+
+            if (status !== 'done' && status !== 'pending') {
                 buttons.push('<button class="btn btn-danger" onclick="cancelTrip()">取消</button>');
             }
 
-            return `<div class="${buttons.length > 1 ? '' : 'full'}" style="display: grid; grid-template-columns: ${buttons.length > 1 ? '1fr 1fr' : '1fr'}; gap: 8px;">
+            return progressHtml + `<div style="display: grid; grid-template-columns: ${buttons.length > 1 ? '1fr 1fr' : '1fr'}; gap: 8px;">
                 ${buttons.join('')}
             </div>`;
         }
@@ -1768,29 +1819,82 @@
             if (!state.currentTripId) return;
 
             try {
+                const trip = state.currentTrips.find(t => t.id === state.currentTripId);
                 const updates = { status: newStatus };
+                const now = new Date().toISOString();
 
-                if (newStatus === 'out' && !state.currentTrips.find(t => t.id === state.currentTripId).outAt) {
-                    updates.outAt = new Date().toISOString();
-                }
-
-                if (newStatus === 'done' && !state.currentTrips.find(t => t.id === state.currentTripId).doneAt) {
-                    updates.doneAt = new Date().toISOString();
+                // Record timestamps for each step
+                const tsMap = {
+                    'dispatched': 'acceptedAt',
+                    'photo_before': 'photoBeforeAt',
+                    'out': 'outAt',
+                    'arrived': 'arrivedAt',
+                    'photo_after': 'photoAfterAt',
+                    'returning': 'returningAt',
+                    'done': 'doneAt'
+                };
+                if (tsMap[newStatus] && trip && !trip[tsMap[newStatus]]) {
+                    updates[tsMap[newStatus]] = now;
                 }
 
                 await updateTripInFirebase(state.currentTripId, updates);
 
-                // GPS 追蹤：出發開始、完成停止
+                // GPS tracking
                 if (newStatus === 'out' && state.gpsEnabled) startGPSTracking(state.currentTripId);
                 if (newStatus === 'done') stopGPSTracking();
 
                 showToast(`狀態已更新為 ${getStatusLabel(newStatus)}`);
                 await loadTrips(state.currentDate);
-                closeTripModal();
+
+                // Reopen modal to show next step
+                if (newStatus !== 'done') {
+                    openTripModal(state.currentTripId);
+                } else {
+                    closeTripModal();
+                }
             } catch (error) {
                 console.error('updateTripStatus error:', error);
                 showToast('更新失敗');
             }
+        }
+
+        // Step photo: trigger camera for before/after photos
+        function triggerStepPhoto(type) {
+            if (!state.currentTripId) return;
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.capture = 'environment';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                try {
+                    showToast('正在處理照片...');
+                    const base64 = await compressImage(file);
+                    const trip = state.currentTrips.find(t => t.id === state.currentTripId);
+                    if (!trip) return;
+
+                    // Save photo with type label
+                    const photos = trip.photos || [];
+                    const photoEntry = { data: base64, type: type, timestamp: new Date().toISOString() };
+                    photos.push(photoEntry);
+
+                    const newStatus = type === 'before' ? 'photo_before' : 'photo_after';
+                    await updateTripInFirebase(state.currentTripId, {
+                        photos: photos,
+                        status: newStatus,
+                        [type === 'before' ? 'photoBeforeAt' : 'photoAfterAt']: new Date().toISOString()
+                    });
+
+                    showToast(type === 'before' ? '出發前照片已上傳' : '交貨照片已上傳');
+                    await loadTrips(state.currentDate);
+                    openTripModal(state.currentTripId);
+                } catch(err) {
+                    console.error('Step photo error:', err);
+                    showToast('照片上傳失敗');
+                }
+            };
+            input.click();
         }
 
         function cancelTrip() {
@@ -1862,12 +1966,16 @@
 
         function renderPhotos(photos) {
             const container = document.getElementById('photoContainer');
-            container.innerHTML = (photos || []).map((photo, idx) => `
-                <div class="photo-item">
-                    <img src="${escapeHtml(photo)}" alt="photo">
+            container.innerHTML = (photos || []).map((photo, idx) => {
+                const src = typeof photo === 'string' ? photo : (photo.data || '');
+                const typeLabel = typeof photo === 'object' && photo.type ? (photo.type === 'before' ? '📦 出發前' : '📍 交貨') : '';
+                const timeLabel = typeof photo === 'object' && photo.timestamp ? new Date(photo.timestamp).toLocaleTimeString('zh-TW', {hour:'2-digit',minute:'2-digit'}) : '';
+                return `<div class="photo-item" style="position:relative;">
+                    <img src="${escapeHtml(src)}" alt="photo">
+                    ${typeLabel ? `<div style="position:absolute;bottom:24px;left:0;right:0;text-align:center;font-size:11px;background:rgba(0,0,0,0.6);color:white;padding:2px 0;">${typeLabel} ${timeLabel}</div>` : ''}
                     <button class="photo-delete" onclick="deletePhoto(${idx})">✕</button>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
         }
 
         async function deletePhoto(idx) {
@@ -2400,6 +2508,7 @@
                 await initializeFirebase();
                 await loadTrips(state.currentDate);
                 loadAnnouncements();
+                loadDriverProfile();
                 setupConnectionMonitoring();
 
                 // Setup date tabs
@@ -2916,6 +3025,53 @@
                 div.textContent = i;
                 container.appendChild(div);
             }
+        }
+
+        // ===== Preferred Areas & Driver Note =====
+        function handleAreaAllToggle() {
+            const allCb = document.getElementById('area-all');
+            document.querySelectorAll('.area-cb').forEach(cb => cb.checked = allCb.checked);
+        }
+        function handleAreaCheckChange() {
+            const cbs = document.querySelectorAll('.area-cb');
+            const allChecked = [...cbs].every(cb => cb.checked);
+            document.getElementById('area-all').checked = allChecked;
+        }
+        async function savePreferredAreas() {
+            const cbs = document.querySelectorAll('.area-cb');
+            const selected = [...cbs].filter(cb => cb.checked).map(cb => cb.value);
+            if (!selected.length) { showToast('請至少選擇一個商圈'); return; }
+            try {
+                await patchFirebase(`/data/driverProfiles/${state.driver}`, { preferredAreas: selected });
+                showToast('商圈設定已儲存');
+            } catch(e) { console.error(e); showToast('儲存失敗'); }
+        }
+        async function saveDriverNote() {
+            const note = document.getElementById('driverNoteInput').value.trim();
+            try {
+                await patchFirebase(`/data/driverProfiles/${state.driver}`, { note: note, noteUpdatedAt: new Date().toISOString() });
+                showToast('備註已儲存');
+            } catch(e) { console.error(e); showToast('儲存失敗'); }
+        }
+        async function loadDriverProfile() {
+            try {
+                const profile = await getFromFirebase(`/data/driverProfiles/${state.driver}`);
+                if (profile) {
+                    // Load preferred areas
+                    if (profile.preferredAreas && Array.isArray(profile.preferredAreas)) {
+                        const areas = profile.preferredAreas;
+                        document.querySelectorAll('.area-cb').forEach(cb => {
+                            cb.checked = areas.includes(cb.value);
+                        });
+                        const allCbs = document.querySelectorAll('.area-cb');
+                        document.getElementById('area-all').checked = [...allCbs].every(cb => cb.checked);
+                    }
+                    // Load note
+                    if (profile.note) {
+                        document.getElementById('driverNoteInput').value = profile.note;
+                    }
+                }
+            } catch(e) { console.error('loadDriverProfile error:', e); }
         }
 
         // Check if logged in
