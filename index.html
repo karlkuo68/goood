@@ -4,6 +4,15 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>好糰 Goood 訂單系統</title>
+
+<!-- PWA Meta -->
+<meta name="theme-color" content="#155f3a"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="好糰 Goood"/>
+<link rel="manifest" href="/manifest.json"/>
+<link rel="apple-touch-icon" href="/icons/icon-192.png"/>
+
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet"/>
 
 <style>
@@ -3988,6 +3997,120 @@ async function refreshDashboard() {
     </tr>`;
   }).join('');
 }
+</script>
+
+<!-- ── PWA: Service Worker + FCM 推播通知 ── -->
+<script>
+// Service Worker 註冊
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', async () => {
+    try {
+      const reg = await navigator.serviceWorker.register('/sw.js');
+      console.log('[PWA] SW registered, scope:', reg.scope);
+
+      // 檢查更新
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'activated') {
+            console.log('[PWA] New version available');
+          }
+        });
+      });
+    } catch (err) {
+      console.error('[PWA] SW registration failed:', err);
+    }
+  });
+}
+
+// 推播通知
+async function initPushNotifications() {
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+    console.log('[PWA] Push not supported');
+    return;
+  }
+
+  const permission = await Notification.requestPermission();
+  if (permission !== 'granted') {
+    console.log('[PWA] Notification permission denied');
+    return;
+  }
+
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let subscription = await reg.pushManager.getSubscription();
+
+    if (!subscription) {
+      // 如果你有 VAPID public key，可以在這裡設定
+      // subscription = await reg.pushManager.subscribe({
+      //   userVisibleOnly: true,
+      //   applicationServerKey: urlBase64ToUint8Array('YOUR_VAPID_PUBLIC_KEY')
+      // });
+      console.log('[PWA] Push subscription needed — set VAPID key to enable');
+    } else {
+      console.log('[PWA] Push subscription active');
+    }
+
+    // 儲存 subscription 到 Firebase（供後端發送推播用）
+    // await fetch(FIREBASE_URL + '/pushSubscriptions/' + encodeURIComponent(subscription.endpoint) + '.json', {
+    //   method: 'PUT',
+    //   body: JSON.stringify({ subscription: JSON.parse(JSON.stringify(subscription)), role: 'admin', timestamp: Date.now() })
+    // });
+  } catch (err) {
+    console.error('[PWA] Push setup error:', err);
+  }
+}
+
+// VAPID key 轉換工具
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+}
+
+// 安裝提示（A2HS）
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  showInstallBanner();
+});
+
+function showInstallBanner() {
+  // 如果已經安裝就不顯示
+  if (window.matchMedia('(display-mode: standalone)').matches) return;
+
+  const banner = document.createElement('div');
+  banner.id = 'pwa-install-banner';
+  banner.style.cssText = 'position:fixed;bottom:70px;left:12px;right:12px;background:#155f3a;color:white;padding:14px 16px;border-radius:12px;display:flex;align-items:center;gap:12px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.25);font-family:inherit;';
+  banner.innerHTML = `
+    <div style="flex:1">
+      <div style="font-weight:700;font-size:14px;">安裝「好糰 Goood」App</div>
+      <div style="font-size:12px;opacity:.8;margin-top:2px;">加到主畫面，享受完整體驗</div>
+    </div>
+    <button id="pwa-install-btn" style="background:white;color:#155f3a;border:none;border-radius:8px;padding:8px 16px;font-weight:600;font-size:13px;cursor:pointer;font-family:inherit;">安裝</button>
+    <button id="pwa-dismiss-btn" style="background:transparent;color:white;border:none;font-size:18px;cursor:pointer;padding:4px;">✕</button>
+  `;
+  document.body.appendChild(banner);
+
+  document.getElementById('pwa-install-btn').addEventListener('click', async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const result = await deferredPrompt.userChoice;
+      console.log('[PWA] Install result:', result.outcome);
+      deferredPrompt = null;
+    }
+    banner.remove();
+  });
+  document.getElementById('pwa-dismiss-btn').addEventListener('click', () => banner.remove());
+}
+
+// 頁面載入後啟動推播
+window.addEventListener('load', () => {
+  // 延遲 3 秒再請求推播權限，避免干擾使用者
+  setTimeout(initPushNotifications, 3000);
+});
 </script>
 </body>
 </html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>好糰 Goood — 離線中</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: linear-gradient(135deg, #155f3a 0%, #1a7a4a 100%);
+    color: white;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    text-align: center;
+  }
+  .icon {
+    font-size: 80px;
+    margin-bottom: 24px;
+    animation: float 3s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  p {
+    font-size: 15px;
+    opacity: 0.85;
+    max-width: 320px;
+    line-height: 1.6;
+    margin-bottom: 32px;
+  }
+  .retry-btn {
+    background: white;
+    color: #155f3a;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 36px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+  }
+  .retry-btn:active {
+    transform: scale(0.96);
+  }
+  .status {
+    margin-top: 24px;
+    font-size: 13px;
+    opacity: 0.6;
+  }
+</style>
+</head>
+<body>
+  <div class="icon">📡</div>
+  <h1>目前沒有網路連線</h1>
+  <p>請確認 Wi-Fi 或行動數據已開啟，連線恢復後即可繼續使用好糰系統。</p>
+  <button class="retry-btn" id="retryBtn">重新連線</button>
+  <div class="status" id="status"></div>
+
+  <script>
+    document.getElementById('retryBtn').addEventListener('click', function() {
+      var status = document.getElementById('status');
+      status.textContent = '嘗試連線中...';
+      fetch('/index.html', { cache: 'no-store' })
+        .then(function() { window.location.reload(); })
+        .catch(function() { status.textContent = '仍然無法連線，請稍後再試'; });
+    });
+
+    // 監聽網路恢復 → 自動重載
+    window.addEventListener('online', function() {
+      window.location.reload();
+    });
+  </script>
+</body>
+</html>
