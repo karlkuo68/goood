@@ -536,6 +536,21 @@ textarea { resize: vertical; min-height: 60px; }
 .dash-zone-name{font-weight:600}
 .dash-zone-stats{display:flex;gap:16px;font-size:12px;color:var(--text-sub)}
 @media(min-width:768px){.dash-grid{grid-template-columns:repeat(4,1fr)}.dash-card.wide{grid-column:span 2}}
+/* 客服私密標註 Modal（階段1） */
+.cs-notes-modal{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;}
+.cs-notes-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.5);}
+.cs-notes-dialog{position:relative;background:#fff;border-radius:12px;width:92%;max-width:560px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.cs-notes-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);}
+.cs-notes-close{background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-sub);padding:4px 8px;line-height:1;}
+.cs-notes-body{overflow-y:auto;padding-top:4px;}
+.cs-notes-section-title{font-size:12px;font-weight:600;color:var(--text-sub);margin:12px 0 6px;border-bottom:1px dashed var(--border);padding-bottom:4px;}
+.cs-notes-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.cs-notes-grid label,.cs-notes-full label{display:block;font-size:12px;color:var(--text-sub);}
+.cs-notes-grid input,.cs-notes-grid select,.cs-notes-full input,.cs-notes-full select,.cs-notes-full textarea{display:block;width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;margin-top:3px;color:var(--text);background:#fff;}
+.cs-notes-full label{margin-bottom:8px;}
+.cs-hint{font-size:10px;color:var(--text-hint);margin-top:2px;}
+.cs-notes-trigger{display:inline-flex;align-items:center;gap:4px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;font-size:12px;}
+.cs-notes-trigger:hover{background:var(--gray-100);}
 </style>
 </head>
 <body>
@@ -649,6 +664,56 @@ textarea { resize: vertical; min-height: 60px; }
     </div>
     <div class="row row-1">
       <div><label>備註</label><textarea id="f-note" placeholder="送達需知、特殊要求等"></textarea></div>
+    </div>
+  </div>
+
+  <!-- 派單資訊（階段1 新增） -->
+  <div class="card" id="dispatch-info-card">
+    <div class="card-title">派單資訊</div>
+    <div class="row row-1">
+      <div>
+        <label>特別時間需求備註（選填）</label>
+        <input type="text" id="f-timeNote" placeholder="例：一定要 11:30 前送達 / 客戶 13:00 才下班"/>
+      </div>
+    </div>
+    <div class="row row-2">
+      <div>
+        <label>佔馬鞍袋單位數（1-9）</label>
+        <input type="number" id="f-baggageUnits" min="1" max="9" value="1"/>
+        <div style="font-size:11px;color:var(--text-hint);margin-top:3px;">每位外送員：左 4 + 右 4 + 保冷袋 1 = 共 9 單位</div>
+      </div>
+      <div>
+        <label>冷/熱標記</label>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px;font-size:13px;">
+          <label style="display:inline-flex;align-items:center;gap:3px;cursor:pointer;"><input type="radio" name="f-tempType" value="cold"/>❄️ 冷藏</label>
+          <label style="display:inline-flex;align-items:center;gap:3px;cursor:pointer;"><input type="radio" name="f-tempType" value="hot"/>🔥 熱食</label>
+          <label style="display:inline-flex;align-items:center;gap:3px;cursor:pointer;"><input type="radio" name="f-tempType" value="normal" checked/>📦 常溫</label>
+        </div>
+        <div style="font-size:11px;color:var(--text-hint);margin-top:3px;">冷熱不能放同一個馬鞍袋</div>
+      </div>
+    </div>
+    <div class="row row-1">
+      <div>
+        <label>付款狀態</label>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:4px;font-size:13px;">
+          <label style="display:inline-flex;align-items:center;gap:3px;cursor:pointer;"><input type="radio" name="f-paymentStatus" value="paid"/>✅ 已付款</label>
+          <label style="display:inline-flex;align-items:center;gap:3px;cursor:pointer;"><input type="radio" name="f-paymentStatus" value="unpaid" checked/>💰 未付款（貨到付現）</label>
+        </div>
+      </div>
+    </div>
+    <div class="row row-1">
+      <div>
+        <label>收貨備註（選填）</label>
+        <textarea id="f-deliveryNote" placeholder="例：放警衛室 / 不按鈴 / 先打電話"></textarea>
+      </div>
+    </div>
+    <div class="row row-1">
+      <div>
+        <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" id="f-isVIP"/>
+          <span>⭐ VIP 訂單（優先派送）</span>
+        </label>
+      </div>
     </div>
   </div>
 
@@ -1052,6 +1117,11 @@ textarea { resize: vertical; min-height: 60px; }
   <div class="page-title">派單管理</div>
   <div class="sync-status"><span class="sync-dot" id="fb-dot"></span><span id="fb-txt">連接 Firebase…</span></div>
 
+  <!-- 階段1 客服標註管理入口 -->
+  <div id="cs-notes-entry" style="margin-bottom:10px;">
+    <button type="button" class="cs-notes-trigger" id="cs-notes-open-btn">📝 客服標註管理</button>
+  </div>
+
   <!-- 排除外送員設定 -->
   <div class="card" id="exclude-drivers-card" style="margin-bottom:12px;">
     <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="toggleExcludePanel()">
@@ -1153,6 +1223,104 @@ textarea { resize: vertical; min-height: 60px; }
     <div class="card-title" style="color:var(--red)">危險區域</div>
     <p style="font-size:12px;color:var(--text-sub);margin-bottom:10px">清除後無法復原，請先匯出備份。</p>
     <button class="btn btn-danger" onclick="clearAllOrders()">清除全部訂單資料</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════
+     客服私密標註 Modal（階段1）
+     僅客服系統使用，driver.html 絕對不讀取
+════════════════════════════ -->
+<div id="cs-notes-modal" class="cs-notes-modal" style="display:none;">
+  <div class="cs-notes-backdrop" id="cs-notes-backdrop"></div>
+  <div class="cs-notes-dialog" role="dialog" aria-modal="true" aria-labelledby="cs-notes-title">
+    <div class="cs-notes-header">
+      <div id="cs-notes-title" style="font-weight:600;font-size:16px;">📝 客服私密標註</div>
+      <button type="button" class="cs-notes-close" id="cs-notes-close-btn" aria-label="關閉">✕</button>
+    </div>
+    <div class="cs-notes-sub" id="cs-notes-driver-label" style="padding:0 16px 8px;font-size:12px;color:var(--text-hint);">僅客服可見，外送員看不到</div>
+    <div class="cs-notes-body" id="cs-notes-body">
+      <div id="cs-notes-driver-picker" style="padding:0 16px 12px;">
+        <label style="font-size:12px;color:var(--text-sub);">選擇外送員</label>
+        <select id="cs-notes-driver-select" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;margin-top:4px;"></select>
+      </div>
+      <div id="cs-notes-fields" style="padding:0 16px 16px;display:none;">
+        <!-- 評分類 -->
+        <div class="cs-notes-section-title">評分（1-5）</div>
+        <div class="cs-notes-grid">
+          <label>準時度<input type="number" min="1" max="5" id="dn-punctuality"/></label>
+          <label>細心度<input type="number" min="1" max="5" id="dn-carefulness"/></label>
+          <label>方向感<input type="number" min="1" max="5" id="dn-navigation"/></label>
+          <label>溝通能力<input type="number" min="1" max="5" id="dn-communication"/></label>
+          <label>體力耐力<input type="number" min="1" max="5" id="dn-stamina"/></label>
+          <label>併單能力<input type="number" min="1" max="5" id="dn-multiOrder"/></label>
+        </div>
+
+        <!-- 信任度 -->
+        <div class="cs-notes-section-title">信任度</div>
+        <div class="cs-notes-grid">
+          <label>信任度等級
+            <select id="dn-trustLevel">
+              <option value="normal">一般</option>
+              <option value="vip">VIP 可派</option>
+              <option value="highValue">高單價可派</option>
+              <option value="confidential">機密可派</option>
+            </select>
+          </label>
+          <label>現金處理可靠度
+            <select id="dn-cashReliability">
+              <option value="reliable">可靠</option>
+              <option value="caution">需注意</option>
+              <option value="noCash">不建議收現</option>
+            </select>
+          </label>
+        </div>
+
+        <!-- 文字紀錄 -->
+        <div class="cs-notes-section-title">文字紀錄</div>
+        <div class="cs-notes-full">
+          <label>歷史事故紀錄
+            <textarea id="dn-incidents" rows="3" placeholder="時間/事件/處理方式"></textarea>
+          </label>
+          <label>商家紅名單（可指派）
+            <select id="dn-vendorRedList" multiple size="4"></select>
+            <div class="cs-hint">按住 Cmd/Ctrl 多選</div>
+          </label>
+          <label>商家黑名單（不派送）
+            <select id="dn-vendorBlackList" multiple size="4"></select>
+            <div class="cs-hint">按住 Cmd/Ctrl 多選</div>
+          </label>
+          <label>客戶偏好紀錄
+            <textarea id="dn-customerPrefs" rows="3" placeholder="特定客戶偏好或排斥此外送員的紀錄"></textarea>
+          </label>
+          <label>外送員衝突標註
+            <select id="dn-driverConflicts" multiple size="4"></select>
+            <div class="cs-hint">避免同時排班的外送員</div>
+          </label>
+          <label>臨時加單意願
+            <select id="dn-extraOrderWill">
+              <option value="high">高</option>
+              <option value="medium">中</option>
+              <option value="low">低</option>
+            </select>
+          </label>
+          <label>內部標籤
+            <select id="dn-internalTag">
+              <option value="new">新人</option>
+              <option value="intern">實習中</option>
+              <option value="observing">待觀察</option>
+              <option value="senior">資深</option>
+              <option value="special">特派</option>
+            </select>
+          </label>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <button type="button" class="btn btn-primary" id="cs-notes-save-btn" style="flex:1;">💾 儲存標註</button>
+          <button type="button" class="btn" id="cs-notes-cancel-btn" style="flex:1;">取消</button>
+        </div>
+        <div id="cs-notes-status" style="margin-top:8px;font-size:12px;color:var(--text-hint);min-height:16px;"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2059,6 +2227,13 @@ function getFormData(prefix) {
     taxid: document.getElementById(prefix + 'taxid').value.trim(),
     note: document.getElementById(prefix + 'note').value.trim(),
     driver: document.getElementById(prefix + 'driver') ? document.getElementById(prefix + 'driver').value : '',
+    // 階段1 派單資訊欄位
+    timeNote: (function(){ var e = document.getElementById(prefix + 'timeNote'); return e ? e.value.trim() : ''; })(),
+    baggageUnits: (function(){ var e = document.getElementById(prefix + 'baggageUnits'); var n = e ? parseInt(e.value, 10) : 1; return (isNaN(n) || n < 1) ? 1 : Math.min(n, 9); })(),
+    tempType: (function(){ var r = document.querySelector('input[name="' + prefix + 'tempType"]:checked'); return r ? r.value : 'normal'; })(),
+    paymentStatus: (function(){ var r = document.querySelector('input[name="' + prefix + 'paymentStatus"]:checked'); return r ? r.value : 'unpaid'; })(),
+    deliveryNote: (function(){ var e = document.getElementById(prefix + 'deliveryNote'); return e ? e.value.trim() : ''; })(),
+    isVIP: (function(){ var e = document.getElementById(prefix + 'isVIP'); return e ? !!e.checked : false; })(),
   };
 }
 
@@ -2092,6 +2267,12 @@ function clearOrderForm() {
   const tr = document.getElementById('f-tr-row'); if (tr) tr.classList.add('hidden');
   renderVendorPicker('main');
   const ma = document.getElementById('menu-area'); if (ma) ma.innerHTML = '<div class="no-msg">請先選擇商家</div>';
+  // 階段1 派單資訊欄位重置
+  ['f-timeNote','f-deliveryNote'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
+  const bu = document.getElementById('f-baggageUnits'); if (bu) bu.value = '1';
+  const tnormal = document.querySelector('input[name="f-tempType"][value="normal"]'); if (tnormal) tnormal.checked = true;
+  const punpaid = document.querySelector('input[name="f-paymentStatus"][value="unpaid"]'); if (punpaid) punpaid.checked = true;
+  const vip = document.getElementById('f-isVIP'); if (vip) vip.checked = false;
 }
 
 // ════════════════════════════════════════════════
@@ -3997,6 +4178,241 @@ async function refreshDashboard() {
     </tr>`;
   }).join('');
 }
+
+/* ════════════════════════════════════════════════
+   階段1 客服私密標註系統（driverNotes）
+   注意：此路徑只在 index.html 讀寫，driver.html 絕不讀取
+════════════════════════════════════════════════ */
+// 權限檢查：僅客服系統（index.html）可用。預設 true，因為在 CS 系統上。
+// 未來若導入真正角色系統，可改為檢查 role === 'admin' || 'staff'
+var CS_ROLE = 'staff'; // admin / staff / driver — index.html 預設 staff
+function csIsStaff() { return CS_ROLE === 'admin' || CS_ROLE === 'staff'; }
+
+var DRIVER_NOTES_FIELDS = [
+  'punctuality','carefulness','navigation','communication','stamina','multiOrder',
+  'trustLevel','cashReliability','incidents','vendorRedList','vendorBlackList',
+  'customerPrefs','driverConflicts','extraOrderWill','internalTag'
+];
+
+function dnDefault() {
+  return {
+    punctuality: null, carefulness: null, navigation: null,
+    communication: null, stamina: null, multiOrder: null,
+    trustLevel: 'normal', cashReliability: 'reliable',
+    incidents: '', vendorRedList: [], vendorBlackList: [],
+    customerPrefs: '', driverConflicts: [],
+    extraOrderWill: 'medium', internalTag: 'observing',
+    updatedAt: null
+  };
+}
+
+async function dnFetchAll() {
+  if (!csIsStaff()) { console.warn('[driverNotes] 權限不足'); return {}; }
+  try {
+    var data = await fbGet('/driverNotes');
+    return data || {};
+  } catch(e) {
+    console.error('[driverNotes] fetch 失敗', e);
+    return {};
+  }
+}
+
+async function dnFetchOne(driverId) {
+  if (!csIsStaff()) return dnDefault();
+  try {
+    var data = await fbGet('/driverNotes/' + encodeURIComponent(driverId));
+    return Object.assign(dnDefault(), data || {});
+  } catch(e) {
+    console.error('[driverNotes] fetchOne 失敗', e);
+    return dnDefault();
+  }
+}
+
+async function dnSave(driverId, notes) {
+  if (!csIsStaff()) { throw new Error('權限不足'); }
+  if (!driverId) throw new Error('缺少 driverId');
+  notes.updatedAt = new Date().toISOString();
+  return fbPatch('/driverNotes/' + encodeURIComponent(driverId), notes);
+}
+
+async function dnLoadDriverList() {
+  try {
+    var accs = await fbGet('/accounts');
+    var list = [];
+    if (accs) {
+      Object.keys(accs).forEach(function(uid){
+        var a = accs[uid];
+        if (a && a.role === 'driver') {
+          list.push({ id: uid, name: a.name || uid });
+        }
+      });
+    }
+    // fallback：若 /accounts 空，從 f-driver 下拉抓
+    if (list.length === 0) {
+      var sel = document.getElementById('f-driver');
+      if (sel) {
+        Array.from(sel.options).forEach(function(opt){
+          if (opt.value && opt.value !== '') list.push({ id: opt.value, name: opt.value });
+        });
+      }
+    }
+    return list;
+  } catch(e) {
+    console.error('[driverNotes] 載入外送員失敗', e);
+    return [];
+  }
+}
+
+function dnPopulateDriverSelect(list) {
+  var sel = document.getElementById('cs-notes-driver-select');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— 請選擇 —</option>' +
+    list.map(function(d){ return '<option value="'+d.id+'">'+d.name+'</option>'; }).join('');
+}
+
+function dnPopulateVendorSelects() {
+  var vendorHtml = (typeof ALL_VENDORS !== 'undefined' && ALL_VENDORS.length)
+    ? ALL_VENDORS.map(function(v){ return '<option value="'+v.id+'">'+v.name+'</option>'; }).join('')
+    : '';
+  ['dn-vendorRedList','dn-vendorBlackList'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.innerHTML = vendorHtml;
+  });
+}
+
+function dnPopulateDriverConflictSelect(list, currentId) {
+  var el = document.getElementById('dn-driverConflicts');
+  if (!el) return;
+  el.innerHTML = list
+    .filter(function(d){ return d.id !== currentId; })
+    .map(function(d){ return '<option value="'+d.id+'">'+d.name+'</option>'; })
+    .join('');
+}
+
+function dnFillForm(notes) {
+  // 數值評分
+  ['punctuality','carefulness','navigation','communication','stamina','multiOrder'].forEach(function(k){
+    var el = document.getElementById('dn-'+k);
+    if (el) el.value = notes[k] == null ? '' : notes[k];
+  });
+  // 下拉
+  ['trustLevel','cashReliability','extraOrderWill','internalTag'].forEach(function(k){
+    var el = document.getElementById('dn-'+k);
+    if (el) el.value = notes[k] || '';
+  });
+  // textarea
+  ['incidents','customerPrefs'].forEach(function(k){
+    var el = document.getElementById('dn-'+k);
+    if (el) el.value = notes[k] || '';
+  });
+  // multi-select
+  ['vendorRedList','vendorBlackList','driverConflicts'].forEach(function(k){
+    var el = document.getElementById('dn-'+k);
+    if (!el) return;
+    var arr = Array.isArray(notes[k]) ? notes[k] : [];
+    Array.from(el.options).forEach(function(opt){ opt.selected = arr.indexOf(opt.value) !== -1; });
+  });
+}
+
+function dnCollectForm() {
+  var notes = dnDefault();
+  ['punctuality','carefulness','navigation','communication','stamina','multiOrder'].forEach(function(k){
+    var el = document.getElementById('dn-'+k);
+    if (el && el.value !== '') {
+      var n = parseInt(el.value, 10);
+      notes[k] = (isNaN(n) || n < 1 || n > 5) ? null : n;
+    }
+  });
+  ['trustLevel','cashReliability','extraOrderWill','internalTag'].forEach(function(k){
+    var el = document.getElementById('dn-'+k);
+    if (el) notes[k] = el.value;
+  });
+  ['incidents','customerPrefs'].forEach(function(k){
+    var el = document.getElementById('dn-'+k);
+    if (el) notes[k] = el.value.trim();
+  });
+  ['vendorRedList','vendorBlackList','driverConflicts'].forEach(function(k){
+    var el = document.getElementById('dn-'+k);
+    if (!el) { notes[k] = []; return; }
+    notes[k] = Array.from(el.selectedOptions).map(function(o){ return o.value; });
+  });
+  return notes;
+}
+
+var __csNotesDrivers = [];
+var __csNotesCurrentId = null;
+
+async function openCsNotesModal() {
+  if (!csIsStaff()) {
+    if (typeof showToast === 'function') showToast('權限不足');
+    return;
+  }
+  var modal = document.getElementById('cs-notes-modal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  document.getElementById('cs-notes-fields').style.display = 'none';
+  document.getElementById('cs-notes-status').textContent = '載入中…';
+  __csNotesDrivers = await dnLoadDriverList();
+  dnPopulateDriverSelect(__csNotesDrivers);
+  dnPopulateVendorSelects();
+  document.getElementById('cs-notes-status').textContent = __csNotesDrivers.length + ' 位外送員';
+}
+
+function closeCsNotesModal() {
+  var modal = document.getElementById('cs-notes-modal');
+  if (modal) modal.style.display = 'none';
+  __csNotesCurrentId = null;
+}
+
+async function onCsNotesDriverChange() {
+  var sel = document.getElementById('cs-notes-driver-select');
+  var id = sel ? sel.value : '';
+  if (!id) {
+    document.getElementById('cs-notes-fields').style.display = 'none';
+    return;
+  }
+  __csNotesCurrentId = id;
+  dnPopulateDriverConflictSelect(__csNotesDrivers, id);
+  var notes = await dnFetchOne(id);
+  dnFillForm(notes);
+  document.getElementById('cs-notes-fields').style.display = 'block';
+  document.getElementById('cs-notes-status').textContent = '已載入 ' + id;
+}
+
+async function onCsNotesSave() {
+  if (!__csNotesCurrentId) return;
+  var status = document.getElementById('cs-notes-status');
+  try {
+    status.textContent = '儲存中…';
+    var notes = dnCollectForm();
+    await dnSave(__csNotesCurrentId, notes);
+    status.textContent = '✅ 已儲存 ' + new Date().toLocaleTimeString();
+    if (typeof showToast === 'function') showToast('標註已儲存');
+  } catch(e) {
+    status.textContent = '❌ 儲存失敗：' + e.message;
+  }
+}
+
+// 綁定事件（iOS Safari 相容：addEventListener，不用 inline onclick）
+document.addEventListener('DOMContentLoaded', function(){
+  var openBtn = document.getElementById('cs-notes-open-btn');
+  if (openBtn) openBtn.addEventListener('click', openCsNotesModal);
+  var closeBtn = document.getElementById('cs-notes-close-btn');
+  if (closeBtn) closeBtn.addEventListener('click', closeCsNotesModal);
+  var cancelBtn = document.getElementById('cs-notes-cancel-btn');
+  if (cancelBtn) cancelBtn.addEventListener('click', closeCsNotesModal);
+  var backdrop = document.getElementById('cs-notes-backdrop');
+  if (backdrop) backdrop.addEventListener('click', closeCsNotesModal);
+  var saveBtn = document.getElementById('cs-notes-save-btn');
+  if (saveBtn) saveBtn.addEventListener('click', onCsNotesSave);
+  var driverSel = document.getElementById('cs-notes-driver-select');
+  if (driverSel) driverSel.addEventListener('change', onCsNotesDriverChange);
+  // 若不是 staff，隱藏入口按鈕
+  if (!csIsStaff()) {
+    var entry = document.getElementById('cs-notes-entry');
+    if (entry) entry.style.display = 'none';
+  }
+});
 </script>
 
 <!-- ── PWA: Service Worker + FCM 推播通知 ── -->
