@@ -4415,6 +4415,894 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 </script>
 
+
+<!-- ════════════════════════════════════════════════
+     階段 2-4：一鍵派單核心邏輯 (DispatchV2)
+     聚類 + 篩選 + 評分 + Google Maps + 負載平衡 + 統計 + 匯出
+     僅客服系統使用 (csIsStaff() 權限檢查)
+════════════════════════════════════════════════ -->
+<style>
+.dv2-btn-main{display:block;width:100%;padding:14px 18px;margin:0 0 12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(99,102,241,.3);transition:all .2s}
+.dv2-btn-main:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(99,102,241,.4)}
+.dv2-btn-main:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.dv2-modal-bk{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9998;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px 10px}
+.dv2-modal-bk.on{display:flex}
+.dv2-modal{background:#fff;border-radius:14px;max-width:760px;width:100%;margin:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden}
+.dv2-mhead{padding:16px 20px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#f5f3ff,#ede9fe)}
+.dv2-mhead h3{margin:0;font-size:16px;font-weight:700;color:#5b21b6}
+.dv2-mclose{background:none;border:none;font-size:22px;cursor:pointer;color:#6b7280;padding:0 6px}
+.dv2-mbody{padding:18px 20px;max-height:72vh;overflow-y:auto}
+.dv2-step-title{font-size:12px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:.06em;margin:14px 0 8px}
+.dv2-step-title:first-child{margin-top:0}
+.dv2-group-card{border:1.5px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:10px;background:#fafafa}
+.dv2-group-card.vip{border-color:#f59e0b;background:#fffbeb}
+.dv2-group-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px}
+.dv2-group-ttl{font-size:13px;font-weight:700;color:#1f2937}
+.dv2-group-meta{font-size:11px;color:#6b7280;display:flex;gap:8px;flex-wrap:wrap}
+.dv2-tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600}
+.dv2-tag.cold{background:#dbeafe;color:#1e40af}
+.dv2-tag.hot{background:#fee2e2;color:#991b1b}
+.dv2-tag.normal{background:#e5e7eb;color:#374151}
+.dv2-tag.vip{background:#fef3c7;color:#92400e}
+.dv2-tag.over{background:#fecaca;color:#7f1d1d}
+.dv2-order-mini{display:flex;align-items:center;gap:6px;padding:4px 8px;background:#fff;border:1px solid #e5e7eb;border-radius:6px;margin-top:4px;font-size:12px}
+.dv2-order-mini .oc-name{flex:1;font-weight:500}
+.dv2-order-mini .oc-addr{font-size:11px;color:#6b7280;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dv2-order-mini .oc-bag{font-size:11px;color:#6366f1;font-weight:600}
+.dv2-order-mini button{background:none;border:1px solid #e5e7eb;border-radius:4px;padding:2px 6px;cursor:pointer;font-size:11px}
+.dv2-driver-candidate{border:1.5px solid #e5e7eb;border-radius:8px;padding:10px;margin-top:6px;cursor:pointer;background:#fff;transition:all .15s}
+.dv2-driver-candidate:hover{border-color:#8b5cf6;background:#faf5ff}
+.dv2-driver-candidate.selected{border-color:#10b981;background:#d1fae5;box-shadow:0 0 0 2px rgba(16,185,129,.2)}
+.dv2-driver-candidate .dc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.dv2-driver-candidate .dc-name{font-size:13px;font-weight:700}
+.dv2-driver-candidate .dc-score{font-size:14px;font-weight:800;color:#6366f1}
+.dv2-driver-candidate .dc-reasons{font-size:11px;color:#4b5563;line-height:1.5}
+.dv2-driver-candidate .dc-reasons .r-plus{color:#059669}
+.dv2-driver-candidate .dc-reasons .r-minus{color:#dc2626}
+.dv2-mfoot{padding:14px 20px;border-top:1px solid #e5e7eb;display:flex;gap:10px;justify-content:flex-end;background:#f9fafb}
+.dv2-mfoot button{padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;border:none}
+.dv2-btn-cancel{background:#e5e7eb;color:#374151}
+.dv2-btn-next{background:#6366f1;color:#fff}
+.dv2-btn-next:disabled{opacity:.5;cursor:not-allowed}
+.dv2-btn-confirm{background:#10b981;color:#fff}
+.dv2-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:8px 0}
+.dv2-stat-box{background:#f5f3ff;border-radius:8px;padding:10px;text-align:center}
+.dv2-stat-box .sb-num{font-size:18px;font-weight:800;color:#6366f1}
+.dv2-stat-box .sb-lbl{font-size:10px;color:#6b7280;margin-top:2px}
+.dv2-load-bar{margin-top:8px}
+.dv2-load-row{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:4px}
+.dv2-load-row .lr-name{width:60px;font-weight:600}
+.dv2-load-row .lr-bar{flex:1;background:#e5e7eb;border-radius:4px;height:10px;overflow:hidden}
+.dv2-load-row .lr-fill{background:linear-gradient(90deg,#10b981,#6366f1);height:100%}
+.dv2-load-row .lr-num{width:30px;text-align:right;font-size:11px;color:#4b5563}
+.dv2-empty{text-align:center;padding:30px 10px;color:#9ca3af;font-size:13px}
+.dv2-help{background:#eff6ff;border-left:3px solid #3b82f6;padding:8px 12px;border-radius:6px;font-size:11px;color:#1e40af;margin-bottom:10px;line-height:1.5}
+.dv2-warn{background:#fef3c7;border-left:3px solid #f59e0b;padding:8px 12px;border-radius:6px;font-size:11px;color:#92400e;margin-bottom:10px;line-height:1.5}
+</style>
+
+<!-- 一鍵派單 Modal -->
+<div class="dv2-modal-bk" id="dv2-modal-bk">
+  <div class="dv2-modal">
+    <div class="dv2-mhead">
+      <h3 id="dv2-mtitle">🚀 一鍵派單</h3>
+      <button class="dv2-mclose" id="dv2-mclose">×</button>
+    </div>
+    <div class="dv2-mbody" id="dv2-mbody"></div>
+    <div class="dv2-mfoot" id="dv2-mfoot"></div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════
+   DispatchV2 — 一鍵派單 (階段 2-4)
+════════════════════════════════════════════════ */
+(function(){
+  'use strict';
+
+  // ── 配置 ──
+  var DV2_CONFIG = {
+    MAX_BAG_UNITS: 9,         // 總馬鞍袋上限 (左4+右4+保冷1)
+    MAX_NORMAL_UNITS: 8,      // 常溫最多單位
+    MAX_COLD_UNITS: 4,        // 冷藏最多單位 (保冷袋1+馬鞍袋佔用)
+    MAX_HOT_UNITS: 4,         // 熱食最多單位
+    SCORE_MAX: 100,
+    GOOGLE_MAPS_API_KEY: 'YOUR_GOOGLE_MAPS_API_KEY_HERE', // 需使用者申請後替換
+    USE_GOOGLE_MAPS: false    // 預設關閉，有 key 再開啟
+  };
+
+  // 商家商圈對照 (階段3簡化版距離估算)
+  var VENDOR_ZONE_MAP = {};
+  try {
+    (VENDOR_ZONES || []).forEach(function(z){
+      (z.vendors || []).forEach(function(v){ VENDOR_ZONE_MAP[v.id] = z.zone; });
+    });
+  } catch(e) {}
+
+  // 送貨地址 → 商圈粗估 (用地址關鍵字)
+  function guessDeliveryZone(addr) {
+    if (!addr) return 'unknown';
+    if (/竹北|新豐|湖口|關西/.test(addr)) return '竹北福興商圈';
+    if (/東區|光復|學府|建功|食品|食品路/.test(addr)) return '新竹東南商圈';
+    if (/北區|湳雅|經國|中華路/.test(addr)) return '新竹湳雅商圈';
+    if (/香山/.test(addr)) return '新竹東南商圈';
+    return '其他';
+  }
+
+  // 計算訂單馬鞍袋單位數
+  function getOrderUnits(order) {
+    var units = parseInt(order.baggageUnits, 10);
+    if (isNaN(units) || units < 1) {
+      // fallback 用 calcOrderBags (袋數 → 單位)
+      try {
+        var bags = (typeof calcOrderBags === 'function') ? calcOrderBags(order) : 1;
+        units = Math.max(1, Math.ceil(bags));
+      } catch(e) { units = 1; }
+    }
+    return Math.min(units, 9);
+  }
+
+  // 取得訂單主要商家 ID
+  function getOrderVendors(order) {
+    var vids = {};
+    (order.items || []).forEach(function(it){
+      if (it.vendorId) vids[it.vendorId] = true;
+    });
+    return Object.keys(vids);
+  }
+
+  // 取得訂單時段 (HH:MM 解析為分鐘數)
+  function parseTimeslotMinutes(slot) {
+    if (!slot) return null;
+    var m = slot.match(/(\d{1,2}):(\d{2})/);
+    if (!m) return null;
+    return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+  }
+
+  /* ──────────────────────────────────────────
+     階段 2.2 — 訂單聚類演算法 clusterOrders()
+  ────────────────────────────────────────── */
+  function clusterOrders(orders) {
+    if (!orders || !orders.length) return [];
+
+    // 先按溫度分桶
+    var byTemp = { cold: [], hot: [], normal: [] };
+    orders.forEach(function(o){
+      var t = o.tempType || 'normal';
+      if (!byTemp[t]) byTemp[t] = [];
+      byTemp[t].push(o);
+    });
+
+    var groups = [];
+
+    // 每個溫度桶內再按商家、區域、時間合併
+    Object.keys(byTemp).forEach(function(tempType){
+      var list = byTemp[tempType];
+      if (!list.length) return;
+
+      // VIP 優先獨立成組
+      var vips = list.filter(function(o){ return o.isVIP; });
+      var normals = list.filter(function(o){ return !o.isVIP; });
+
+      // VIP 每單一組 (之後可合併相近的)
+      vips.forEach(function(o){
+        groups.push(makeGroup([o], tempType));
+      });
+
+      // 一般訂單：按 (商家組合, 送貨區域, 時段) key 分桶
+      var buckets = {};
+      normals.forEach(function(o){
+        var vids = getOrderVendors(o).sort().join(',');
+        var area = guessDeliveryZone(o.address);
+        var slot = o.timeslot || '';
+        var key = tempType + '|' + vids + '|' + area + '|' + slot;
+        if (!buckets[key]) buckets[key] = [];
+        buckets[key].push(o);
+      });
+
+      // 每桶內再按容量切分 (若超過 MAX_BAG_UNITS)
+      Object.keys(buckets).forEach(function(key){
+        var bucket = buckets[key];
+        var cur = [];
+        var curUnits = 0;
+        var cap = tempType === 'cold' ? DV2_CONFIG.MAX_COLD_UNITS
+                : tempType === 'hot'  ? DV2_CONFIG.MAX_HOT_UNITS
+                : DV2_CONFIG.MAX_NORMAL_UNITS;
+        bucket.forEach(function(o){
+          var u = getOrderUnits(o);
+          if (curUnits + u <= cap) {
+            cur.push(o); curUnits += u;
+          } else {
+            if (cur.length) groups.push(makeGroup(cur, tempType));
+            cur = [o]; curUnits = u;
+          }
+        });
+        if (cur.length) groups.push(makeGroup(cur, tempType));
+      });
+    });
+
+    return groups;
+  }
+
+  function makeGroup(orders, tempType) {
+    var totalUnits = 0;
+    var vendors = {};
+    var areas = {};
+    var hasVIP = false;
+    var minTime = Infinity;
+    var timeConstraint = '';
+
+    orders.forEach(function(o){
+      totalUnits += getOrderUnits(o);
+      getOrderVendors(o).forEach(function(v){ vendors[v] = true; });
+      var area = guessDeliveryZone(o.address);
+      areas[area] = true;
+      if (o.isVIP) hasVIP = true;
+      var mt = parseTimeslotMinutes(o.timeslot);
+      if (mt != null && mt < minTime) { minTime = mt; timeConstraint = o.timeslot; }
+      if (o.timeNote) timeConstraint = o.timeNote;
+    });
+
+    return {
+      orders: orders,
+      totalUnits: totalUnits,
+      tempTypes: [tempType],
+      vendors: Object.keys(vendors),
+      areas: Object.keys(areas),
+      hasVIP: hasVIP,
+      timeConstraint: timeConstraint || (orders[0] && orders[0].timeslot) || ''
+    };
+  }
+
+  /* ──────────────────────────────────────────
+     階段 2.3 — 硬性篩選 filterAvailableDrivers()
+  ────────────────────────────────────────── */
+  function filterAvailableDrivers(group, allDrivers, driverNotes, schedules, todayLoad) {
+    var results = [];
+    allDrivers.forEach(function(driverId){
+      var note = driverNotes[driverId] || {};
+      var reason = null;
+
+      // 1. 馬鞍袋容量
+      if (group.totalUnits > DV2_CONFIG.MAX_BAG_UNITS) {
+        reason = '訂單總容量 ' + group.totalUnits + ' 超過 9 單位';
+      }
+
+      // 2. 排班檢查 (schedules 是 {driverId: {date: 'on'/'off'}} 或 undefined 視為可派)
+      if (!reason && schedules && schedules[driverId]) {
+        var today = (typeof dispatchDate !== 'undefined' && dispatchDate) || new Date().toISOString().slice(0,10);
+        if (schedules[driverId][today] === 'off') {
+          reason = '今日未排班';
+        }
+      }
+
+      // 3. VIP 訂單需要 trust
+      if (!reason && group.hasVIP) {
+        var tl = note.trustLevel || 'normal';
+        if (tl !== 'vip' && tl !== 'confidential' && tl !== 'highValue') {
+          reason = 'VIP 訂單但信任度不足';
+        }
+      }
+
+      // 4. 商家黑名單
+      if (!reason) {
+        var black = note.vendorBlackList || [];
+        var hit = group.vendors.filter(function(v){ return black.indexOf(v) !== -1; });
+        if (hit.length) reason = '商家黑名單命中 (' + hit.length + ' 家)';
+      }
+
+      // 5. 內部標籤：實習中 + VIP/高單價訂單排除
+      if (!reason) {
+        var tag = note.internalTag || '';
+        var totalAmt = (group.orders || []).reduce(function(s,o){ return s + (o.total||0); }, 0);
+        if ((tag === 'intern' || tag === 'observing') && (group.hasVIP || totalAmt > 3000)) {
+          reason = '實習/待觀察狀態不可接 VIP 或高單價';
+        }
+      }
+
+      if (!reason) {
+        results.push({ driverId: driverId, note: note });
+      } else {
+        results.push({ driverId: driverId, note: note, excluded: true, excludeReason: reason });
+      }
+    });
+    return results;
+  }
+
+  /* ──────────────────────────────────────────
+     階段 2.4 — 軟性評分 scoreDriverForOrderGroup()
+  ────────────────────────────────────────── */
+  function scoreDriverForOrderGroup(driverId, group, note, todayLoad) {
+    var score = 50; // 起始基礎分
+    var reasons = [];
+
+    note = note || {};
+
+    // 商家紅名單匹配 +30
+    var red = note.vendorRedList || [];
+    var redHit = group.vendors.filter(function(v){ return red.indexOf(v) !== -1; });
+    if (redHit.length) {
+      score += 30;
+      reasons.push({ type: 'plus', text: '商家紅名單加分 (+30)' });
+    }
+
+    // 準時度 ×4 (1-5 → 4-20)
+    if (note.punctuality) {
+      var p = note.punctuality * 4;
+      score += p;
+      reasons.push({ type: 'plus', text: '準時度 ' + note.punctuality + '★ (+' + p + ')' });
+    }
+
+    // 細心度 ×3
+    if (note.carefulness) {
+      var c = note.carefulness * 3;
+      score += c;
+      reasons.push({ type: 'plus', text: '細心度 ' + note.carefulness + '★ (+' + c + ')' });
+    }
+
+    // 併單能力 (多單時才加)
+    if (note.multiOrder && group.orders.length > 1) {
+      var mo = note.multiOrder * 3;
+      score += mo;
+      reasons.push({ type: 'plus', text: '併單能力 ' + note.multiOrder + '★ (+' + mo + ')' });
+    }
+
+    // 信任度等級
+    var tl = note.trustLevel || 'normal';
+    if (group.hasVIP && tl === 'vip') { score += 10; reasons.push({ type: 'plus', text: 'VIP 可派 (+10)' }); }
+    if (tl === 'highValue') { score += 15; reasons.push({ type: 'plus', text: '高單價可派 (+15)' }); }
+    if (tl === 'confidential') { score += 20; reasons.push({ type: 'plus', text: '機密可派 (+20)' }); }
+
+    // 臨時加單意願
+    var will = note.extraOrderWill || 'medium';
+    if (will === 'high') { score += 5; reasons.push({ type: 'plus', text: '臨時加單意願高 (+5)' }); }
+    if (will === 'low')  { score -= 5; reasons.push({ type: 'minus', text: '臨時加單意願低 (-5)' }); }
+
+    // 方向感 ×2
+    if (note.navigation) {
+      var nv = note.navigation * 2;
+      score += nv;
+      reasons.push({ type: 'plus', text: '方向感 ' + note.navigation + '★ (+' + nv + ')' });
+    }
+
+    // 今日已接訂單數 -3 per 單 (階段4 負載平衡強化)
+    var load = (todayLoad && todayLoad[driverId]) || 0;
+    if (load > 0) {
+      var penalty = load * 3;
+      score -= penalty;
+      reasons.push({ type: (load >= 3 ? 'minus' : 'plus'), text: '今日已接 ' + load + ' 單 (-' + penalty + ')' });
+    } else {
+      reasons.push({ type: 'plus', text: '今日尚未接單' });
+    }
+
+    // 內部標籤
+    var tag = note.internalTag || '';
+    if (tag === 'senior')   { score += 10; reasons.push({ type: 'plus', text: '資深外送員 (+10)' }); }
+    if (tag === 'reliable') { score += 15; reasons.push({ type: 'plus', text: '特派 (+15)' }); }
+    if (tag === 'observing'){ score -= 20; reasons.push({ type: 'minus', text: '待觀察 (-20)' }); }
+    if (tag === 'intern')   { score -= 10; reasons.push({ type: 'minus', text: '實習中 (-10)' }); }
+
+    return { score: Math.max(0, Math.min(score, 150)), reasons: reasons };
+  }
+
+  /* ──────────────────────────────────────────
+     階段 3 — 距離/時間估算 (簡化版，有 API key 再啟用真 Maps)
+  ────────────────────────────────────────── */
+  function estimateGroupDuration(group) {
+    // 簡化版：按商圈估算
+    var areaCount = group.areas.length;
+    var orderCount = group.orders.length;
+    // 基礎：取餐 10min + 每單 5min + 跨商圈 +15min
+    var mins = 10 + orderCount * 5 + (areaCount - 1) * 15;
+    return mins;
+  }
+
+  function estimateGroupDistance(group) {
+    // 簡化：每單 2km + 跨商圈 +5km
+    return group.orders.length * 2 + (group.areas.length - 1) * 5;
+  }
+
+  // 貪婪 TSP — 回傳重新排序後的訂單陣列
+  function greedyTSP(orders, startPoint) {
+    // 無座標時返回原陣列 (階段3 有 API 再啟用)
+    if (!orders || orders.length <= 1) return orders || [];
+    var withCoords = orders.filter(function(o){ return o.coords && o.coords.lat; });
+    if (withCoords.length < orders.length) return orders; // 缺座標
+    var remain = orders.slice();
+    var route = [];
+    var cur = startPoint || { lat: remain[0].coords.lat, lng: remain[0].coords.lng };
+    while (remain.length) {
+      var best = 0, bestD = Infinity;
+      for (var i = 0; i < remain.length; i++) {
+        var d = haversine(cur, remain[i].coords);
+        if (d < bestD) { bestD = d; best = i; }
+      }
+      cur = remain[best].coords;
+      route.push(remain.splice(best, 1)[0]);
+    }
+    return route;
+  }
+
+  function haversine(a, b) {
+    if (!a || !b) return Infinity;
+    var R = 6371;
+    var dLat = (b.lat - a.lat) * Math.PI / 180;
+    var dLng = (b.lng - a.lng) * Math.PI / 180;
+    var la1 = a.lat * Math.PI / 180;
+    var la2 = b.lat * Math.PI / 180;
+    var x = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.sin(dLng/2)*Math.sin(dLng/2)*Math.cos(la1)*Math.cos(la2);
+    return 2 * R * Math.atan2(Math.sqrt(x), Math.sqrt(1-x));
+  }
+
+  /* ──────────────────────────────────────────
+     階段 4.1 — 今日負載追蹤
+  ────────────────────────────────────────── */
+  function computeTodayLoad(fbTripsLocal, dateStr) {
+    var load = {};
+    if (!fbTripsLocal) return load;
+    Object.values(fbTripsLocal).forEach(function(trip){
+      if (trip.date !== dateStr) return;
+      var drv = trip.driver;
+      if (!drv) return;
+      load[drv] = (load[drv] || 0) + ((trip.orders || []).length || 0);
+    });
+    return load;
+  }
+
+  /* ──────────────────────────────────────────
+     階段 4.4 — CSV 匯出
+  ────────────────────────────────────────── */
+  function exportDispatchCSV(groupsWithDrivers, dateStr) {
+    var rows = [['日期','時段','外送員','訂單ID','客戶','地址','電話','袋數','溫度','金額','VIP','時間備註','送貨備註']];
+    groupsWithDrivers.forEach(function(gw){
+      var drv = gw.driver || '未指派';
+      var slot = gw.group.timeConstraint || '';
+      gw.group.orders.forEach(function(o){
+        rows.push([
+          dateStr, slot, drv, o.id || '', o.customer || '',
+          o.address || '', o.phone || '',
+          getOrderUnits(o), o.tempType || 'normal', o.total || 0,
+          o.isVIP ? 'Y' : 'N', o.timeNote || '', o.deliveryNote || ''
+        ]);
+      });
+    });
+    var csv = '\uFEFF' + rows.map(function(r){
+      return r.map(function(c){
+        var s = String(c == null ? '' : c).replace(/"/g, '""');
+        return /[,"\n]/.test(s) ? '"' + s + '"' : s;
+      }).join(',');
+    }).join('\n');
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = '派單結果_' + dateStr + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+  }
+
+  /* ──────────────────────────────────────────
+     階段 2.5 — 一鍵派單 UI (Modal 流程)
+  ────────────────────────────────────────── */
+  var dv2State = {
+    groups: [],
+    allDrivers: [],
+    driverNotes: {},
+    schedules: {},
+    todayLoad: {},
+    assignments: {}, // { groupIdx: driverId }
+    step: 1  // 1=合併建議, 2=選外送員, 3=統計
+  };
+
+  function openDv2Modal() {
+    if (typeof csIsStaff === 'function' && !csIsStaff()) {
+      if (typeof showToast === 'function') showToast('權限不足');
+      return;
+    }
+    var bk = document.getElementById('dv2-modal-bk');
+    bk.classList.add('on');
+    dv2State.step = 1;
+    dv2State.assignments = {};
+    prepareDv2Data().then(renderDv2Step1);
+  }
+
+  function closeDv2Modal() {
+    var bk = document.getElementById('dv2-modal-bk');
+    if (bk) bk.classList.remove('on');
+  }
+
+  async function prepareDv2Data() {
+    // 取訂單 (今日且未派)
+    var dateStr = (typeof dispatchDate !== 'undefined' && dispatchDate)
+      || new Date().toISOString().slice(0,10);
+
+    var allOrders = [];
+    try { allOrders = DB.getOrders() || []; } catch(e) {}
+    var todayOrders = allOrders.filter(function(o){ return o.date === dateStr; });
+
+    // 排除已派訂單
+    var tripsLocal = {};
+    try { tripsLocal = (typeof fbTrips !== 'undefined' && fbTrips) || await fbGet('/trips') || {}; } catch(e) {}
+    var dispatchedIds = new Set();
+    Object.values(tripsLocal).forEach(function(t){
+      (t.orders || []).forEach(function(o){ dispatchedIds.add(String(o.id)); });
+    });
+    var pending = todayOrders.filter(function(o){ return !dispatchedIds.has(String(o.id)); });
+
+    // 聚類
+    dv2State.groups = clusterOrders(pending);
+
+    // 載入外送員 + 標註
+    dv2State.allDrivers = (typeof getAvailableDrivers === 'function')
+      ? getAvailableDrivers()
+      : (typeof DRIVERS !== 'undefined' ? DRIVERS : []);
+
+    try { dv2State.driverNotes = await fbGet('/driverNotes') || {}; } catch(e) { dv2State.driverNotes = {}; }
+    try { dv2State.schedules  = await fbGet('/schedules')  || {}; } catch(e) { dv2State.schedules = {}; }
+    dv2State.todayLoad = computeTodayLoad(tripsLocal, dateStr);
+    dv2State.dateStr = dateStr;
+  }
+
+  function renderDv2Step1() {
+    var body = document.getElementById('dv2-mbody');
+    var foot = document.getElementById('dv2-mfoot');
+    document.getElementById('dv2-mtitle').textContent = '🚀 一鍵派單 — 步驟 1：訂單合併建議';
+
+    if (!dv2State.groups.length) {
+      body.innerHTML = '<div class="dv2-empty">🎉 今日無待派訂單</div>';
+      foot.innerHTML = '<button class="dv2-btn-cancel" id="dv2-btn-close">關閉</button>';
+      document.getElementById('dv2-btn-close').addEventListener('click', closeDv2Modal);
+      return;
+    }
+
+    var html = '<div class="dv2-help">💡 系統已依「溫度 / 商家 / 區域 / 時段 / 容量」智能合併。可手動調整分組。</div>';
+    html += '<div class="dv2-step-title">合併結果 (' + dv2State.groups.length + ' 組)</div>';
+
+    dv2State.groups.forEach(function(g, gi){
+      var tempTag = g.tempTypes[0];
+      var tempText = tempTag === 'cold' ? '❄️ 冷藏' : tempTag === 'hot' ? '🔥 熱食' : '📦 常溫';
+      var over = g.totalUnits > DV2_CONFIG.MAX_BAG_UNITS;
+      var vipClass = g.hasVIP ? ' vip' : '';
+
+      html += '<div class="dv2-group-card' + vipClass + '">';
+      html += '<div class="dv2-group-head">';
+      html += '<div class="dv2-group-ttl">組 ' + (gi+1) + ' · ' + g.orders.length + ' 單 · ' + g.totalUnits + ' 單位</div>';
+      html += '<div class="dv2-group-meta">';
+      html += '<span class="dv2-tag ' + tempTag + '">' + tempText + '</span>';
+      if (g.hasVIP) html += '<span class="dv2-tag vip">⭐ VIP</span>';
+      if (over) html += '<span class="dv2-tag over">⚠ 超載</span>';
+      html += '<span>🏪 ' + (g.vendors.length || 1) + '家</span>';
+      html += '<span>📍 ' + g.areas.join('、') + '</span>';
+      if (g.timeConstraint) html += '<span>🕐 ' + escHtml(g.timeConstraint) + '</span>';
+      html += '</div></div>';
+
+      g.orders.forEach(function(o, oi){
+        html += '<div class="dv2-order-mini">';
+        html += '<span class="oc-name">' + escHtml(o.customer || '未命名') + '</span>';
+        html += '<span class="oc-addr">' + escHtml(o.address || '') + '</span>';
+        html += '<span class="oc-bag">' + getOrderUnits(o) + '單位</span>';
+        if (gi > 0) html += '<button data-action="move-up" data-gi="' + gi + '" data-oi="' + oi + '" title="移至上一組">⬆</button>';
+        if (gi < dv2State.groups.length - 1) html += '<button data-action="move-down" data-gi="' + gi + '" data-oi="' + oi + '" title="移至下一組">⬇</button>';
+        html += '</div>';
+      });
+      html += '</div>';
+    });
+
+    body.innerHTML = html;
+    foot.innerHTML = '<button class="dv2-btn-cancel" id="dv2-btn-cancel">取消</button>' +
+                     '<button class="dv2-btn-next" id="dv2-btn-next">下一步：選外送員 →</button>';
+
+    document.getElementById('dv2-btn-cancel').addEventListener('click', closeDv2Modal);
+    document.getElementById('dv2-btn-next').addEventListener('click', goToStep2);
+
+    // 綁定移動按鈕
+    body.querySelectorAll('button[data-action]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var action = btn.getAttribute('data-action');
+        var gi = parseInt(btn.getAttribute('data-gi'), 10);
+        var oi = parseInt(btn.getAttribute('data-oi'), 10);
+        moveOrderBetweenGroups(gi, oi, action === 'move-up' ? -1 : 1);
+      });
+    });
+  }
+
+  function moveOrderBetweenGroups(gi, oi, delta) {
+    var fromG = dv2State.groups[gi];
+    var toIdx = gi + delta;
+    if (toIdx < 0 || toIdx >= dv2State.groups.length) return;
+    var toG = dv2State.groups[toIdx];
+    var order = fromG.orders.splice(oi, 1)[0];
+    toG.orders.push(order);
+    // 重算 group meta
+    dv2State.groups[gi] = makeGroup(fromG.orders, fromG.tempTypes[0]);
+    dv2State.groups[toIdx] = makeGroup(toG.orders, toG.tempTypes[0]);
+    // 過濾空 group
+    dv2State.groups = dv2State.groups.filter(function(g){ return g.orders.length > 0; });
+    renderDv2Step1();
+  }
+
+  function goToStep2() {
+    dv2State.step = 2;
+    renderDv2Step2();
+  }
+
+  function renderDv2Step2() {
+    var body = document.getElementById('dv2-mbody');
+    var foot = document.getElementById('dv2-mfoot');
+    document.getElementById('dv2-mtitle').textContent = '🚀 一鍵派單 — 步驟 2：選擇外送員';
+
+    var html = '<div class="dv2-help">💡 每組顯示 Top 3 推薦外送員。點擊卡片即選擇。可見評分理由。</div>';
+
+    dv2State.groups.forEach(function(g, gi){
+      var filtered = filterAvailableDrivers(g, dv2State.allDrivers, dv2State.driverNotes, dv2State.schedules, dv2State.todayLoad);
+      var available = filtered.filter(function(r){ return !r.excluded; });
+      var excluded = filtered.filter(function(r){ return r.excluded; });
+
+      var scored = available.map(function(r){
+        var s = scoreDriverForOrderGroup(r.driverId, g, r.note, dv2State.todayLoad);
+        return { driverId: r.driverId, score: s.score, reasons: s.reasons };
+      }).sort(function(a,b){ return b.score - a.score; });
+
+      var top3 = scored.slice(0, 3);
+
+      html += '<div class="dv2-group-card' + (g.hasVIP ? ' vip' : '') + '">';
+      html += '<div class="dv2-group-head">';
+      html += '<div class="dv2-group-ttl">組 ' + (gi+1) + ' · ' + g.orders.length + ' 單</div>';
+      html += '<div class="dv2-group-meta"><span>' + g.orders.map(function(o){return escHtml(o.customer||'');}).join('、') + '</span></div>';
+      html += '</div>';
+
+      if (!top3.length) {
+        html += '<div class="dv2-warn">⚠ 無符合條件的外送員' + (excluded.length ? '（已全部被硬性條件排除）' : '') + '</div>';
+      }
+
+      top3.forEach(function(d, di){
+        var selClass = (dv2State.assignments[gi] === d.driverId) ? ' selected' : '';
+        html += '<div class="dv2-driver-candidate' + selClass + '" data-gi="' + gi + '" data-driver="' + escHtml(d.driverId) + '">';
+        html += '<div class="dc-head">';
+        html += '<div class="dc-name">Top ' + (di+1) + '：' + escHtml(d.driverId) + '</div>';
+        html += '<div class="dc-score">' + Math.round(d.score) + ' 分</div>';
+        html += '</div><div class="dc-reasons">';
+        html += d.reasons.map(function(r){
+          var cls = r.type === 'minus' ? 'r-minus' : 'r-plus';
+          var ico = r.type === 'minus' ? '✕' : '✓';
+          return '<span class="' + cls + '">' + ico + ' ' + escHtml(r.text) + '</span>';
+        }).join(' &nbsp; ');
+        html += '</div></div>';
+      });
+
+      if (excluded.length) {
+        html += '<div style="font-size:11px;color:#9ca3af;margin-top:6px;">排除：' +
+                excluded.slice(0,5).map(function(r){ return escHtml(r.driverId) + '(' + escHtml(r.excludeReason) + ')'; }).join('、') +
+                '</div>';
+      }
+      html += '</div>';
+    });
+
+    body.innerHTML = html;
+    foot.innerHTML =
+      '<button class="dv2-btn-cancel" id="dv2-btn-back">← 上一步</button>' +
+      '<button class="dv2-btn-next" id="dv2-btn-next2">下一步：預覽統計 →</button>';
+
+    document.getElementById('dv2-btn-back').addEventListener('click', renderDv2Step1);
+    document.getElementById('dv2-btn-next2').addEventListener('click', goToStep3);
+
+    body.querySelectorAll('.dv2-driver-candidate').forEach(function(el){
+      el.addEventListener('click', function(){
+        var gi = parseInt(el.getAttribute('data-gi'), 10);
+        var drv = el.getAttribute('data-driver');
+        dv2State.assignments[gi] = drv;
+        renderDv2Step2();
+      });
+    });
+  }
+
+  function goToStep3() {
+    // 驗證：每組都有指派
+    var unassigned = [];
+    dv2State.groups.forEach(function(g, gi){
+      if (!dv2State.assignments[gi]) unassigned.push(gi+1);
+    });
+    if (unassigned.length) {
+      if (typeof showToast === 'function') showToast('請指派組 ' + unassigned.join('、'));
+      return;
+    }
+    dv2State.step = 3;
+    renderDv2Step3();
+  }
+
+  function renderDv2Step3() {
+    var body = document.getElementById('dv2-mbody');
+    var foot = document.getElementById('dv2-mfoot');
+    document.getElementById('dv2-mtitle').textContent = '🚀 一鍵派單 — 步驟 3：統計預覽';
+
+    var totalOrders = 0;
+    var totalUnits = 0;
+    var totalAmt = 0;
+    var totalMins = 0;
+    var totalKm = 0;
+    var driverSet = {};
+    var driverLoad = {};
+
+    dv2State.groups.forEach(function(g, gi){
+      totalOrders += g.orders.length;
+      totalUnits += g.totalUnits;
+      g.orders.forEach(function(o){ totalAmt += (o.total || 0); });
+      totalMins += estimateGroupDuration(g);
+      totalKm += estimateGroupDistance(g);
+      var drv = dv2State.assignments[gi];
+      if (drv) {
+        driverSet[drv] = true;
+        driverLoad[drv] = (driverLoad[drv] || 0) + g.orders.length;
+      }
+    });
+
+    var driverCount = Object.keys(driverSet).length;
+    var maxLoad = Math.max.apply(null, Object.values(driverLoad).concat([1]));
+
+    var html = '<div class="dv2-help">💡 確認無誤後點擊「確認派單」寫入系統，並可匯出 CSV。</div>';
+    html += '<div class="dv2-step-title">📊 派單統計</div>';
+    html += '<div class="dv2-stats">';
+    html += '<div class="dv2-stat-box"><div class="sb-num">' + totalOrders + '</div><div class="sb-lbl">總訂單數</div></div>';
+    html += '<div class="dv2-stat-box"><div class="sb-num">' + dv2State.groups.length + '</div><div class="sb-lbl">趟次數</div></div>';
+    html += '<div class="dv2-stat-box"><div class="sb-num">' + driverCount + '</div><div class="sb-lbl">涉及外送員</div></div>';
+    html += '<div class="dv2-stat-box"><div class="sb-num">' + totalUnits + '</div><div class="sb-lbl">總袋數</div></div>';
+    html += '<div class="dv2-stat-box"><div class="sb-num">' + totalKm.toFixed(1) + ' km</div><div class="sb-lbl">預估里程</div></div>';
+    html += '<div class="dv2-stat-box"><div class="sb-num">' + totalMins + ' 分</div><div class="sb-lbl">預估時間</div></div>';
+    html += '<div class="dv2-stat-box"><div class="sb-num">$' + totalAmt.toLocaleString() + '</div><div class="sb-lbl">總金額</div></div>';
+    html += '</div>';
+
+    html += '<div class="dv2-step-title">⚖️ 負載分布</div>';
+    html += '<div class="dv2-load-bar">';
+    Object.keys(driverLoad).forEach(function(drv){
+      var pct = (driverLoad[drv] / maxLoad) * 100;
+      html += '<div class="dv2-load-row">';
+      html += '<div class="lr-name">' + escHtml(drv) + '</div>';
+      html += '<div class="lr-bar"><div class="lr-fill" style="width:' + pct + '%"></div></div>';
+      html += '<div class="lr-num">' + driverLoad[drv] + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+
+    html += '<div class="dv2-step-title">📋 派單詳情</div>';
+    dv2State.groups.forEach(function(g, gi){
+      var drv = dv2State.assignments[gi] || '未指派';
+      html += '<div class="dv2-group-card">';
+      html += '<div class="dv2-group-head">';
+      html += '<div class="dv2-group-ttl">組 ' + (gi+1) + ' → 🛵 ' + escHtml(drv) + '</div>';
+      html += '<div class="dv2-group-meta"><span>' + g.orders.length + ' 單 · ' + g.totalUnits + ' 單位</span></div>';
+      html += '</div>';
+      g.orders.forEach(function(o){
+        html += '<div class="dv2-order-mini"><span class="oc-name">' + escHtml(o.customer||'') + '</span>' +
+                '<span class="oc-addr">' + escHtml(o.address||'') + '</span>' +
+                '<span class="oc-bag">$' + (o.total||0).toLocaleString() + '</span></div>';
+      });
+      html += '</div>';
+    });
+
+    body.innerHTML = html;
+    foot.innerHTML =
+      '<button class="dv2-btn-cancel" id="dv2-btn-back3">← 上一步</button>' +
+      '<button class="dv2-btn-cancel" id="dv2-btn-csv">📥 匯出 CSV</button>' +
+      '<button class="dv2-btn-confirm" id="dv2-btn-confirm">✅ 確認派單</button>';
+
+    document.getElementById('dv2-btn-back3').addEventListener('click', renderDv2Step2);
+    document.getElementById('dv2-btn-csv').addEventListener('click', function(){
+      var gw = dv2State.groups.map(function(g, gi){ return { group: g, driver: dv2State.assignments[gi] }; });
+      exportDispatchCSV(gw, dv2State.dateStr);
+    });
+    document.getElementById('dv2-btn-confirm').addEventListener('click', confirmDv2Dispatch);
+  }
+
+  async function confirmDv2Dispatch() {
+    var btn = document.getElementById('dv2-btn-confirm');
+    if (btn) { btn.disabled = true; btn.textContent = '派單中…'; }
+    var ok = 0, fail = 0;
+    for (var gi = 0; gi < dv2State.groups.length; gi++) {
+      var g = dv2State.groups[gi];
+      var drv = dv2State.assignments[gi];
+      if (!drv) { fail++; continue; }
+      var slot = g.timeConstraint || (g.orders[0] && g.orders[0].timeslot) || '';
+      var depart = (typeof calcDepartTime === 'function') ? calcDepartTime(slot) : '';
+      var tripData = {
+        date: dv2State.dateStr,
+        timeslot: slot,
+        departTime: depart,
+        driver: drv,
+        status: 'dispatched',
+        createdAt: new Date().toISOString(),
+        autoDispatched: true,
+        orders: g.orders.map(function(o){
+          return {
+            id: String(o.id), customer: o.customer||'', phone: o.phone||'',
+            phone2: o.phone2||'', address: o.address||'', total: o.total||0,
+            payment: o.payment||'', payType: o.payType||'cash', note: o.note||'',
+            items: o.items||[],
+            bags: (typeof calcVendorBags === 'function') ? calcVendorBags(o) : [],
+            totalBags: (typeof calcOrderBags === 'function') ? calcOrderBags(o) : 0,
+            confirmMsg: o.confirmMsg||'',
+            tempType: o.tempType||'normal',
+            isVIP: !!o.isVIP,
+            timeNote: o.timeNote||'',
+            deliveryNote: o.deliveryNote||'',
+            paymentStatus: o.paymentStatus||'unpaid',
+            baggageUnits: getOrderUnits(o)
+          };
+        })
+      };
+      try {
+        await fbPush('/trips', tripData);
+        ok++;
+      } catch(e) {
+        console.error('[DV2] 派單失敗', e);
+        fail++;
+      }
+    }
+    try { if (typeof fbTrips !== 'undefined') { fbTrips = await fbGet('/trips') || {}; } } catch(e) {}
+    if (typeof showToast === 'function') showToast('✅ 完成 ' + ok + ' 組派單' + (fail ? ' (失敗 ' + fail + ')' : ''));
+    closeDv2Modal();
+    if (typeof renderDispatchContent === 'function') renderDispatchContent();
+  }
+
+  function escHtml(s) {
+    if (typeof esc === 'function') return esc(s);
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+
+  /* ──────────────────────────────────────────
+     注入按鈕 & 初始化
+  ────────────────────────────────────────── */
+  function injectDv2Button() {
+    var page = document.getElementById('page-dispatch');
+    if (!page) return;
+    if (document.getElementById('dv2-btn-main')) return;
+    // 若不是 staff 則不顯示
+    if (typeof csIsStaff === 'function' && !csIsStaff()) return;
+
+    var btn = document.createElement('button');
+    btn.id = 'dv2-btn-main';
+    btn.className = 'dv2-btn-main';
+    btn.textContent = '🚀 一鍵派單（AI 智能合併 + 外送員推薦）';
+    btn.addEventListener('click', openDv2Modal);
+
+    // 插入在 sync-status 之後
+    var syncBar = page.querySelector('.sync-status');
+    if (syncBar && syncBar.nextSibling) {
+      page.insertBefore(btn, syncBar.nextSibling);
+    } else {
+      page.insertBefore(btn, page.firstChild);
+    }
+  }
+
+  // Modal 背景點擊關閉
+  document.addEventListener('DOMContentLoaded', function(){
+    injectDv2Button();
+    var bk = document.getElementById('dv2-modal-bk');
+    if (bk) {
+      bk.addEventListener('click', function(e){
+        if (e.target === bk) closeDv2Modal();
+      });
+    }
+    var x = document.getElementById('dv2-mclose');
+    if (x) x.addEventListener('click', closeDv2Modal);
+  });
+
+  // 對外暴露 (debug 用)
+  window.DV2 = {
+    clusterOrders: clusterOrders,
+    filterAvailableDrivers: filterAvailableDrivers,
+    scoreDriverForOrderGroup: scoreDriverForOrderGroup,
+    estimateGroupDuration: estimateGroupDuration,
+    estimateGroupDistance: estimateGroupDistance,
+    computeTodayLoad: computeTodayLoad,
+    exportDispatchCSV: exportDispatchCSV,
+    openModal: openDv2Modal,
+    CONFIG: DV2_CONFIG
+  };
+})();
+</script>
+
 <!-- ── PWA: Service Worker + FCM 推播通知 ── -->
 <script>
 // Service Worker 註冊
