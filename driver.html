@@ -1119,6 +1119,10 @@
                 <label for="passwordInput">密碼</label>
                 <input type="password" id="passwordInput" placeholder="輸入密碼">
             </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                <input type="checkbox" id="rememberMe" checked style="width:16px;height:16px;cursor:pointer;accent-color:#155f3a;">
+                <label for="rememberMe" style="font-size:13px;color:#6b7280;cursor:pointer;margin:0;user-select:none;">記住我（下次自動登入）</label>
+            </div>
             <button class="login-button" onclick="handleLogin()">登入</button>
             <div id="loginError" class="error-msg"></div>
         </div>
@@ -1555,7 +1559,12 @@
             }
 
             state.driver = driver;
-            localStorage.setItem('driver', driver);
+            const rememberMe = document.getElementById('rememberMe');
+            if (rememberMe && rememberMe.checked) {
+                localStorage.setItem('driver', driver);
+            } else {
+                localStorage.removeItem('driver');
+            }
             showLoginPage(false);
             initializeApp();
         }

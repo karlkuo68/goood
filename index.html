@@ -554,7 +554,35 @@ textarea { resize: vertical; min-height: 60px; }
 </style>
 </head>
 <body>
-<div class="app">
+
+<!-- ── 登入覆蓋層 ── -->
+<div id="loginOverlay" style="display:flex;position:fixed;inset:0;background:#f4f5f0;z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:16px;padding:32px 24px;width:90%;max-width:360px;box-shadow:0 4px 24px rgba(0,0,0,.12);">
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="width:56px;height:56px;background:#155f3a;border-radius:14px;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:16px;line-height:1.2;margin:0 auto 12px;">好<br>糰</div>
+      <div style="font-size:20px;font-weight:700;color:#111827;">好糰訂單管理系統</div>
+      <div style="font-size:12px;color:#6b7280;margin-top:4px;">客服管理端</div>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px;">管理密碼</label>
+      <input type="password" id="adminPasswordInput" placeholder="輸入管理密碼" style="width:100%;padding:10px 14px;border:1px solid #e5e7eb;border-radius:8px;font-size:15px;font-family:inherit;outline:none;box-sizing:border-box;" onkeydown="if(event.key==='Enter')handleAdminLogin()">
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+      <input type="checkbox" id="adminRememberMe" checked style="width:16px;height:16px;cursor:pointer;accent-color:#155f3a;">
+      <label for="adminRememberMe" style="font-size:13px;color:#6b7280;cursor:pointer;user-select:none;">記住我（下次自動登入）</label>
+    </div>
+    <button onclick="handleAdminLogin()" style="width:100%;padding:12px;background:#155f3a;color:white;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;">登入</button>
+    <div id="adminLoginError" style="color:#dc2626;font-size:13px;text-align:center;margin-top:10px;min-height:18px;"></div>
+  </div>
+</div>
+<!-- 立即檢查是否已登入（避免閃爍） -->
+<script>
+  if (localStorage.getItem('goood_admin_auth') === '1') {
+    document.getElementById('loginOverlay').style.display = 'none';
+  }
+</script>
+
+<div class="app" id="mainApp" style="display:none">
 
 <!-- 手機頂部 header -->
 <header class="topbar">
@@ -564,6 +592,7 @@ textarea { resize: vertical; min-height: 60px; }
     <div class="topbar-sub">訂單管理系統 <span id="ver" style="font-size:9px;opacity:.6">v20260318</span></div>
   </div>
   <a href="driver.html" style="color:rgba(255,255,255,.85);font-size:11px;padding:5px 12px;border:1px solid rgba(255,255,255,.35);border-radius:6px;text-decoration:none;margin-left:auto;white-space:nowrap;flex-shrink:0">🛵 外送員頁面</a>
+  <button onclick="handleAdminLogout()" style="color:rgba(255,255,255,.75);font-size:11px;padding:5px 10px;border:1px solid rgba(255,255,255,.3);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;flex-shrink:0;white-space:nowrap;">登出</button>
 </header>
 
 <!-- 桌機左側 sidebar -->
@@ -589,6 +618,9 @@ textarea { resize: vertical; min-height: 60px; }
   </button>
   <button class="nav-btn" data-page="dashboard" onclick="switchPage('dashboard',this)">
     <span class="nav-icon">📊</span>儀表板
+  </button>
+  <button class="nav-btn" onclick="handleAdminLogout()" style="margin-top:auto;color:rgba(255,255,255,.6);">
+    <span class="nav-icon">🚪</span>登出
   </button>
 </nav>
 
@@ -5414,6 +5446,49 @@ function showInstallBanner() {
 window.addEventListener('load', () => {
   // 延遲 3 秒再請求推播權限，避免干擾使用者
   setTimeout(initPushNotifications, 3000);
+});
+</script>
+
+<!-- ── 自動登入記憶系統 ── -->
+<script>
+const ADMIN_PASSWORD = '0000';
+const ADMIN_AUTH_KEY = 'goood_admin_auth';
+
+function handleAdminLogin() {
+  const input = document.getElementById('adminPasswordInput');
+  const error = document.getElementById('adminLoginError');
+  const remember = document.getElementById('adminRememberMe');
+  error.textContent = '';
+  if (!input.value) { error.textContent = '請輸入密碼'; return; }
+  if (input.value !== ADMIN_PASSWORD) {
+    error.textContent = '密碼錯誤';
+    input.value = '';
+    input.focus();
+    return;
+  }
+  if (remember && remember.checked) {
+    localStorage.setItem(ADMIN_AUTH_KEY, '1');
+  }
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('mainApp').style.display = '';
+}
+
+function handleAdminLogout() {
+  if (confirm('確認登出？')) {
+    localStorage.removeItem(ADMIN_AUTH_KEY);
+    document.getElementById('loginOverlay').style.display = 'flex';
+    document.getElementById('mainApp').style.display = 'none';
+    const input = document.getElementById('adminPasswordInput');
+    if (input) input.value = '';
+  }
+}
+
+// DOMContentLoaded：已登入則直接顯示主畫面
+window.addEventListener('DOMContentLoaded', () => {
+  if (localStorage.getItem(ADMIN_AUTH_KEY) === '1') {
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('mainApp').style.display = '';
+  }
 });
 </script>
 </body>
