@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-TW"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>一鍵派單測試 — 注入測試訂單</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: 'Noto Sans TC', sans-serif; max-width: 640px; margin: 30px auto; padding: 16px; background: #f8f9fa; color: #1a1a2e; }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  .sub { font-size: 13px; color: #666; margin-bottom: 20px; }
+  .card { background: white; border-radius: 14px; padding: 18px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .card h3 { margin: 0 0 10px; font-size: 15px; }
+  button { padding: 12px 24px; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; color: white; transition: all 0.2s; font-family: inherit; }
+  button:active { transform: scale(0.96); }
+  .btn-green { background: linear-gradient(135deg, #1a7a4a, #22c55e); }
+  .btn-orange { background: linear-gradient(135deg, #ea580c, #f97316); }
+  .btn-blue { background: linear-gradient(135deg, #2563eb, #60a5fa); }
+  .btn-gray { background: #999; }
+  .log { background: #1a1a2e; color: #0f0; font-family: monospace; padding: 14px; border-radius: 10px; max-height: 50vh; overflow-y: auto; font-size: 12px; line-height: 1.5; white-space: pre-wrap; margin-top: 12px; }
+  .ok { color: #22c55e; } .info { color: #60a5fa; } .warn { color: #f59e0b; } .err { color: #ef4444; }
+  .order-preview { font-size: 12px; background: #f5f5f5; border-radius: 8px; padding: 10px; margin: 6px 0; border-left: 3px solid #22c55e; }
+  .order-preview.vip { border-left-color: #f59e0b; }
+  .order-preview.cold { border-left-color: #3b82f6; }
+  .order-preview.hot { border-left-color: #ef4444; }
+  .tag { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 4px; font-weight: 600; margin-left: 4px; }
+  .tag-vip { background: #fef3c7; color: #92400e; }
+  .tag-cold { background: #dbeafe; color: #1e40af; }
+  .tag-hot { background: #fee2e2; color: #991b1b; }
+  .count { font-size: 28px; font-weight: 700; color: #22c55e; }
+  .steps { font-size: 13px; margin-top: 16px; line-height: 2; }
+  .steps b { color: #1a7a4a; }
+</style>
+</head><body>
+
+<h1>一鍵派單測試工具</h1>
+<p class="sub">注入多樣化測試訂單到 localStorage，然後跳轉到客服系統測試自動派單</p>
+
+<div class="card">
+  <h3>目前狀態</h3>
+  <div>今日訂單：<span class="count" id="orderCount">0</span> 筆</div>
+  <div style="font-size:12px;color:#666;margin-top:4px" id="orderSummary"></div>
+</div>
+
+<div class="card">
+  <h3>注入測試訂單</h3>
+  <p style="font-size:13px;color:#666;margin-bottom:12px">產生 15 筆涵蓋各種情境的訂單：不同商圈、溫層、VIP、時段、大小單</p>
+  <button class="btn-green" onclick="injectOrders()" style="width:100%">注入 15 筆測試訂單</button>
+</div>
+
+<div class="card">
+  <h3>清除 & 重置</h3>
+  <div style="display:flex;gap:8px">
+    <button class="btn-orange" onclick="clearOrders()" style="flex:1">清除所有訂單</button>
+    <button class="btn-gray" onclick="clearTrips()" style="flex:1">清除派單紀錄</button>
+  </div>
+</div>
+
+<div class="card">
+  <h3>前往測試</h3>
+  <button class="btn-blue" onclick="goDispatch()" style="width:100%">開啟客服系統 → 派單頁</button>
+  <div class="steps">
+    <b>步驟：</b><br>
+    1. 先按上面「注入 15 筆測試訂單」<br>
+    2. 按「開啟客服系統」<br>
+    3. 登入（密碼 123123）<br>
+    4. 點左側選單「派單」<br>
+    5. 點「🚀 一鍵派單」按鈕<br>
+    6. 系統自動聚類 → 推薦外送員 → 確認派出
+  </div>
+</div>
+
+<div class="log" id="log" style="display:none"></div>
+<div id="preview"></div>
+
+<script>
+var today = new Date().toISOString().slice(0,10);
+var logEl = document.getElementById('log');
+
+function log(msg, cls) {
+  logEl.style.display = 'block';
+  var s = document.createElement('span'); s.className = cls||''; s.textContent = msg+'\n';
+  logEl.appendChild(s); logEl.scrollTop = logEl.scrollHeight;
+}
+
+function refreshCount() {
+  var orders = JSON.parse(localStorage.getItem('goood_orders') || '[]');
+  var todayOrders = orders.filter(function(o){ return o.date === today; });
+  document.getElementById('orderCount').textContent = todayOrders.length;
+
+  if (todayOrders.length) {
+    var vendors = {};
+    todayOrders.forEach(function(o){
+      (o.items||[]).forEach(function(i){ vendors[i.vendorId || '?'] = (vendors[i.vendorId || '?']||0)+1; });
+    });
+    var vip = todayOrders.filter(function(o){ return o.isVIP; }).length;
+    var cold = todayOrders.filter(function(o){ return o.tempType==='cold'; }).length;
+    var hot = todayOrders.filter(function(o){ return o.tempType==='hot'; }).length;
+    var total = todayOrders.reduce(function(s,o){ return s+(o.total||0); },0);
+    var txt = '總額 $' + total;
+    if (vip) txt += ' | VIP ' + vip + '筆';
+    if (cold) txt += ' | 冷藏 ' + cold + '筆';
+    if (hot) txt += ' | 熱食 ' + hot + '筆';
+    document.getElementById('orderSummary').textContent = txt;
+  } else {
+    document.getElementById('orderSummary').textContent = '尚無訂單';
+  }
+}
+
+function injectOrders() {
+  var now = Date.now();
+  var orders = JSON.parse(localStorage.getItem('goood_orders') || '[]');
+
+  var testOrders = [
+    // ── 東南商圈・午餐時段 ──
+    { id:now+1, date:today, timeslot:'12:00-12:30', customer:'陳美惠', phone:'0912-111-111', phone2:'只有一支',
+      address:'新竹市東區東南街50號', payment:'transfer', payType:'transfer', transfer:'末12345',
+      taxid:'', note:'門口放地上即可', driver:'', timeNote:'', baggageUnits:2, tempType:'normal',
+      paymentStatus:'unpaid', deliveryNote:'', isVIP:false,
+      items:[{name:'鵲幸紅豆',qty:3,price:25,opts:null,vendorId:'v_qe'},{name:'香草珍珠',qty:2,price:30,opts:null,vendorId:'v_qe'}],
+      total:135, confirmMsg:'', createdAt:new Date().toISOString() },
+
+    { id:now+2, date:today, timeslot:'12:00-12:30', customer:'林志明', phone:'0923-222-222', phone2:'只有一支',
+      address:'新竹市東區光復路一段101號', payment:'cash', payType:'cash', transfer:'',
+      taxid:'', note:'', driver:'', timeNote:'', baggageUnits:1, tempType:'normal',
+      paymentStatus:'unpaid', deliveryNote:'管理員代收', isVIP:false,
+      items:[{name:'起司薯薯',qty:1,price:35,opts:null,vendorId:'v_qe'},{name:'熔岩可可',qty:1,price:30,opts:null,vendorId:'v_qe'}],
+      total:65, confirmMsg:'', createdAt:new Date().toISOString() },
+
+    { id:now+3, date:today, timeslot:'12:00-12:30', customer:'張家豪', phone:'0934-333-333', phone2:'只有一支',
+      address:'新竹市東區東南街88號3F', payment:'transfer', payType:'transfer', transfer:'末67890',
+      taxid:'', note:'飲料要少冰', driver:'', timeNote:'', baggageUnits:1, tempType:'cold',
+      paymentStatus:'paid', deliveryNote:'', isVIP:false,
+      items:[{name:'翡翠檸檬',qty:2,price:45,opts:'少冰半糖',vendorId:'v_yl'},{name:'珍珠奶茶',qty:1,price:55,opts:'正常冰全糖+珍珠',vendorId:'v_yl'}],
+      total:145, confirmMsg:'', createdAt:new Date().toISOString() },
+
+    // ── 東南商圈・下午時段 ──
+    { id:now+4, date:today, timeslot:'14:00-14:30', customer:'VIP王董', phone:'0945-444-444', phone2:'0955-444-445',
+      address:'新竹市東區民族路168號 王董辦公室', payment:'transfer', payType:'transfer', transfer:'末11111',
+      taxid:'12345678', note:'VIP客戶，務必準時！包裝要精美', driver:'', timeNote:'14:00前一定要到', baggageUnits:4, tempType:'normal',
+      paymentStatus:'paid', deliveryNote:'交給秘書李小姐', isVIP:true,
+      items:[{name:'流心花生',qty:5,price:40,opts:null,vendorId:'v_qe'},{name:'抹茶麻糬',qty:5,price:30,opts:null,vendorId:'v_qe'},{name:'黑糖麻糬',qty:5,price:30,opts:null,vendorId:'v_qe'}],
+      total:500, confirmMsg:'', createdAt:new Date().toISOString() },
+
+    { id:now+5, date:today, timeslot:'14:00-14:30', customer:'吳淑芬', phone:'0956-555-555', phone2:'只有一支',
+      address:'新竹市東區東南街120號', payment:'cash', payType:'cash', transfer:'',
+      taxid:'', note:'', driver:'', timeNote:'', baggageUnits:1, tempType:'hot',
+      paymentStatus:'unpaid', deliveryNote:'', isVIP:false,
+      items:[{name:'經典越南麵包',qty:2,price:60,opts:null,vendorId:'v_vn'},{name:'特製豬肉麵包',qty:1,price:70,opts:null,vendorId:'v_vn'}],
+      total:190, confirmMsg:'', createdAt:new Date().toISOString() },
+
+    { id:now+6, date:today, timeslot:'14:30-15:00', customer:'黃小萍', phone:'0967-666-666', phone2:'只有一支',
+      address:'新竹市東區光復路二段200號', payment:'transfer', payType:'transfer', transfer:'末22222',
+      taxid:'', note:'', driver:'', timeNote:'', baggageUnits:1, tempType:'normal',
+      paymentStatus:'unpaid', deliveryNote:'', isVIP:false,
+      items:[{name:'米米香原味飯糰',qty:3,price:35,opts:null,vendorId:'v_mm'}],
+      total:105, confirmMsg:'', createdAt:new Date().toISOString() },
+
+    // ── 湳雅商圈 ──
+    { id:now+7, date:today, timeslot:'12:30-13:00', customer:'趙大偉', phone:'0978-777-777', phone2:'只有一支',
+      address:'新竹市北區湳雅街72號', payment:'cash', payType:'cash', transfer:'',
+      taxid:'', note:'湳雅那邊的', driver:'', timeNote:'', baggageUnits:2, tempType:'cold',
+      paymentStatus:'unpaid', deliveryNote:'', isVIP:false,
+      items:[{name:'招牌冰品',qty:3,price:50,opts:'芒果+紅豆+珍珠',vendorId:'v_ah'},{name:'綜合剉冰',qty:2,price:45,opts:null,vendorId:'v_ah'}],
+      total:240, confirmMsg:'', createdAt:new Date().toISOString() },
+
+    { id:now+8, date:today, timeslot:'12:30-13:00', customer:'孫美玲', phone:'0989-888-888', phone2:'只有一支',
+      address:'新竹市北區中正路55號', payment:'transfer', payType:'transfer', transfer:'末33333',
+      taxid:'', note:'', driver:'', timeNote:'', baggageUnits:1, tempType:'normal',
+      paymentStatus:'paid', deliveryNote:'', isVIP:false,
+      items:[{name:'經典飯糰',qty:4,price:40,opts:null,vendorId:'v_yf'}],
+      total:160, confirmMsg:'', createdAt:new Date().toISOString() },
+
+    // ── 竹北商圈 ──
+    { id:now+9, date:today, timeslot:'13:00-13:30', customer:'周建國', phone:'0911-999-999', phone2:'只有一支',
+      address:'竹北市福興路100號', payment:'cash', payType:'cash', transfer:'',
+      taxid:'', note:'竹北的單', driver:'', timeNote:'', baggageUnits:3, tempType:'normal',
+      paymentStatus:'unpaid', deliveryNote:'', isVIP:false,
+      items:[{name:'鵲幸紅豆',qty:5,price:25,opts:null,vendorId:'v_qb'},{name:'香草珍珠',qty:5,price:30,opts:null,vendorId:'v_qb'}],
+      total:275, confirmMsg:'', createdAt:new Date().toISOString() },
+
+    { id:now+10, date:today, timeslot:'13:00-13:30', customer:'VIP許總', phone:'0922-000-000', phone2:'0933-000-001',
+      address:'竹北市嘉興路200號 許總公司', payment:'transfer', payType:'transfer', transfer:'末44444',
+      taxid:'87654321', note:'VIP大單，要分袋包裝', driver:'', timeNote:'', baggageUnits:6, tempType:'normal',
+      paymentStatus:'paid', deliveryNote:'VIP客戶，交給總機', isVIP:true,
+      items:[{name:'鵲幸紅豆',qty:10,price:25,opts:null,vendorId:'v_qb'},{name:'起司薯薯',qty:10,price:35,opts:null,vendorId:'v_qb'},{name:'流心花生',qty:5,price:40,opts:null,vendorId:'v_qb'}],
+      total:800, confirmMsg:'', createdAt:new Date().toISOString() },
+
+    // ── 跨商圈大單 ──
+    { id:now+11, date:today, timeslot:'15:00-15:30', customer:'劉雅琪', phone:'0944-111-222', phone2:'只有一支',
+      address:'新竹市東區食品路88號', payment:'cash', payType:'cash', transfer:'',
+      taxid:'', note:'公司下午茶，量大', driver:'', timeNote:'希望提早5分鐘', baggageUnits:5, tempType:'normal',
+      paymentStatus:'unpaid', deliveryNote:'', isVIP:false,
+      items:[{name:'鵲幸紅豆',qty:8,price:25,opts:null,vendorId:'v_qe'},{name:'翡翠檸檬',qty:6,price:45,opts:'去冰半糖',vendorId:'v_yl'},{name:'米米香原味飯糰',qty:4,price:35,opts:null,vendorId:'v_mm'}],
+      total:610, confirmMsg:'', createdAt:new Date().toISOString() },
+
+    // ── 熱食專車 ──
+    { id:now+12, date:today, timeslot:'12:00-12:30', customer:'蔡宗翰', phone:'0955-333-444', phone2:'只有一支',
+      address:'新竹市東區東南街200號', payment:'cash', payType:'cash', transfer:'',
+      taxid:'', note:'熱的要趕快送！', driver:'', timeNote:'要快', baggageUnits:2, tempType:'hot',
+      paymentStatus:'unpaid', deliveryNote:'', isVIP:false,
+      items:[{name:'鐵板牛肉飯',qty:2,price:85,opts:null,vendorId:'v_te'},{name:'雞腿便當',qty:1,price:80,opts:null,vendorId:'v_te'}],
+      total:250, confirmMsg:'', createdAt:new Date().toISOString() },
+
+    { id:now+13, date:today, timeslot:'12:00-12:30', customer:'許志豪', phone:'0966-555-666', phone2:'只有一支',
+      address:'新竹市東區光復路一段50號', payment:'transfer', payType:'transfer', transfer:'末55555',
+      taxid:'', note:'', driver:'', timeNote:'', baggageUnits:1, tempType:'hot',
+      paymentStatus:'paid', deliveryNote:'', isVIP:false,
+      items:[{name:'排骨便當',qty:1,price:75,opts:null,vendorId:'v_te'},{name:'炒飯',qty:1,price:60,opts:null,vendorId:'v_te'}],
+      total:135, confirmMsg:'', createdAt:new Date().toISOString() },
+
+    // ── 純冷藏飲料大單 ──
+    { id:now+14, date:today, timeslot:'14:00-14:30', customer:'鄭曉菁', phone:'0977-777-888', phone2:'只有一支',
+      address:'新竹市東區建功路66號', payment:'transfer', payType:'transfer', transfer:'末66666',
+      taxid:'', note:'全部要冰的，保冷袋', driver:'', timeNote:'', baggageUnits:3, tempType:'cold',
+      paymentStatus:'unpaid', deliveryNote:'要保冷', isVIP:false,
+      items:[{name:'珍珠奶茶',qty:4,price:55,opts:'少冰半糖+珍珠',vendorId:'v_yl'},{name:'翡翠檸檬',qty:4,price:45,opts:'去冰微糖',vendorId:'v_yl'},{name:'黑糖鮮奶',qty:2,price:60,opts:'去冰',vendorId:'v_yl'}],
+      total:520, confirmMsg:'', createdAt:new Date().toISOString() },
+
+    // ── 小單・步行可送 ──
+    { id:now+15, date:today, timeslot:'11:30-12:00', customer:'方怡君', phone:'0988-999-000', phone2:'只有一支',
+      address:'新竹市東區東南街116號', payment:'cash', payType:'cash', transfer:'',
+      taxid:'', note:'離店很近', driver:'', timeNote:'', baggageUnits:1, tempType:'normal',
+      paymentStatus:'unpaid', deliveryNote:'', isVIP:false,
+      items:[{name:'鵲幸紅豆',qty:1,price:25,opts:null,vendorId:'v_qe'}],
+      total:25, confirmMsg:'', createdAt:new Date().toISOString() }
+  ];
+
+  orders = orders.concat(testOrders);
+  localStorage.setItem('goood_orders', JSON.stringify(orders));
+
+  log('═══ 注入 15 筆測試訂單 ═══', 'info');
+  log('日期: ' + today, 'warn');
+  testOrders.forEach(function(o, i) {
+    var tags = '';
+    if (o.isVIP) tags += ' [VIP]';
+    if (o.tempType === 'cold') tags += ' [冷藏]';
+    if (o.tempType === 'hot') tags += ' [熱食]';
+    var vendorIds = o.items.map(function(it){ return it.vendorId; }).filter(function(v,i,a){ return a.indexOf(v)===i; });
+    log('  #' + (i+1) + ' ' + o.customer + ' $' + o.total + ' ' + o.timeslot + ' ' + vendorIds.join('+') + tags, o.isVIP?'warn':o.tempType==='cold'?'info':o.tempType==='hot'?'err':'ok');
+  });
+  log('\n預期聚類結果:', 'info');
+  log('  • 東南 12:00 常溫 (鵲幸×2) → 合併一趟', 'ok');
+  log('  • 東南 12:00 熱食 (鐵三角×2) → 熱食專車', 'err');
+  log('  • 東南 12:00 冷藏 (玉蘭×1) → 冷藏車', 'info');
+  log('  • 湳雅 12:30 混合 (阿惠冷+一口丹常) → 分冷/常', 'warn');
+  log('  • 東南 14:00 VIP (鵲幸大單) → VIP專車', 'warn');
+  log('  • 東南 14:00 熱食 (越南麵包) → 熱食', 'err');
+  log('  • 東南 14:00 冷藏 (玉蘭飲料大單) → 冷藏', 'info');
+  log('  • 竹北 13:00 常溫+VIP → 分開', 'ok');
+  log('  • 東南 14:30~15:30 零散 → 各自或合併', 'ok');
+  log('  • 東南 11:30 小單 → 步行可達', 'ok');
+  log('\n✓ 完成！現在可以前往客服系統測試派單。', 'ok');
+
+  refreshCount();
+  showPreview(testOrders);
+}
+
+function showPreview(orders) {
+  var el = document.getElementById('preview');
+  el.innerHTML = '<div class="card"><h3>訂單預覽</h3>' + orders.map(function(o){
+    var cls = 'order-preview';
+    if (o.isVIP) cls += ' vip';
+    else if (o.tempType==='cold') cls += ' cold';
+    else if (o.tempType==='hot') cls += ' hot';
+    var tags = '';
+    if (o.isVIP) tags += '<span class="tag tag-vip">VIP</span>';
+    if (o.tempType==='cold') tags += '<span class="tag tag-cold">冷藏</span>';
+    if (o.tempType==='hot') tags += '<span class="tag tag-hot">熱食</span>';
+    return '<div class="'+cls+'"><b>'+o.customer+'</b> $'+o.total+' '+o.timeslot+tags+'<br><span style="color:#666">'+o.address+'</span><br><span style="color:#888">'+o.items.map(function(i){return i.name+'×'+i.qty;}).join('、')+'</span></div>';
+  }).join('') + '</div>';
+}
+
+function clearOrders() {
+  localStorage.setItem('goood_orders', '[]');
+  log('已清除所有訂單', 'warn');
+  refreshCount();
+  document.getElementById('preview').innerHTML = '';
+}
+
+function clearTrips() {
+  // Clear trips from Firebase
+  fetch('https://goood-orders-default-rtdb.asia-southeast1.firebasedatabase.app/trips.json', {
+    method: 'PUT', headers: {'Content-Type':'application/json'}, body: 'null'
+  }).then(function(){ log('已清除 Firebase 派單紀錄（/trips）', 'warn'); })
+    .catch(function(e){ log('清除失敗: ' + e.message, 'err'); });
+}
+
+function goDispatch() {
+  window.open('index.html', '_blank');
+}
+
+refreshCount();
+</script>
+</body></html>
