@@ -1041,33 +1041,33 @@
             padding: 2px 8px; font-weight: 600;
         }
         .shift-blocks {
-            display: flex; gap: 0; padding: 0;
+            display: grid; grid-template-columns: repeat(6, 1fr); gap: 0; padding: 0;
         }
         .shift-block {
-            flex: 1; padding: 14px 8px; text-align: center; cursor: pointer;
+            padding: 10px 4px; text-align: center; cursor: pointer;
             transition: all 0.2s; border-right: 1px solid var(--border);
-            -webkit-tap-highlight-color: transparent;
+            -webkit-tap-highlight-color: transparent; position: relative;
         }
-        .shift-block:last-child { border-right: none; }
-        .shift-block:active { transform: scale(0.97); }
-        .shift-block .block-label { font-size: 12px; font-weight: 600; color: var(--text-sub); margin-bottom: 4px; }
-        .shift-block .block-time { font-size: 10px; color: var(--gray-400); margin-bottom: 6px; }
-        .shift-block .block-icon { font-size: 20px; }
+        .shift-block:nth-child(6) { border-right: none; }
+        .shift-block:active { transform: scale(0.95); }
+        .shift-block .block-label { font-size: 13px; font-weight: 700; color: var(--text-sub); margin-bottom: 2px; }
+        .shift-block .block-time { font-size: 9px; color: var(--gray-400); }
         .shift-block.booked { background: var(--green-light); }
         .shift-block.booked .block-label { color: var(--green); }
-        .shift-block.booked .block-icon { color: var(--green); }
         .shift-block.pending { background: var(--orange-light); }
         .shift-block.pending .block-label { color: var(--orange); }
-        .shift-block.pending .block-icon { color: var(--orange); }
         .shift-block.past-block { cursor: not-allowed; }
+        .shift-block .block-check {
+            position: absolute; top: 3px; right: 3px; font-size: 10px;
+        }
 
         /* Quick action bar */
         .shift-quick-bar {
-            display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; justify-content: center;
+            display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; justify-content: center;
         }
         .shift-quick-bar button {
-            padding: 10px 18px; border-radius: 10px; border: 1px solid var(--border);
-            background: var(--card); color: var(--text); font-size: 14px; font-weight: 600;
+            padding: 8px 14px; border-radius: 10px; border: 1px solid var(--border);
+            background: var(--card); color: var(--text); font-size: 13px; font-weight: 600;
             cursor: pointer; transition: all 0.2s; font-family: 'Noto Sans TC', sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
@@ -1282,10 +1282,10 @@
                     <button id="shiftNextWeek">▶</button>
                 </div>
                 <div class="shift-quick-bar">
-                    <button id="sqAll">整週全選</button>
-                    <button id="sqLunch">整週午餐</button>
-                    <button id="sqAfternoon">整週下午</button>
-                    <button id="sqClear">清除全部</button>
+                    <button id="sqAll">全天</button>
+                    <button id="sqLunch">午餐</button>
+                    <button id="sqAfternoon">下午</button>
+                    <button id="sqClear">清除</button>
                 </div>
                 <div class="shift-days-container" id="shiftDaysContainer"></div>
                 <div class="shift-summary" id="shiftSummary"></div>
@@ -2646,9 +2646,15 @@
         // ===== Simplified Shift Scheduling (foodpanda style) =====
         let shiftWeekStart = getMonday(new Date());
         const SHIFT_BLOCKS = [
-            { id: 'lunch', label: '午餐', time: '11:00-14:00', slots: ['h1100','h1130','h1200','h1230','h1300','h1330'] },
-            { id: 'afternoon', label: '下午', time: '14:00-17:00', slots: ['h1400','h1430','h1500','h1530','h1600','h1630'] }
+            { id: 'h11', label: '11', time: '11-12', slots: ['h1100','h1130'] },
+            { id: 'h12', label: '12', time: '12-13', slots: ['h1200','h1230'] },
+            { id: 'h13', label: '13', time: '13-14', slots: ['h1300','h1330'] },
+            { id: 'h14', label: '14', time: '14-15', slots: ['h1400','h1430'] },
+            { id: 'h15', label: '15', time: '15-16', slots: ['h1500','h1530'] },
+            { id: 'h16', label: '16', time: '16-17', slots: ['h1600','h1630'] }
         ];
+        const LUNCH_BLOCKS = ['h11','h12','h13'];
+        const AFTERNOON_BLOCKS = ['h14','h15','h16'];
         let shiftBookings = {};
 
         function changeShiftWeek(delta) {
@@ -2733,11 +2739,11 @@
                     if (isPast) cls += ' past-block';
                     blockEl.className = cls;
 
-                    let icon = status === 'booked' ? '✓' : status === 'partial' ? '⏳' : '+';
+                    let check = status === 'booked' ? '✓' : status === 'partial' ? '⏳' : '';
 
                     blockEl.innerHTML = '<div class="block-label">' + block.label + '</div>' +
                         '<div class="block-time">' + block.time + '</div>' +
-                        '<div class="block-icon">' + icon + '</div>';
+                        (check ? '<div class="block-check">' + check + '</div>' : '');
 
                     if (!isPast) {
                         (function(dk, bl) {
@@ -2802,8 +2808,8 @@
                 if (d < today) continue;
                 const dateKey = formatDate(d);
 
-                const blocksToProcess = mode === 'lunch' ? [SHIFT_BLOCKS[0]] :
-                                        mode === 'afternoon' ? [SHIFT_BLOCKS[1]] :
+                const blocksToProcess = mode === 'lunch' ? SHIFT_BLOCKS.filter(b => LUNCH_BLOCKS.includes(b.id)) :
+                                        mode === 'afternoon' ? SHIFT_BLOCKS.filter(b => AFTERNOON_BLOCKS.includes(b.id)) :
                                         SHIFT_BLOCKS;
 
                 if (mode === 'clear') {
@@ -2839,7 +2845,7 @@
                     }
                 }
             }
-            const msgs = { all: '已全選整週所有時段', lunch: '已選整週午餐時段', afternoon: '已選整週下午時段', clear: '已清除全部排班' };
+            const msgs = { all: '已全選整週 11-17', lunch: '已選整週午餐 11-14', afternoon: '已選整週下午 14-17', clear: '已清除全部排班' };
             showToast(msgs[mode]);
             renderShiftDays();
         }
