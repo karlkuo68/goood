@@ -4978,69 +4978,23 @@ async function computeDriverHistory() {
   }
 
   /* ──────────────────────────────────────────
-     階段 2.3 — 硬性篩選 filterAvailableDrivers()
+     篩選：只看排班（今天有班才能派）
   ────────────────────────────────────────── */
   function filterAvailableDrivers(group, allDrivers, driverNotes, schedules, todayLoad) {
     var results = [];
     allDrivers.forEach(function(driverId){
+      if (driverId === '平台') {
+        results.push({ driverId: driverId, note: {}, excluded: true, excludeReason: '平台不派單' });
+        return;
+      }
       var note = (driverNotes && driverNotes[driverId]) || {};
       var reason = null;
 
-      // 1. 馬鞍袋容量
-      if (group.totalUnits > DV2_CONFIG.MAX_BAG_UNITS) {
-        reason = '訂單總容量 ' + group.totalUnits + ' 超過 9 單位';
-      }
-
-      // 2. 排班檢查 (schedules 是 {driverId: {date: 'on'/'off'}} 或 undefined 視為可派)
-      if (!reason && schedules && schedules[driverId]) {
+      // 唯一篩選：排班
+      if (schedules && schedules[driverId]) {
         var today = (typeof dispatchDate !== 'undefined' && dispatchDate) || new Date().toISOString().slice(0,10);
         if (schedules[driverId][today] === 'off') {
-          reason = '今日未排班';
-        }
-      }
-
-      // 3. VIP 訂單需要 trust
-      if (!reason && group.hasVIP) {
-        var tl = note.trustLevel || 'normal';
-        if (tl !== 'vip' && tl !== 'confidential' && tl !== 'highValue') {
-          reason = 'VIP 訂單但信任度不足';
-        }
-      }
-
-      // 4. 商家黑名單
-      if (!reason) {
-        var black = note.vendorBlackList || [];
-        var hit = group.vendors.filter(function(v){ return black.indexOf(v) !== -1; });
-        if (hit.length) reason = '商家黑名單命中 (' + hit.length + ' 家)';
-      }
-
-      // 5. 外送員衝突標註 — 若同批已指派的外送員有衝突則排除（排除自己）
-      if (!reason) {
-        var conflicts = note.driverConflicts || [];
-        if (conflicts.length && dv2State && dv2State.assignments) {
-          var assigned = Object.values(dv2State.assignments).filter(function(a){ return a !== driverId; });
-          var conflictHit = assigned.filter(function(a){ return conflicts.indexOf(a) !== -1; });
-          if (conflictHit.length) reason = '與已指派外送員衝突 (' + conflictHit.join('、') + ')';
-        }
-      }
-
-      // 6. 交通工具不符合 — 大量訂單需汽車、步行不可接多單
-      if (!reason) {
-        var vehicle = note.vehicleType || 'scooter';
-        if (vehicle === 'walk' && group.totalUnits > 2) {
-          reason = '步行外送員無法承載 ' + group.totalUnits + ' 單位';
-        }
-        if (vehicle === 'ebike' && group.totalUnits > 4) {
-          reason = '電動自行車無法承載 ' + group.totalUnits + ' 單位';
-        }
-      }
-
-      // 7. 內部標籤：實習中 + VIP/高單價訂單排除
-      if (!reason) {
-        var tag = note.internalTag || '';
-        var totalAmt = (group.orders || []).reduce(function(s,o){ return s + (o.total||0); }, 0);
-        if ((tag === 'intern' || tag === 'observing' || tag === 'new') && (group.hasVIP || totalAmt > 3000)) {
-          reason = '新人/實習/待觀察不可接 VIP 或高單價';
+          reason = '今日休假';
         }
       }
 
@@ -5054,116 +5008,23 @@ async function computeDriverHistory() {
   }
 
   /* ──────────────────────────────────────────
-     階段 2.4 — 軟性評分 scoreDriverForOrderGroup()
+     評分：只看負載平衡（由 autoAssign 處理時間衝突）
   ────────────────────────────────────────── */
   function scoreDriverForOrderGroup(driverId, group, note, todayLoad) {
-    var score = 50; // 起始基礎分
+    var score = 50;
     var reasons = [];
 
-    note = note || {};
-
-    // 商家紅名單匹配 +30
-    var red = note.vendorRedList || [];
-    var redHit = group.vendors.filter(function(v){ return red.indexOf(v) !== -1; });
-    if (redHit.length) {
-      score += 30;
-      reasons.push({ type: 'plus', text: '商家紅名單加分 (+30)' });
-    }
-
-    // 準時度 (支援 1-5 星或 0-100 分)
-    if (note.punctuality) {
-      var pRaw = note.punctuality > 5 ? note.punctuality / 20 : note.punctuality; // 正規化為 1-5
-      var p = Math.round(pRaw * 4);
-      score += p;
-      reasons.push({ type: 'plus', text: '準時度 ' + pRaw.toFixed(1) + '★ (+' + p + ')' });
-    }
-
-    // 細心度
-    if (note.carefulness) {
-      var cRaw = note.carefulness > 5 ? note.carefulness / 20 : note.carefulness;
-      var c = Math.round(cRaw * 3);
-      score += c;
-      reasons.push({ type: 'plus', text: '細心度 ' + cRaw.toFixed(1) + '★ (+' + c + ')' });
-    }
-
-    // 併單能力 (多單時才加)
-    if (note.multiOrder && group.orders.length > 1) {
-      var mo = note.multiOrder * 3;
-      score += mo;
-      reasons.push({ type: 'plus', text: '併單能力 ' + note.multiOrder + '★ (+' + mo + ')' });
-    }
-
-    // 信任度等級
-    var tl = note.trustLevel || 'normal';
-    if (group.hasVIP && tl === 'vip') { score += 10; reasons.push({ type: 'plus', text: 'VIP 可派 (+10)' }); }
-    if (tl === 'highValue') { score += 15; reasons.push({ type: 'plus', text: '高單價可派 (+15)' }); }
-    if (tl === 'confidential') { score += 20; reasons.push({ type: 'plus', text: '機密可派 (+20)' }); }
-
-    // 臨時加單意願
-    var will = note.extraOrderWill || 'medium';
-    if (will === 'high') { score += 5; reasons.push({ type: 'plus', text: '臨時加單意願高 (+5)' }); }
-    if (will === 'low')  { score -= 5; reasons.push({ type: 'minus', text: '臨時加單意願低 (-5)' }); }
-
-    // 方向感
-    if (note.navigation) {
-      var nvRaw = note.navigation > 5 ? note.navigation / 20 : note.navigation;
-      var nv = Math.round(nvRaw * 2);
-      score += nv;
-      reasons.push({ type: 'plus', text: '方向感 ' + nvRaw.toFixed(1) + '★ (+' + nv + ')' });
-    }
-
-    // 今日已接訂單數 -8 per 單 (強化負載平衡)
+    // 今日已接單數 — 每單 -10，讓訂單平均分散
     var load = (todayLoad && todayLoad[driverId]) || 0;
     if (load > 0) {
-      var penalty = load * 8;
+      var penalty = load * 10;
       score -= penalty;
-      reasons.push({ type: 'minus', text: '今日已接 ' + load + ' 單 (-' + penalty + ')' });
+      reasons.push({ type: 'minus', text: '已接 ' + load + ' 單 (-' + penalty + ')' });
     } else {
-      reasons.push({ type: 'plus', text: '今日尚未接單' });
+      reasons.push({ type: 'plus', text: '尚未接單' });
     }
 
-    // 偏好區域匹配
-    var prefAreas = note.preferredAreas || [];
-    if (prefAreas.length) {
-      var groupAreas = group.areas || [];
-      var areaMatch = groupAreas.filter(function(a){ return prefAreas.indexOf(a) !== -1; });
-      if (areaMatch.length) {
-        score += 12;
-        reasons.push({ type: 'plus', text: '熟悉區域 ' + areaMatch.join('/') + ' (+12)' });
-      } else {
-        score -= 5;
-        reasons.push({ type: 'minus', text: '非熟悉區域 (-5)' });
-      }
-    }
-
-    // 內部標籤
-    var tag = note.internalTag || '';
-    if (tag === 'veteran')  { score += 10; reasons.push({ type: 'plus', text: '資深外送員 (+10)' }); }
-    if (tag === 'senior')   { score += 10; reasons.push({ type: 'plus', text: '資深外送員 (+10)' }); }
-    if (tag === 'special')  { score += 15; reasons.push({ type: 'plus', text: '特派 (+15)' }); }
-    if (tag === 'observing'){ score -= 20; reasons.push({ type: 'minus', text: '待觀察 (-20)' }); }
-    if (tag === 'intern')   { score -= 10; reasons.push({ type: 'minus', text: '實習中 (-10)' }); }
-    if (tag === 'new')      { score -= 5;  reasons.push({ type: 'minus', text: '新人 (-5)' }); }
-
-    // 歷史表現加分 (階段 4.2)
-    if (dv2State && dv2State.driverHistory && dv2State.driverHistory[driverId]) {
-      var hist = dv2State.driverHistory[driverId];
-      if (hist.onTimeRate != null) {
-        if (hist.onTimeRate >= 90)      { score += 10; reasons.push({ type: 'plus', text: '歷史準時率 ' + hist.onTimeRate + '% (+10)' }); }
-        else if (hist.onTimeRate >= 70) { score += 5;  reasons.push({ type: 'plus', text: '歷史準時率 ' + hist.onTimeRate + '% (+5)' }); }
-        else                            { score -= 5;  reasons.push({ type: 'minus', text: '歷史準時率 ' + hist.onTimeRate + '% (-5)' }); }
-      }
-      if (hist.complaintRate != null && hist.complaintRate > 10) {
-        score -= 10;
-        reasons.push({ type: 'minus', text: '客訴率 ' + hist.complaintRate + '% (-10)' });
-      }
-      if (hist.avgRating != null) {
-        if (hist.avgRating >= 4.5)      { score += 5; reasons.push({ type: 'plus', text: '歷史評分 ' + hist.avgRating + '★ (+5)' }); }
-        else if (hist.avgRating < 3.0)  { score -= 5; reasons.push({ type: 'minus', text: '歷史評分 ' + hist.avgRating + '★ (-5)' }); }
-      }
-    }
-
-    return { score: Math.max(0, Math.min(score, 150)), reasons: reasons };
+    return { score: Math.max(0, score), reasons: reasons };
   }
 
   /* ──────────────────────────────────────────
