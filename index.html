@@ -4572,31 +4572,34 @@ async function getDistanceMatrix(origins, destinations) {
 }
 
 // ── 訂單儲存時自動 Geocoding (hook) ──
-var _origSaveOrder = (typeof saveOrder === 'function') ? saveOrder : null;
-function saveOrderWithGeocode() {
-  // 先執行原始 saveOrder
-  if (_origSaveOrder) _origSaveOrder();
-  // 非同步背景 geocode 最新訂單
-  setTimeout(async function(){
-    try {
-      var key = (typeof DV2_CONFIG !== 'undefined' && DV2_CONFIG.GOOGLE_MAPS_API_KEY) || '';
-      if (key === 'YOUR_GOOGLE_MAPS_API_KEY_HERE' || !key) return;
-      var orders = DB.getOrders();
-      if (!orders.length) return;
-      var last = orders[orders.length - 1];
-      if (last.coords) return; // 已有座標
-      if (!last.address) return;
-      var coords = await geocodeAddress(last.address);
-      if (coords) {
-        last.coords = coords;
-        DB.saveOrders(orders);
-        console.log('[Geocoding] 已為訂單', last.id, '取得座標:', coords);
-      }
-    } catch(e) { console.warn('[Geocoding] 背景處理失敗', e); }
-  }, 500);
-}
-// 替換全域 saveOrder
-if (_origSaveOrder) { window.saveOrder = saveOrderWithGeocode; }
+// 延遲 hook，確保 saveOrder 已定義
+document.addEventListener('DOMContentLoaded', function() {
+  if (typeof window.saveOrder !== 'function') return;
+  var _origSaveOrder = window.saveOrder;
+  window.saveOrder = function saveOrderWithGeocode() {
+    // 先執行原始 saveOrder
+    _origSaveOrder();
+    // 非同步背景 geocode 最新訂單
+    setTimeout(async function(){
+      try {
+        var key = (typeof DV2_CONFIG !== 'undefined' && DV2_CONFIG.GOOGLE_MAPS_API_KEY) || '';
+        if (key === 'YOUR_GOOGLE_MAPS_API_KEY_HERE' || !key) return;
+        var orders = DB.getOrders();
+        if (!orders.length) return;
+        var last = orders[orders.length - 1];
+        if (last.coords) return; // 已有座標
+        if (!last.address) return;
+        var coords = await geocodeAddress(last.address);
+        if (coords) {
+          last.coords = coords;
+          DB.saveOrders(orders);
+          console.log('[Geocoding] 已為訂單', last.id, '取得座標:', coords);
+        }
+      } catch(e) { console.warn('[Geocoding] 背景處理失敗', e); }
+    }, 500);
+  };
+  console.log('[Geocoding] saveOrder hook 已掛載');
+});
 
 // ── 4.2 歷史表現學習：從 /trips 計算實際準時率和客訴率 ──
 async function computeDriverHistory() {
@@ -4808,7 +4811,7 @@ async function computeDriverHistory() {
   function filterAvailableDrivers(group, allDrivers, driverNotes, schedules, todayLoad) {
     var results = [];
     allDrivers.forEach(function(driverId){
-      var note = driverNotes[driverId] || {};
+      var note = (driverNotes && driverNotes[driverId]) || {};
       var reason = null;
 
       // 1. 馬鞍袋容量
@@ -4839,11 +4842,11 @@ async function computeDriverHistory() {
         if (hit.length) reason = '商家黑名單命中 (' + hit.length + ' 家)';
       }
 
-      // 5. 外送員衝突標註 — 若同批已指派的外送員有衝突則排除
+      // 5. 外送員衝突標註 — 若同批已指派的外送員有衝突則排除（排除自己）
       if (!reason) {
         var conflicts = note.driverConflicts || [];
         if (conflicts.length && dv2State && dv2State.assignments) {
-          var assigned = Object.values(dv2State.assignments);
+          var assigned = Object.values(dv2State.assignments).filter(function(a){ return a !== driverId; });
           var conflictHit = assigned.filter(function(a){ return conflicts.indexOf(a) !== -1; });
           if (conflictHit.length) reason = '與已指派外送員衝突 (' + conflictHit.join('、') + ')';
         }
@@ -4864,8 +4867,8 @@ async function computeDriverHistory() {
       if (!reason) {
         var tag = note.internalTag || '';
         var totalAmt = (group.orders || []).reduce(function(s,o){ return s + (o.total||0); }, 0);
-        if ((tag === 'intern' || tag === 'observing') && (group.hasVIP || totalAmt > 3000)) {
-          reason = '實習/待觀察狀態不可接 VIP 或高單價';
+        if ((tag === 'intern' || tag === 'observing' || tag === 'new') && (group.hasVIP || totalAmt > 3000)) {
+          reason = '新人/實習/待觀察不可接 VIP 或高單價';
         }
       }
 
@@ -4947,9 +4950,10 @@ async function computeDriverHistory() {
     // 內部標籤
     var tag = note.internalTag || '';
     if (tag === 'senior')   { score += 10; reasons.push({ type: 'plus', text: '資深外送員 (+10)' }); }
-    if (tag === 'reliable') { score += 15; reasons.push({ type: 'plus', text: '特派 (+15)' }); }
+    if (tag === 'special')  { score += 15; reasons.push({ type: 'plus', text: '特派 (+15)' }); }
     if (tag === 'observing'){ score -= 20; reasons.push({ type: 'minus', text: '待觀察 (-20)' }); }
     if (tag === 'intern')   { score -= 10; reasons.push({ type: 'minus', text: '實習中 (-10)' }); }
+    if (tag === 'new')      { score -= 5;  reasons.push({ type: 'minus', text: '新人 (-5)' }); }
 
     // 歷史表現加分 (階段 4.2)
     if (dv2State && dv2State.driverHistory && dv2State.driverHistory[driverId]) {
@@ -5502,6 +5506,14 @@ async function computeDriverHistory() {
   // Modal 背景點擊關閉
   document.addEventListener('DOMContentLoaded', function(){
     injectDv2Button();
+    // fallback: 監聽 dispatch 頁面切換也嘗試注入
+    var _origSwitchPage = window.switchPage;
+    if (typeof _origSwitchPage === 'function') {
+      window.switchPage = function() {
+        _origSwitchPage.apply(this, arguments);
+        setTimeout(injectDv2Button, 100);
+      };
+    }
     var bk = document.getElementById('dv2-modal-bk');
     if (bk) {
       bk.addEventListener('click', function(e){
