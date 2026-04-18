@@ -9,7 +9,7 @@
     <meta name="theme-color" content="#155f3a">
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="/icons/icon-192.png">
-    <title>好糰 Goood 外送員 v20260324</title>
+    <title>好糰 Goood 外送員 v20260418</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -974,119 +974,110 @@
         .schedule-section { display: none; padding-bottom: 160px; }
         .schedule-section.active { display: block; }
 
-        .clock-card {
-            background: var(--card); border-radius: 12px; padding: 20px;
-            margin-bottom: 16px; border: 1px solid var(--border);
+        /* === Online/Offline Toggle (foodpanda style) === */
+        .online-toggle-card {
+            background: var(--card); border-radius: 16px; padding: 24px 20px;
+            margin-bottom: 20px; border: 1px solid var(--border);
             box-shadow: var(--shadow); text-align: center;
         }
-        .clock-status { font-size: 14px; color: var(--text-sub); margin-bottom: 8px; }
-        .clock-time { font-size: 32px; font-weight: 700; color: var(--green); margin-bottom: 16px; font-variant-numeric: tabular-nums; }
-        .clock-btn {
-            padding: 16px 32px; border: none; border-radius: 12px;
-            font-size: 18px; font-weight: 700; cursor: pointer;
-            min-height: 56px; min-width: 160px; color: white;
-            transition: transform 0.2s, box-shadow 0.2s;
+        .online-status-text { font-size: 14px; color: var(--text-sub); margin-bottom: 6px; }
+        .online-time-display { font-size: 28px; font-weight: 700; color: var(--green); margin-bottom: 16px; font-variant-numeric: tabular-nums; }
+        .online-toggle-wrap { display: flex; justify-content: center; margin-bottom: 12px; }
+        .online-toggle-btn {
+            width: 200px; height: 64px; border-radius: 32px; border: none;
+            font-size: 20px; font-weight: 700; cursor: pointer; color: white;
+            transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 10px;
+            -webkit-tap-highlight-color: transparent;
         }
-        .clock-btn:active { transform: scale(0.96); }
-        .clock-btn.clock-in { background: var(--green); box-shadow: 0 4px 12px rgba(26,122,74,0.3); }
-        .clock-btn.clock-out { background: var(--orange); box-shadow: 0 4px 12px rgba(234,88,12,0.3); }
-        .clock-btn:disabled { background: var(--gray-400); box-shadow: none; cursor: not-allowed; }
-        .clock-record { display: flex; justify-content: space-around; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
-        .clock-record-item { text-align: center; }
-        .clock-record-label { font-size: 12px; color: var(--text-sub); margin-bottom: 4px; }
-        .clock-record-value { font-size: 16px; font-weight: 600; }
+        .online-toggle-btn:active { transform: scale(0.95); }
+        .online-toggle-btn.go-online {
+            background: linear-gradient(135deg, #1a7a4a, #22c55e);
+            box-shadow: 0 6px 20px rgba(26,122,74,0.35);
+        }
+        .online-toggle-btn.go-offline {
+            background: linear-gradient(135deg, #ea580c, #f97316);
+            box-shadow: 0 6px 20px rgba(234,88,12,0.35);
+            animation: pulse-glow 2s infinite;
+        }
+        .online-toggle-btn.done {
+            background: var(--gray-400); cursor: not-allowed; box-shadow: none;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 6px 20px rgba(234,88,12,0.35); }
+            50% { box-shadow: 0 6px 30px rgba(234,88,12,0.55); }
+        }
+        .online-record { display: flex; justify-content: space-around; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+        .online-record-item { text-align: center; }
+        .online-record-label { font-size: 11px; color: var(--text-sub); margin-bottom: 2px; }
+        .online-record-value { font-size: 16px; font-weight: 600; color: var(--text); }
 
-        /* Foodpanda-style Weekly Shift Grid */
-        .schedule-week-nav {
-            display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
-        }
-        .schedule-week-nav button {
-            background: var(--card); border: 1px solid var(--border); border-radius: 8px;
-            padding: 8px 12px; cursor: pointer; color: var(--text); min-height: 44px; min-width: 44px; font-size: 16px;
-        }
-        .schedule-week-title { font-size: 16px; font-weight: 700; text-align: center; }
-        .shift-grid {
-            background: var(--card); border-radius: 12px; border: 1px solid var(--border);
-            box-shadow: var(--shadow); overflow-x: auto; -webkit-overflow-scrolling: touch;
+        /* === Simple Week Shift Blocks === */
+        .shift-week-header {
+            display: flex; justify-content: space-between; align-items: center;
             margin-bottom: 12px;
         }
-        .shift-grid table { width: 100%; border-collapse: collapse; min-width: 500px; }
-        .shift-grid th {
-            padding: 8px 4px; font-size: 12px; font-weight: 600; color: var(--text-sub);
-            background: var(--gray-100); border-bottom: 1px solid var(--border); text-align: center;
-            position: sticky; top: 0; z-index: 1;
+        .shift-week-header button {
+            background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+            padding: 8px 14px; cursor: pointer; color: var(--text); min-height: 44px; min-width: 44px; font-size: 16px;
+            -webkit-tap-highlight-color: transparent;
         }
-        .shift-grid th.today-col { color: var(--green); font-weight: 700; }
-        .shift-grid th small { display: block; font-size: 10px; font-weight: 400; }
-        .shift-grid td {
-            padding: 2px; text-align: center; border-bottom: 1px solid var(--border);
-            border-right: 1px solid var(--border); vertical-align: middle;
-        }
-        .shift-grid td:first-child {
-            font-size: 11px; font-weight: 600; color: var(--text-sub); white-space: nowrap;
-            padding: 4px 6px; background: var(--gray-50); text-align: right; min-width: 55px;
-            position: sticky; left: 0; z-index: 1;
-        }
-        .shift-cell {
-            width: 100%; min-height: 32px; border: 2px solid transparent; border-radius: 6px;
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            transition: all 0.15s; padding: 2px; font-size: 10px; color: var(--text-sub); background: var(--bg);
-        }
-        .shift-cell:hover { border-color: var(--green); background: var(--green-light); }
-        .shift-cell.booked {
-            background: var(--green-light); border-color: var(--green); color: var(--green); font-weight: 600;
-        }
-        .shift-cell.pending {
-            background: var(--orange-light); border-color: var(--orange); color: var(--orange); font-weight: 600;
-        }
-        .shift-cell.past-slot { opacity: 0.4; cursor: not-allowed; }
-        .shift-quick-btns {
-            display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; justify-content: center;
-        }
-        .shift-quick-btn {
-            padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);
-            background: var(--bg); color: var(--text); font-size: 13px; font-weight: 600;
-            cursor: pointer; transition: all 0.2s; font-family: 'Noto Sans TC', sans-serif;
-        }
-        .shift-quick-btn:hover { border-color: var(--green); background: var(--green-light); }
-        .shift-quick-btn.active { background: var(--green); color: white; border-color: var(--green); }
-        .shift-legend { display: flex; gap: 12px; margin-top: 12px; justify-content: center; flex-wrap: wrap; }
-        .shift-legend-item { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-sub); }
-        .shift-legend-dot { width: 10px; height: 10px; border-radius: 4px; border: 2px solid; }
-
-        /* Mini Month Calendar */
-        .schedule-month-nav {
-            display: flex; justify-content: space-between; align-items: center; margin: 16px 0 8px;
-        }
-        .schedule-month-nav button {
-            background: var(--card); border: 1px solid var(--border); border-radius: 8px;
-            padding: 6px 10px; cursor: pointer; color: var(--text); min-height: 36px; min-width: 36px; font-size: 14px;
-        }
-        .schedule-month-title { font-size: 15px; font-weight: 700; }
-        .schedule-calendar {
+        .shift-week-header button:active { background: var(--gray-100); }
+        .shift-week-title { font-size: 16px; font-weight: 700; text-align: center; }
+        .shift-days-container { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+        .shift-day-row {
             background: var(--card); border-radius: 12px; border: 1px solid var(--border);
-            box-shadow: var(--shadow); overflow: hidden;
+            overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
         }
-        .schedule-weekdays {
-            display: grid; grid-template-columns: repeat(7, 1fr);
-            background: var(--gray-100); border-bottom: 1px solid var(--border);
+        .shift-day-row.is-today { border-color: var(--green); border-width: 2px; }
+        .shift-day-row.is-past { opacity: 0.45; }
+        .shift-day-label {
+            padding: 10px 14px; font-size: 14px; font-weight: 700; color: var(--text);
+            background: var(--gray-50); border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
         }
-        .schedule-weekday { text-align: center; padding: 6px 2px; font-size: 11px; font-weight: 600; color: var(--text-sub); }
-        .schedule-days { display: grid; grid-template-columns: repeat(7, 1fr); }
-        .schedule-day {
-            aspect-ratio: 1; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; font-size: 12px;
-            cursor: default; border: 1px solid transparent; position: relative;
+        .shift-day-label .day-date { font-size: 12px; font-weight: 400; color: var(--text-sub); }
+        .shift-day-label .today-badge {
+            font-size: 11px; background: var(--green); color: white; border-radius: 6px;
+            padding: 2px 8px; font-weight: 600;
         }
-        .schedule-day.other-month { color: var(--gray-400); }
-        .schedule-day.today { font-weight: 700; color: var(--green); }
-        .schedule-day .shift-count-badge {
-            font-size: 8px; background: var(--green); color: white; border-radius: 50%;
-            width: 14px; height: 14px; display: flex; align-items: center; justify-content: center;
-            position: absolute; bottom: 2px;
+        .shift-blocks {
+            display: flex; gap: 0; padding: 0;
         }
+        .shift-block {
+            flex: 1; padding: 14px 8px; text-align: center; cursor: pointer;
+            transition: all 0.2s; border-right: 1px solid var(--border);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .shift-block:last-child { border-right: none; }
+        .shift-block:active { transform: scale(0.97); }
+        .shift-block .block-label { font-size: 12px; font-weight: 600; color: var(--text-sub); margin-bottom: 4px; }
+        .shift-block .block-time { font-size: 10px; color: var(--gray-400); margin-bottom: 6px; }
+        .shift-block .block-icon { font-size: 20px; }
+        .shift-block.booked { background: var(--green-light); }
+        .shift-block.booked .block-label { color: var(--green); }
+        .shift-block.booked .block-icon { color: var(--green); }
+        .shift-block.pending { background: var(--orange-light); }
+        .shift-block.pending .block-label { color: var(--orange); }
+        .shift-block.pending .block-icon { color: var(--orange); }
+        .shift-block.past-block { cursor: not-allowed; }
 
-        .schedule-section .schedule-info { margin-bottom: 16px; }
+        /* Quick action bar */
+        .shift-quick-bar {
+            display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; justify-content: center;
+        }
+        .shift-quick-bar button {
+            padding: 10px 18px; border-radius: 10px; border: 1px solid var(--border);
+            background: var(--card); color: var(--text); font-size: 14px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s; font-family: 'Noto Sans TC', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .shift-quick-bar button:active { background: var(--green-light); border-color: var(--green); }
+
+        .shift-summary {
+            text-align: center; font-size: 13px; color: var(--text-sub); margin-top: 8px;
+            padding: 10px; background: var(--gray-50); border-radius: 8px;
+        }
+        .shift-summary strong { color: var(--green); font-size: 16px; }
 
         /* (Chat target selector removed - now using private messaging UI) */
     </style>
@@ -1261,72 +1252,43 @@
 
             <!-- Schedule & Clock -->
             <div id="scheduleSection" class="schedule-section">
-                <!-- Clock In/Out -->
-                <div class="clock-card">
-                    <div class="clock-status" id="clockStatus">尚未打卡</div>
-                    <div class="clock-time" id="clockCurrentTime">--:--:--</div>
-                    <button class="clock-btn clock-in" id="clockBtn" onclick="handleClockAction()">打卡上班</button>
-                    <div class="clock-record" id="clockRecord" style="display:none;">
-                        <div class="clock-record-item">
-                            <div class="clock-record-label">上班時間</div>
-                            <div class="clock-record-value" id="clockInTime">--:--</div>
+                <!-- Online/Offline Toggle -->
+                <div class="online-toggle-card">
+                    <div class="online-status-text" id="clockStatus">目前離線</div>
+                    <div class="online-time-display" id="clockCurrentTime">--:--:--</div>
+                    <div class="online-toggle-wrap">
+                        <button class="online-toggle-btn go-online" id="clockBtn">上線接單</button>
+                    </div>
+                    <div class="online-record" id="clockRecord" style="display:none;">
+                        <div class="online-record-item">
+                            <div class="online-record-label">上線時間</div>
+                            <div class="online-record-value" id="clockInTime">--:--</div>
                         </div>
-                        <div class="clock-record-item">
-                            <div class="clock-record-label">下班時間</div>
-                            <div class="clock-record-value" id="clockOutTime">--:--</div>
+                        <div class="online-record-item">
+                            <div class="online-record-label">離線時間</div>
+                            <div class="online-record-value" id="clockOutTime">--:--</div>
                         </div>
-                        <div class="clock-record-item">
-                            <div class="clock-record-label">工時</div>
-                            <div class="clock-record-value" id="clockDuration">--</div>
+                        <div class="online-record-item">
+                            <div class="online-record-label">工時</div>
+                            <div class="online-record-value" id="clockDuration">--</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Foodpanda-style Weekly Shift Grid -->
-                <div class="schedule-week-nav">
-                    <button onclick="changeShiftWeek(-1)">◀</button>
-                    <div class="schedule-week-title" id="shiftWeekTitle"></div>
-                    <button onclick="changeShiftWeek(1)">▶</button>
+                <!-- Simple Week Shift Blocks -->
+                <div class="shift-week-header">
+                    <button id="shiftPrevWeek">◀</button>
+                    <div class="shift-week-title" id="shiftWeekTitle"></div>
+                    <button id="shiftNextWeek">▶</button>
                 </div>
-                <div class="shift-quick-btns">
-                    <button class="shift-quick-btn" onclick="quickSelectSlots('all')">全選 11-17</button>
-                    <button class="shift-quick-btn" onclick="quickSelectSlots('lunch')">午餐 11-14</button>
-                    <button class="shift-quick-btn" onclick="quickSelectSlots('afternoon')">下午 14-17</button>
-                    <button class="shift-quick-btn" onclick="quickSelectSlots('clear')">清除全部</button>
+                <div class="shift-quick-bar">
+                    <button id="sqAll">整週全選</button>
+                    <button id="sqLunch">整週午餐</button>
+                    <button id="sqAfternoon">整週下午</button>
+                    <button id="sqClear">清除全部</button>
                 </div>
-                <div class="shift-grid" id="shiftGrid"></div>
-                <div class="shift-legend">
-                    <div class="shift-legend-item"><div class="shift-legend-dot" style="background:var(--green-light); border-color:var(--green);"></div>已報名</div>
-                    <div class="shift-legend-item"><div class="shift-legend-dot" style="background:var(--orange-light); border-color:var(--orange);"></div>待核准</div>
-                </div>
-
-                <!-- Mini Month Calendar -->
-                <div class="schedule-month-nav">
-                    <button onclick="changeScheduleMonth(-1)">◀</button>
-                    <div class="schedule-month-title" id="scheduleMonthTitle"></div>
-                    <button onclick="changeScheduleMonth(1)">▶</button>
-                </div>
-                <div class="schedule-calendar">
-                    <div class="schedule-weekdays">
-                        <div class="schedule-weekday">日</div>
-                        <div class="schedule-weekday">一</div>
-                        <div class="schedule-weekday">二</div>
-                        <div class="schedule-weekday">三</div>
-                        <div class="schedule-weekday">四</div>
-                        <div class="schedule-weekday">五</div>
-                        <div class="schedule-weekday">六</div>
-                    </div>
-                    <div class="schedule-days" id="scheduleDays"></div>
-                </div>
-                <div class="schedule-info" style="margin-top:12px;">
-                    <div class="schedule-info-title">排班說明</div>
-                    <div class="schedule-info-text">
-                        • 以半小時為單位，點擊格子即可報名/取消<br>
-                        • 快捷按鈕：全選、午餐(11-14)、下午(14-17)、清除<br>
-                        • 每個時段不限人數，歡迎報名<br>
-                        • 報名後可隨時取消（當天時段除外）
-                    </div>
-                </div>
+                <div class="shift-days-container" id="shiftDaysContainer"></div>
+                <div class="shift-summary" id="shiftSummary"></div>
             </div>
 
             <!-- Settings -->
@@ -2681,23 +2643,13 @@
         let clockState = { clockedIn: false, clockInTime: null, clockOutTime: null };
         let clockTimer = null;
 
-        // Half-hour shift scheduling
+        // ===== Simplified Shift Scheduling (foodpanda style) =====
         let shiftWeekStart = getMonday(new Date());
-        const HALF_HOUR_SLOTS = [
-            '11:00','11:30','12:00','12:30','13:00','13:30',
-            '14:00','14:30','15:00','15:30','16:00','16:30'
+        const SHIFT_BLOCKS = [
+            { id: 'lunch', label: '午餐', time: '11:00-14:00', slots: ['h1100','h1130','h1200','h1230','h1300','h1330'] },
+            { id: 'afternoon', label: '下午', time: '14:00-17:00', slots: ['h1400','h1430','h1500','h1530','h1600','h1630'] }
         ];
-        let shiftSlotConfig = {};
         let shiftBookings = {};
-
-        function getMonday(d) {
-            const date = new Date(d);
-            const day = date.getDay();
-            const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-            date.setDate(diff);
-            date.setHours(0, 0, 0, 0);
-            return date;
-        }
 
         function changeShiftWeek(delta) {
             shiftWeekStart = new Date(shiftWeekStart);
@@ -2719,10 +2671,24 @@
                 );
             }
             await Promise.all(promises);
-            renderShiftGrid();
+            renderShiftDays();
         }
 
-        function renderShiftGrid() {
+        function getBlockStatus(dateKey, block) {
+            const dayBookings = shiftBookings[dateKey] || {};
+            let bookedCount = 0, pendingCount = 0;
+            for (const slotId of block.slots) {
+                const slotBookings = dayBookings[slotId] || {};
+                const my = slotBookings[state.driver];
+                if (my && my.status === 'booked') bookedCount++;
+                else if (my && my.status === 'pending') pendingCount++;
+            }
+            if (bookedCount === block.slots.length) return 'booked';
+            if (pendingCount > 0 || bookedCount > 0) return 'partial';
+            return 'none';
+        }
+
+        function renderShiftDays() {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
             const endDate = new Date(shiftWeekStart);
@@ -2730,98 +2696,105 @@
 
             const startStr = (shiftWeekStart.getMonth()+1) + '/' + shiftWeekStart.getDate();
             const endStr = (endDate.getMonth()+1) + '/' + endDate.getDate();
-            document.getElementById('shiftWeekTitle').textContent = startStr + ' - ' + endStr;
+            document.getElementById('shiftWeekTitle').textContent = startStr + ' ~ ' + endStr;
 
             const dayNames = ['日','一','二','三','四','五','六'];
+            const container = document.getElementById('shiftDaysContainer');
+            container.innerHTML = '';
+            let totalBooked = 0;
 
-            let html = '<table><thead><tr><th>時段</th>';
             for (let i = 0; i < 7; i++) {
                 const d = new Date(shiftWeekStart);
                 d.setDate(d.getDate() + i);
+                const dateKey = formatDate(d);
                 const isToday = d.getTime() === today.getTime();
-                html += '<th class="' + (isToday ? 'today-col' : '') + '">' + dayNames[d.getDay()] + '<small>' + (d.getMonth()+1) + '/' + d.getDate() + '</small></th>';
-            }
-            html += '</tr></thead><tbody>';
+                const isPast = d < today;
 
-            for (const slot of HALF_HOUR_SLOTS) {
-                html += '<tr><td>' + slot + '</td>';
-                for (let i = 0; i < 7; i++) {
-                    const d = new Date(shiftWeekStart);
-                    d.setDate(d.getDate() + i);
-                    const dateKey = formatDate(d);
-                    const slotId = 'h' + slot.replace(':', '');
-                    const dayBookings = shiftBookings[dateKey] || {};
-                    const slotBookings = dayBookings[slotId] || {};
+                const row = document.createElement('div');
+                row.className = 'shift-day-row' + (isToday ? ' is-today' : '') + (isPast ? ' is-past' : '');
 
-                    const myBooking = slotBookings[state.driver];
-                    const isBooked = myBooking && myBooking.status === 'booked';
-                    const isPending = myBooking && myBooking.status === 'pending';
-                    const isPast = d < today;
+                const label = document.createElement('div');
+                label.className = 'shift-day-label';
+                let labelHTML = '<span>' + dayNames[d.getDay()] + '</span>';
+                labelHTML += '<span class="day-date">' + (d.getMonth()+1) + '/' + d.getDate() + '</span>';
+                if (isToday) labelHTML += '<span class="today-badge">今天</span>';
+                label.innerHTML = labelHTML;
+                row.appendChild(label);
 
-                    let cellClass = 'shift-cell';
-                    if (isBooked) cellClass += ' booked';
-                    else if (isPending) cellClass += ' pending';
-                    if (isPast) cellClass += ' past-slot';
+                const blocksDiv = document.createElement('div');
+                blocksDiv.className = 'shift-blocks';
 
-                    const icon = isBooked ? '✓' : isPending ? '⏳' : '';
+                for (const block of SHIFT_BLOCKS) {
+                    const status = getBlockStatus(dateKey, block);
+                    const blockEl = document.createElement('div');
+                    let cls = 'shift-block';
+                    if (status === 'booked') { cls += ' booked'; totalBooked++; }
+                    else if (status === 'partial') { cls += ' pending'; totalBooked++; }
+                    if (isPast) cls += ' past-block';
+                    blockEl.className = cls;
 
-                    html += '<td><div class="' + cellClass + '" onclick="toggleShiftSlot(\'' + dateKey + '\',\'' + slotId + '\',' + isPast + ')" data-date="' + dateKey + '" data-slot="' + slotId + '">';
-                    html += '<span>' + icon + '</span>';
-                    html += '</div></td>';
+                    let icon = status === 'booked' ? '✓' : status === 'partial' ? '⏳' : '+';
+
+                    blockEl.innerHTML = '<div class="block-label">' + block.label + '</div>' +
+                        '<div class="block-time">' + block.time + '</div>' +
+                        '<div class="block-icon">' + icon + '</div>';
+
+                    if (!isPast) {
+                        (function(dk, bl) {
+                            blockEl.addEventListener('click', function() { toggleShiftBlock(dk, bl); });
+                        })(dateKey, block);
+                    }
+                    blocksDiv.appendChild(blockEl);
                 }
-                html += '</tr>';
+
+                row.appendChild(blocksDiv);
+                container.appendChild(row);
             }
 
-            html += '</tbody></table>';
-            document.getElementById('shiftGrid').innerHTML = html;
-            renderScheduleCalendar();
+            document.getElementById('shiftSummary').innerHTML = '本週已報名 <strong>' + totalBooked + '</strong> 個時段';
         }
 
-        async function toggleShiftSlot(dateKey, slotId, isPast) {
-            if (isPast) { showToast('無法修改過去的時段'); return; }
+        async function toggleShiftBlock(dateKey, block) {
+            const status = getBlockStatus(dateKey, block);
 
-            const dayBookings = shiftBookings[dateKey] || {};
-            const slotBookings = dayBookings[slotId] || {};
-            const myBooking = slotBookings[state.driver];
-
-            if (myBooking && (myBooking.status === 'booked' || myBooking.status === 'pending')) {
-                await writeToFirebase('/shiftBookings/' + dateKey + '/' + slotId + '/' + state.driver, null);
-                if (!shiftBookings[dateKey]) shiftBookings[dateKey] = {};
-                if (!shiftBookings[dateKey][slotId]) shiftBookings[dateKey][slotId] = {};
-                delete shiftBookings[dateKey][slotId][state.driver];
-                showToast('已取消報名');
+            if (status === 'booked' || status === 'partial') {
+                for (const slotId of block.slots) {
+                    const dayBookings = shiftBookings[dateKey] || {};
+                    const slotBookings = dayBookings[slotId] || {};
+                    if (slotBookings[state.driver]) {
+                        await writeToFirebase('/shiftBookings/' + dateKey + '/' + slotId + '/' + state.driver, null);
+                        if (shiftBookings[dateKey] && shiftBookings[dateKey][slotId]) {
+                            delete shiftBookings[dateKey][slotId][state.driver];
+                        }
+                    }
+                }
+                showToast('已取消 ' + block.label + ' 排班');
             } else {
                 const slotDate = new Date(dateKey + 'T00:00:00');
                 const now = new Date();
                 const hoursUntil = (slotDate - now) / (1000 * 60 * 60);
-                const status = hoursUntil < 24 ? 'pending' : 'booked';
+                const bookStatus = hoursUntil < 24 ? 'pending' : 'booked';
 
-                const bookingData = {
-                    status: status,
-                    bookedAt: new Date().toISOString(),
-                    driverName: state.driver
-                };
-                await writeToFirebase('/shiftBookings/' + dateKey + '/' + slotId + '/' + state.driver, bookingData);
-                if (!shiftBookings[dateKey]) shiftBookings[dateKey] = {};
-                if (!shiftBookings[dateKey][slotId]) shiftBookings[dateKey][slotId] = {};
-                shiftBookings[dateKey][slotId][state.driver] = bookingData;
-
-                if (status === 'pending') {
-                    showToast('已申請報名（24小時內需核准）');
-                } else {
-                    showToast('已成功報名');
+                for (const slotId of block.slots) {
+                    const bookingData = {
+                        status: bookStatus,
+                        bookedAt: new Date().toISOString(),
+                        driverName: state.driver
+                    };
+                    await writeToFirebase('/shiftBookings/' + dateKey + '/' + slotId + '/' + state.driver, bookingData);
+                    if (!shiftBookings[dateKey]) shiftBookings[dateKey] = {};
+                    if (!shiftBookings[dateKey][slotId]) shiftBookings[dateKey][slotId] = {};
+                    shiftBookings[dateKey][slotId][state.driver] = bookingData;
                 }
+
+                showToast(bookStatus === 'pending' ? '已申請 ' + block.label + '（24小時內需核准）' : '已報名 ' + block.label);
             }
-            renderShiftGrid();
+            renderShiftDays();
         }
 
         async function quickSelectSlots(mode) {
             const today = new Date();
             today.setHours(0,0,0,0);
-            let targetSlots = [];
-            if (mode === 'all') targetSlots = HALF_HOUR_SLOTS.slice();
-            else if (mode === 'lunch') targetSlots = HALF_HOUR_SLOTS.filter(s => parseInt(s) < 14);
-            else if (mode === 'afternoon') targetSlots = HALF_HOUR_SLOTS.filter(s => parseInt(s) >= 14);
 
             for (let i = 0; i < 7; i++) {
                 const d = new Date(shiftWeekStart);
@@ -2829,40 +2802,46 @@
                 if (d < today) continue;
                 const dateKey = formatDate(d);
 
+                const blocksToProcess = mode === 'lunch' ? [SHIFT_BLOCKS[0]] :
+                                        mode === 'afternoon' ? [SHIFT_BLOCKS[1]] :
+                                        SHIFT_BLOCKS;
+
                 if (mode === 'clear') {
-                    for (const slot of HALF_HOUR_SLOTS) {
-                        const slotId = 'h' + slot.replace(':', '');
-                        const dayBookings = shiftBookings[dateKey] || {};
-                        const slotBookings = dayBookings[slotId] || {};
-                        if (slotBookings[state.driver]) {
-                            await writeToFirebase('/shiftBookings/' + dateKey + '/' + slotId + '/' + state.driver, null);
-                            if (shiftBookings[dateKey] && shiftBookings[dateKey][slotId]) {
-                                delete shiftBookings[dateKey][slotId][state.driver];
+                    for (const block of SHIFT_BLOCKS) {
+                        for (const slotId of block.slots) {
+                            const dayBookings = shiftBookings[dateKey] || {};
+                            const slotBookings = dayBookings[slotId] || {};
+                            if (slotBookings[state.driver]) {
+                                await writeToFirebase('/shiftBookings/' + dateKey + '/' + slotId + '/' + state.driver, null);
+                                if (shiftBookings[dateKey] && shiftBookings[dateKey][slotId]) {
+                                    delete shiftBookings[dateKey][slotId][state.driver];
+                                }
                             }
                         }
                     }
                 } else {
-                    for (const slot of targetSlots) {
-                        const slotId = 'h' + slot.replace(':', '');
-                        const dayBookings = shiftBookings[dateKey] || {};
-                        const slotBookings = dayBookings[slotId] || {};
-                        if (!slotBookings[state.driver]) {
-                            const slotDate = new Date(dateKey + 'T00:00:00');
-                            const now = new Date();
-                            const hoursUntil = (slotDate - now) / (1000 * 60 * 60);
-                            const status = hoursUntil < 24 ? 'pending' : 'booked';
-                            const bookingData = { status: status, bookedAt: new Date().toISOString(), driverName: state.driver };
-                            await writeToFirebase('/shiftBookings/' + dateKey + '/' + slotId + '/' + state.driver, bookingData);
-                            if (!shiftBookings[dateKey]) shiftBookings[dateKey] = {};
-                            if (!shiftBookings[dateKey][slotId]) shiftBookings[dateKey][slotId] = {};
-                            shiftBookings[dateKey][slotId][state.driver] = bookingData;
+                    for (const block of blocksToProcess) {
+                        for (const slotId of block.slots) {
+                            const dayBookings = shiftBookings[dateKey] || {};
+                            const slotBookings = dayBookings[slotId] || {};
+                            if (!slotBookings[state.driver]) {
+                                const slotDate = new Date(dateKey + 'T00:00:00');
+                                const now = new Date();
+                                const hoursUntil = (slotDate - now) / (1000 * 60 * 60);
+                                const st = hoursUntil < 24 ? 'pending' : 'booked';
+                                const bookingData = { status: st, bookedAt: new Date().toISOString(), driverName: state.driver };
+                                await writeToFirebase('/shiftBookings/' + dateKey + '/' + slotId + '/' + state.driver, bookingData);
+                                if (!shiftBookings[dateKey]) shiftBookings[dateKey] = {};
+                                if (!shiftBookings[dateKey][slotId]) shiftBookings[dateKey][slotId] = {};
+                                shiftBookings[dateKey][slotId][state.driver] = bookingData;
+                            }
                         }
                     }
                 }
             }
-            const msgs = { all: '已全選 11:00-17:00', lunch: '已選午餐 11:00-14:00', afternoon: '已選下午 14:00-17:00', clear: '已清除全部排班' };
+            const msgs = { all: '已全選整週所有時段', lunch: '已選整週午餐時段', afternoon: '已選整週下午時段', clear: '已清除全部排班' };
             showToast(msgs[mode]);
-            renderShiftGrid();
+            renderShiftDays();
         }
 
         // Clock - live time display
@@ -2903,36 +2882,33 @@
             const durEl = document.getElementById('clockDuration');
 
             if (clockState.clockInTime && clockState.clockOutTime) {
-                // Already clocked out
-                statusEl.textContent = '今日已完成打卡';
-                btn.textContent = '已完成';
+                statusEl.textContent = '今日已完成';
+                btn.textContent = '已離線';
                 btn.disabled = true;
-                btn.className = 'clock-btn';
-                btn.style.background = 'var(--gray-400)';
+                btn.className = 'online-toggle-btn done';
                 recordEl.style.display = 'flex';
                 inEl.textContent = clockState.clockInTime;
                 outEl.textContent = clockState.clockOutTime;
-                // Calculate duration
                 const [ih, im] = clockState.clockInTime.split(':').map(Number);
                 const [oh, om] = clockState.clockOutTime.split(':').map(Number);
                 const mins = (oh * 60 + om) - (ih * 60 + im);
                 const hrs = Math.floor(mins / 60);
                 const rmins = mins % 60;
-                durEl.textContent = `${hrs}h ${rmins}m`;
+                durEl.textContent = hrs + 'h ' + rmins + 'm';
             } else if (clockState.clockedIn) {
-                statusEl.textContent = '已上班，工作中';
-                btn.textContent = '打卡下班';
+                statusEl.textContent = '接單中';
+                btn.textContent = '離線';
                 btn.disabled = false;
-                btn.className = 'clock-btn clock-out';
+                btn.className = 'online-toggle-btn go-offline';
                 recordEl.style.display = 'flex';
                 inEl.textContent = clockState.clockInTime;
                 outEl.textContent = '--:--';
                 durEl.textContent = '進行中';
             } else {
-                statusEl.textContent = '尚未打卡';
-                btn.textContent = '打卡上班';
+                statusEl.textContent = '目前離線';
+                btn.textContent = '上線接單';
                 btn.disabled = false;
-                btn.className = 'clock-btn clock-in';
+                btn.className = 'online-toggle-btn go-online';
                 recordEl.style.display = 'none';
             }
         }
@@ -2951,7 +2927,7 @@
                     clockIn: timeStr,
                     clockInTimestamp: now.toISOString()
                 });
-                showToast('打卡上班成功 ' + timeStr);
+                showToast('已上線 ' + timeStr);
             } else {
                 // Clock out
                 clockState.clockedIn = false;
@@ -2960,84 +2936,32 @@
                     clockOut: timeStr,
                     clockOutTimestamp: now.toISOString()
                 });
-                showToast('打卡下班成功 ' + timeStr);
+                showToast('已離線 ' + timeStr);
             }
             renderClockUI();
         }
 
-        // Schedule - load data (now loads shift grid + mini calendar)
+        // Event listeners for schedule buttons (iOS Safari compatible)
+        document.addEventListener('DOMContentLoaded', function() {
+            var clockBtn = document.getElementById('clockBtn');
+            if (clockBtn) clockBtn.addEventListener('click', handleClockAction);
+            var prevBtn = document.getElementById('shiftPrevWeek');
+            if (prevBtn) prevBtn.addEventListener('click', function() { changeShiftWeek(-1); });
+            var nextBtn = document.getElementById('shiftNextWeek');
+            if (nextBtn) nextBtn.addEventListener('click', function() { changeShiftWeek(1); });
+            var sqAll = document.getElementById('sqAll');
+            if (sqAll) sqAll.addEventListener('click', function() { quickSelectSlots('all'); });
+            var sqLunch = document.getElementById('sqLunch');
+            if (sqLunch) sqLunch.addEventListener('click', function() { quickSelectSlots('lunch'); });
+            var sqAfternoon = document.getElementById('sqAfternoon');
+            if (sqAfternoon) sqAfternoon.addEventListener('click', function() { quickSelectSlots('afternoon'); });
+            var sqClear = document.getElementById('sqClear');
+            if (sqClear) sqClear.addEventListener('click', function() { quickSelectSlots('clear'); });
+        });
+
+        // Schedule - load data
         async function loadScheduleData() {
             await loadShiftWeekData();
-        }
-
-        function changeScheduleMonth(delta) {
-            scheduleViewDate.setMonth(scheduleViewDate.getMonth() + delta);
-            renderScheduleCalendar();
-        }
-
-        function renderScheduleCalendar() {
-            const year = scheduleViewDate.getFullYear();
-            const month = scheduleViewDate.getMonth();
-
-            document.getElementById('scheduleMonthTitle').textContent = `${year} 年 ${month + 1} 月`;
-
-            const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
-            const container = document.getElementById('scheduleDays');
-            container.innerHTML = '';
-
-            for (let i = 0; i < firstDay; i++) {
-                const prevMonthDays = new Date(year, month, 0).getDate();
-                const dayNum = prevMonthDays - firstDay + i + 1;
-                const div = document.createElement('div');
-                div.className = 'schedule-day other-month';
-                div.textContent = dayNum;
-                container.appendChild(div);
-            }
-
-            for (let d = 1; d <= daysInMonth; d++) {
-                const div = document.createElement('div');
-                div.className = 'schedule-day';
-                div.textContent = d;
-
-                const dateObj = new Date(year, month, d);
-                dateObj.setHours(0, 0, 0, 0);
-
-                if (dateObj.getTime() === today.getTime()) div.classList.add('today');
-
-                // Count how many slots booked for this day
-                const dateKey = formatDate(dateObj);
-                const dayBookings = shiftBookings[dateKey];
-                if (dayBookings) {
-                    let bookedCount = 0;
-                    for (const slotId of Object.keys(dayBookings)) {
-                        const slotData = dayBookings[slotId];
-                        if (slotData && slotData[state.driver] && (slotData[state.driver].status === 'booked' || slotData[state.driver].status === 'pending')) {
-                            bookedCount++;
-                        }
-                    }
-                    if (bookedCount > 0) {
-                        const badge = document.createElement('div');
-                        badge.className = 'shift-count-badge';
-                        badge.textContent = bookedCount;
-                        div.appendChild(badge);
-                    }
-                }
-
-                container.appendChild(div);
-            }
-
-            const totalCells = firstDay + daysInMonth;
-            const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
-            for (let i = 1; i <= remaining; i++) {
-                const div = document.createElement('div');
-                div.className = 'schedule-day other-month';
-                div.textContent = i;
-                container.appendChild(div);
-            }
         }
 
         // ===== Preferred Areas & Driver Note =====
