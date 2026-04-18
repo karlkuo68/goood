@@ -4792,13 +4792,21 @@ async function computeDriverHistory() {
 
   // ── 配置 ──
   var DV2_CONFIG = {
-    MAX_BAG_UNITS: 2,         // 一趟最多 2 馬鞍袋 (左1+右1)
-    MAX_NORMAL_UNITS: 2,      // 常溫最多
-    MAX_COLD_UNITS: 1.5,      // 冷藏（需保冷袋佔空間）
-    MAX_HOT_UNITS: 1.5,       // 熱食（需保溫佔空間）
+    // 載量：2 馬鞍袋 + 1 背負保溫袋 = 最多 2.5 袋
+    MAX_TOTAL_BAGS: 2.5,
+    // 單一溫層在同溫合併時的上限
+    MAX_SINGLE_TEMP_BAGS: 2.5,
+    // 跨溫層時，每個溫層各自上限 1 袋
+    MAX_CROSS_TEMP_PER_LAYER: 1,
+    // 合併上限
+    MAX_MERGE_ORDERS: 3,
+    // 時段跨度上限（分鐘）
+    MAX_TIMESLOT_SPAN: 60,
+    // 目的地間距上限（公里）
+    MAX_DEST_DISTANCE_KM: 1,
     SCORE_MAX: 100,
-    GOOGLE_MAPS_API_KEY: 'YOUR_GOOGLE_MAPS_API_KEY_HERE', // 需使用者申請後替換
-    USE_GOOGLE_MAPS: false    // 預設關閉，有 key 再開啟
+    GOOGLE_MAPS_API_KEY: 'YOUR_GOOGLE_MAPS_API_KEY_HERE',
+    USE_GOOGLE_MAPS: false
   };
 
   // 商家商圈對照 (階段3簡化版距離估算)
@@ -4883,66 +4891,172 @@ async function computeDriverHistory() {
   }
 
   /* ──────────────────────────────────────────
-     階段 2.2 — 訂單聚類演算法 clusterOrders()
+     訂單合併演算法 clusterOrders()
+     合併條件：
+     1. 同商圈取貨
+     2. 時段跨度 ≤ 1 小時
+     3. 溫層容量（同溫 ≤ 2.5 袋；跨溫各層 ≤ 1 袋；總量 ≤ 2.5 袋）
+     4. 目的地距離 ≤ 1 公里（無 Maps 用同區域判斷）
+     5. 最多 3 筆
   ────────────────────────────────────────── */
+
+  // 取訂單的取貨商圈（商家所在商圈）
+  function getOrderPickupZone(order) {
+    var vids = getOrderVendors(order);
+    if (!vids.length) return 'unknown';
+    // 取第一個商家的商圈
+    return VENDOR_ZONE_MAP[vids[0]] || 'unknown';
+  }
+
+  // 取訂單時段的起始和結束分鐘
+  function parseSlotRange(slot) {
+    if (!slot) return { start: null, end: null };
+    var parts = slot.split('-');
+    var s = parseTimeslotMinutes(parts[0]);
+    var e = parts[1] ? parseTimeslotMinutes(parts[1]) : (s != null ? s + 30 : null);
+    return { start: s, end: e };
+  }
+
+  // 判斷兩個目的地是否「同方向順路」（無 Maps 時用區域 + 地址相似度）
+  function areDestinationsNearby(addrA, addrB) {
+    // 有 Google Maps 時用真實距離（未來擴充）
+    // 無 Maps：同送貨區域視為順路
+    var zoneA = guessDeliveryZone(addrA);
+    var zoneB = guessDeliveryZone(addrB);
+    if (zoneA === zoneB) return true;
+
+    // 相鄰區域也算順路
+    var ADJACENT = {
+      '新竹東南商圈': ['新竹科學園區', '新竹湳雅商圈'],
+      '新竹科學園區': ['新竹東南商圈', '竹東'],
+      '新竹湳雅商圈': ['新竹東南商圈', '竹北福興商圈'],
+      '竹北福興商圈': ['新竹湳雅商圈'],
+      '竹東': ['新竹科學園區']
+    };
+    var adj = ADJACENT[zoneA] || [];
+    return adj.indexOf(zoneB) !== -1;
+  }
+
+  // 檢查一組訂單的溫層容量是否合法
+  function checkTempCapacity(orderList) {
+    // 統計每個溫層的袋數
+    var tempBags = {};
+    orderList.forEach(function(o) {
+      var t = o.tempType || 'normal';
+      tempBags[t] = (tempBags[t] || 0) + getOrderUnits(o);
+    });
+
+    var tempTypes = Object.keys(tempBags);
+    var totalBags = 0;
+    for (var i = 0; i < tempTypes.length; i++) {
+      totalBags += tempBags[tempTypes[i]];
+    }
+
+    if (tempTypes.length === 1) {
+      // 同溫層：上限 2.5 袋
+      if (tempBags[tempTypes[0]] > DV2_CONFIG.MAX_SINGLE_TEMP_BAGS) return false;
+    } else {
+      // 跨溫層：每層 ≤ 1 袋
+      for (var j = 0; j < tempTypes.length; j++) {
+        if (tempBags[tempTypes[j]] > DV2_CONFIG.MAX_CROSS_TEMP_PER_LAYER) return false;
+      }
+    }
+
+    // 總量不超過 2.5
+    if (totalBags > DV2_CONFIG.MAX_TOTAL_BAGS) return false;
+    return true;
+  }
+
+  // 檢查時段跨度
+  function checkTimeslotSpan(orderList) {
+    var minStart = Infinity, maxEnd = -Infinity;
+    orderList.forEach(function(o) {
+      var range = parseSlotRange(o.timeslot);
+      if (range.start != null && range.start < minStart) minStart = range.start;
+      if (range.end != null && range.end > maxEnd) maxEnd = range.end;
+    });
+    if (minStart === Infinity) return true; // 沒有時段資訊，不限制
+    return (maxEnd - minStart) <= DV2_CONFIG.MAX_TIMESLOT_SPAN;
+  }
+
+  // 檢查所有目的地兩兩之間是否順路
+  function checkAllDestsNearby(orderList) {
+    for (var i = 0; i < orderList.length; i++) {
+      for (var j = i + 1; j < orderList.length; j++) {
+        if (!areDestinationsNearby(orderList[i].address || '', orderList[j].address || '')) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  // 嘗試將 candidate 加入 group，回傳是否可合併
+  function canMergeOrder(existingOrders, candidate) {
+    // 條件 5：最多 3 筆
+    if (existingOrders.length >= DV2_CONFIG.MAX_MERGE_ORDERS) return false;
+
+    // 條件 1：同商圈取貨
+    var groupZone = getOrderPickupZone(existingOrders[0]);
+    var candZone = getOrderPickupZone(candidate);
+    if (groupZone !== candZone) return false;
+
+    var merged = existingOrders.concat([candidate]);
+
+    // 條件 2：時段跨度 ≤ 1 小時
+    if (!checkTimeslotSpan(merged)) return false;
+
+    // 條件 3：溫層容量
+    if (!checkTempCapacity(merged)) return false;
+
+    // 條件 4：目的地順路
+    if (!checkAllDestsNearby(merged)) return false;
+
+    return true;
+  }
+
   function clusterOrders(orders) {
     if (!orders || !orders.length) return [];
 
-    // 先按溫度分桶
-    var byTemp = { cold: [], hot: [], normal: [] };
-    orders.forEach(function(o){
-      var t = o.tempType || 'normal';
-      if (!byTemp[t]) byTemp[t] = [];
-      byTemp[t].push(o);
+    // 按時段排序
+    var sorted = orders.slice().sort(function(a, b) {
+      var tA = parseTimeslotMinutes(a.timeslot) || 9999;
+      var tB = parseTimeslotMinutes(b.timeslot) || 9999;
+      return tA - tB;
     });
 
-    var groups = [];
+    var groups = []; // 每組: { orders: [...] }
+    var used = new Array(sorted.length);
 
-    // 每個溫度桶內再按商家、區域、時間合併
-    Object.keys(byTemp).forEach(function(tempType){
-      var list = byTemp[tempType];
-      if (!list.length) return;
+    // 貪婪合併：依序取未分組的訂單，嘗試合併後續訂單
+    for (var i = 0; i < sorted.length; i++) {
+      if (used[i]) continue;
+      var group = [sorted[i]];
+      used[i] = true;
 
-      // VIP 優先獨立成組
-      var vips = list.filter(function(o){ return o.isVIP; });
-      var normals = list.filter(function(o){ return !o.isVIP; });
+      // 嘗試合併後面的訂單
+      for (var j = i + 1; j < sorted.length; j++) {
+        if (used[j]) continue;
+        if (canMergeOrder(group, sorted[j])) {
+          group.push(sorted[j]);
+          used[j] = true;
+        }
+      }
 
-      // VIP 每單一組 (之後可合併相近的)
-      vips.forEach(function(o){
-        groups.push(makeGroup([o], tempType));
+      // 決定這組的主要溫層
+      var tempCounts = {};
+      group.forEach(function(o) {
+        var t = o.tempType || 'normal';
+        tempCounts[t] = (tempCounts[t] || 0) + 1;
+      });
+      var mainTemp = 'normal';
+      var maxCount = 0;
+      Object.keys(tempCounts).forEach(function(t) {
+        if (tempCounts[t] > maxCount) { maxCount = tempCounts[t]; mainTemp = t; }
       });
 
-      // 一般訂單：按 (商家組合, 送貨區域, 時段) key 分桶
-      var buckets = {};
-      normals.forEach(function(o){
-        var vids = getOrderVendors(o).sort().join(',');
-        var area = guessDeliveryZone(o.address);
-        var slot = o.timeslot || '';
-        var key = tempType + '|' + vids + '|' + area + '|' + slot;
-        if (!buckets[key]) buckets[key] = [];
-        buckets[key].push(o);
-      });
-
-      // 每桶內再按容量切分 (若超過 MAX_BAG_UNITS)
-      Object.keys(buckets).forEach(function(key){
-        var bucket = buckets[key];
-        var cur = [];
-        var curUnits = 0;
-        var cap = tempType === 'cold' ? DV2_CONFIG.MAX_COLD_UNITS
-                : tempType === 'hot'  ? DV2_CONFIG.MAX_HOT_UNITS
-                : DV2_CONFIG.MAX_NORMAL_UNITS;
-        bucket.forEach(function(o){
-          var u = getOrderUnits(o);
-          if (curUnits + u <= cap) {
-            cur.push(o); curUnits += u;
-          } else {
-            if (cur.length) groups.push(makeGroup(cur, tempType));
-            cur = [o]; curUnits = u;
-          }
-        });
-        if (cur.length) groups.push(makeGroup(cur, tempType));
-      });
-    });
+      groups.push(makeGroup(group, mainTemp));
+    }
 
     return groups;
   }
@@ -4952,7 +5066,9 @@ async function computeDriverHistory() {
     var vendors = {};
     var areas = {};
     var hasVIP = false;
-    var minTime = Infinity;
+    var tempTypes = {};
+    var minStart = Infinity;
+    var maxEnd = -Infinity;
     var timeConstraint = '';
 
     orders.forEach(function(o){
@@ -4961,19 +5077,47 @@ async function computeDriverHistory() {
       var area = guessDeliveryZone(o.address);
       areas[area] = true;
       if (o.isVIP) hasVIP = true;
-      var mt = parseTimeslotMinutes(o.timeslot);
-      if (mt != null && mt < minTime) { minTime = mt; timeConstraint = o.timeslot; }
+      var t = o.tempType || 'normal';
+      tempTypes[t] = true;
+      var range = parseSlotRange(o.timeslot);
+      if (range.start != null && range.start < minStart) minStart = range.start;
+      if (range.end != null && range.end > maxEnd) maxEnd = range.end;
       if (o.timeNote) timeConstraint = o.timeNote;
     });
+
+    // 最早時段作為 timeConstraint
+    if (!timeConstraint && orders[0]) {
+      timeConstraint = orders[0].timeslot || '';
+    }
+
+    // 計算建議出發時間
+    var suggestedDepart = '';
+    var isCrossSlot = false;
+    if (orders.length > 1 && minStart !== Infinity) {
+      // 檢查是否跨時段
+      var slots = {};
+      orders.forEach(function(o){ slots[o.timeslot || ''] = true; });
+      isCrossSlot = Object.keys(slots).length > 1;
+      if (isCrossSlot) {
+        // 跨時段：取中間時間提前 15 分鐘
+        var midPoint = Math.round((minStart + maxEnd) / 2) - 15;
+        var dH = Math.floor(midPoint / 60);
+        var dM = midPoint % 60;
+        suggestedDepart = String(dH).padStart(2, '0') + ':' + String(dM).padStart(2, '0');
+      }
+    }
 
     return {
       orders: orders,
       totalUnits: totalUnits,
-      tempTypes: [tempType],
+      tempTypes: Object.keys(tempTypes),
       vendors: Object.keys(vendors),
       areas: Object.keys(areas),
       hasVIP: hasVIP,
-      timeConstraint: timeConstraint || (orders[0] && orders[0].timeslot) || ''
+      timeConstraint: timeConstraint,
+      suggestedDepart: suggestedDepart,
+      isCrossSlot: isCrossSlot,
+      pickupZone: getOrderPickupZone(orders[0])
     };
   }
 
@@ -5410,7 +5554,8 @@ async function computeDriverHistory() {
       var assignedDriver = dv2State.assignments[gi] || '';
       g.orders.forEach(function(o, oi){
         var slot = o.timeslot || g.timeConstraint || '';
-        var depart = (typeof calcDepartTime === 'function') ? calcDepartTime(slot) : '';
+        // 跨時段合併時用組的建議出發時間，否則用訂單自己的
+        var depart = g.suggestedDepart || ((typeof calcDepartTime === 'function') ? calcDepartTime(slot) : '');
         rows.push({
           gi: gi, oi: oi,
           order: o,
@@ -5418,6 +5563,7 @@ async function computeDriverHistory() {
           ranked: ranked,
           timeslot: slot,
           departTime: depart,
+          isCrossSlot: g.isCrossSlot,
           sortKey: (slot.replace(/[^0-9]/g,'') || '9999') + '_' + String(gi).padStart(3,'0') + '_' + String(oi).padStart(3,'0'),
           driver: assignedDriver
         });
