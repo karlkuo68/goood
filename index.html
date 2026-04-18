@@ -1807,6 +1807,43 @@ function renderVendorPicker(ctx) {
 // ════════════════════════════════════════════════
 // 菜單面板（全域狀態版）
 // ════════════════════════════════════════════════
+// ── 菜單排序：品項上下移動 ──
+function moveMenuItem(ctx, catIdx, itemIdx, delta) {
+  const vid = ctx === 'main' ? selVid : selPVid;
+  if (!vid) return;
+  const db = DB.getMenus();
+  const menu = db[vid];
+  if (!menu || !menu.categories || !menu.categories[catIdx]) return;
+  const items = menu.categories[catIdx].items;
+  const newIdx = itemIdx + delta;
+  if (newIdx < 0 || newIdx >= items.length) return;
+  // swap
+  const tmp = items[itemIdx];
+  items[itemIdx] = items[newIdx];
+  items[newIdx] = tmp;
+  DB.saveMenus(db);
+  renderMenuPanel(ctx);
+}
+
+// ── 菜單排序：分類上下移動 ──
+function moveMenuCat(ctx, catIdx, delta) {
+  const vid = ctx === 'main' ? selVid : selPVid;
+  if (!vid) return;
+  const db = DB.getMenus();
+  const menu = db[vid];
+  if (!menu || !menu.categories) return;
+  const cats = menu.categories;
+  const newIdx = catIdx + delta;
+  if (newIdx < 0 || newIdx >= cats.length) return;
+  const tmp = cats[catIdx];
+  cats[catIdx] = cats[newIdx];
+  cats[newIdx] = tmp;
+  // 更新 active index 跟著移動
+  if (ctx === 'main') activeCatIdx = newIdx; else activePCatIdx = newIdx;
+  DB.saveMenus(db);
+  renderMenuPanel(ctx);
+}
+
 function renderMenuPanel(ctx) {
   const menuAreaId = ctx === 'main' ? 'menu-area' : 'p-menu-area';
   const vid = ctx === 'main' ? selVid : selPVid;
@@ -1842,11 +1879,39 @@ function renderMenuPanel(ctx) {
   menu.categories.forEach((cat, i) => {
     const d = document.createElement('div');
     d.className = 'cat-tab' + (i === catIdx ? ' active' : '');
-    d.textContent = cat.name;
-    d.onclick = () => {
-      if (ctx === 'main') activeCatIdx = i; else activePCatIdx = i;
-      renderMenuPanel(ctx);
-    };
+    d.style.cssText = 'display:flex;align-items:center;gap:2px;';
+
+    const catLabel = document.createElement('span');
+    catLabel.textContent = cat.name;
+    catLabel.style.cursor = 'pointer';
+    catLabel.addEventListener('click', (function(idx){
+      return function() {
+        if (ctx === 'main') activeCatIdx = idx; else activePCatIdx = idx;
+        renderMenuPanel(ctx);
+      };
+    })(i));
+    d.appendChild(catLabel);
+
+    // 分類排序箭頭（僅 active 分類顯示）
+    if (i === catIdx && menu.categories.length > 1) {
+      if (i > 0) {
+        const catL = document.createElement('span');
+        catL.textContent = '◀';
+        catL.title = '左移';
+        catL.style.cssText = 'cursor:pointer;font-size:10px;opacity:0.5;padding:0 2px;';
+        catL.addEventListener('click', (function(idx){ return function(e){ e.stopPropagation(); moveMenuCat(ctx, idx, -1); }; })(i));
+        d.insertBefore(catL, catLabel);
+      }
+      if (i < menu.categories.length - 1) {
+        const catR = document.createElement('span');
+        catR.textContent = '▶';
+        catR.title = '右移';
+        catR.style.cssText = 'cursor:pointer;font-size:10px;opacity:0.5;padding:0 2px;';
+        catR.addEventListener('click', (function(idx){ return function(e){ e.stopPropagation(); moveMenuCat(ctx, idx, 1); }; })(i));
+        d.appendChild(catR);
+      }
+    }
+
     catBar.appendChild(d);
   });
 
@@ -1911,8 +1976,31 @@ function renderMenuPanel(ctx) {
     qtyDiv.appendChild(qtySpan);
     qtyDiv.appendChild(plusBtn);
 
+    // 排序按鈕
+    const sortDiv = document.createElement('div');
+    sortDiv.className = 'item-sort-btns';
+    sortDiv.style.cssText = 'display:flex;flex-direction:column;gap:1px;margin-left:4px;';
+
+    if (ii > 0) {
+      const upBtn = document.createElement('button');
+      upBtn.textContent = '▲';
+      upBtn.title = '上移';
+      upBtn.style.cssText = 'border:none;background:none;cursor:pointer;font-size:10px;color:#9ca3af;padding:1px 4px;line-height:1;';
+      upBtn.addEventListener('click', (function(catI, itemI){ return function(ev){ ev.stopPropagation(); moveMenuItem(ctx, catI, itemI, -1); }; })(catIdx, ii));
+      sortDiv.appendChild(upBtn);
+    }
+    if (ii < cat.items.length - 1) {
+      const downBtn = document.createElement('button');
+      downBtn.textContent = '▼';
+      downBtn.title = '下移';
+      downBtn.style.cssText = 'border:none;background:none;cursor:pointer;font-size:10px;color:#9ca3af;padding:1px 4px;line-height:1;';
+      downBtn.addEventListener('click', (function(catI, itemI){ return function(ev){ ev.stopPropagation(); moveMenuItem(ctx, catI, itemI, 1); }; })(catIdx, ii));
+      sortDiv.appendChild(downBtn);
+    }
+
     d.appendChild(infoDiv);
     d.appendChild(priceSpan);
+    d.appendChild(sortDiv);
     d.appendChild(qtyDiv);
     itemArea.appendChild(d);
   });
