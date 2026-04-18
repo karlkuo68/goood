@@ -5314,6 +5314,54 @@ async function computeDriverHistory() {
   }
 
   /* ──────────────────────────────────────────
+     拆單：將訂單從合併組中拆出成獨立組
+  ────────────────────────────────────────── */
+  function splitOrderFromGroup(gi, oi) {
+    var group = dv2State.groups[gi];
+    if (!group || group.orders.length <= 1) return;
+    var order = group.orders.splice(oi, 1)[0];
+    // 重算原組 meta
+    var tempType = group.tempTypes[0] || 'normal';
+    dv2State.groups[gi] = makeGroup(group.orders, tempType);
+    // 保留原組的外送員指派
+    // 新增獨立組
+    var newGroup = makeGroup([order], tempType);
+    dv2State.groups.push(newGroup);
+    // 清空新組的指派（讓 autoAssign 重新選）
+    // 重新整理 assignments（index 沒變，只多了最後一組）
+    autoAssignAllDrivers();
+    renderDv2Summary();
+    if (typeof showToast === 'function') showToast('已拆出「' + (order.customer || '訂單') + '」為獨立組');
+  }
+
+  /* ──────────────────────────────────────────
+     合併：將獨立組合回指定組
+  ────────────────────────────────────────── */
+  function mergeOrderToGroup(fromGi, targetGi) {
+    if (fromGi === targetGi) return;
+    var fromGroup = dv2State.groups[fromGi];
+    var targetGroup = dv2State.groups[targetGi];
+    if (!fromGroup || !targetGroup) return;
+    // 把 from 的所有訂單併入 target
+    fromGroup.orders.forEach(function(o){ targetGroup.orders.push(o); });
+    var tempType = targetGroup.tempTypes[0] || 'normal';
+    dv2State.groups[targetGi] = makeGroup(targetGroup.orders, tempType);
+    // 移除空組
+    dv2State.groups.splice(fromGi, 1);
+    // 重整 assignments
+    var newAssignments = {};
+    var oldAssignments = dv2State.assignments;
+    var shift = 0;
+    for (var i = 0; i < dv2State.groups.length + 1; i++) {
+      if (i === fromGi) { shift = 1; continue; }
+      newAssignments[i - shift] = oldAssignments[i] || '';
+    }
+    dv2State.assignments = newAssignments;
+    autoAssignAllDrivers();
+    renderDv2Summary();
+  }
+
+  /* ──────────────────────────────────────────
      自動指派：為每組選最高分外送員
   ────────────────────────────────────────── */
   function autoAssignAllDrivers() {
@@ -5443,13 +5491,11 @@ async function computeDriverHistory() {
     html += '<th style="padding:6px 4px;text-align:center;border-bottom:2px solid #e2e8f0;white-space:nowrap;">馬鞍袋</th>';
     html += '<th style="padding:6px 4px;text-align:right;border-bottom:2px solid #e2e8f0;white-space:nowrap;">總金額</th>';
     html += '<th style="padding:6px 8px;text-align:center;border-bottom:2px solid #e2e8f0;white-space:nowrap;">外送員</th>';
+    html += '<th style="padding:6px 4px;text-align:center;border-bottom:2px solid #e2e8f0;white-space:nowrap;"></th>';
     html += '</tr></thead><tbody>';
 
     // 組別色帶：用外送員顏色淡化當底色，組間加粗分隔線
-    var GROUP_BG_COLORS = [
-      '#fff3e0','#e3f2fd','#e8f5e9','#f3e5f5','#fff8e1',
-      '#e0f7fa','#fce4ec','#e8eaf6','#f1f8e9','#fbe9e7'
-    ];
+    var GROUP_BG_COLORS = ['#fff','#f0f4f8','#f8f5ee'];
     var lastGi = -1;
     var groupColorIdx = -1;
 
@@ -5512,6 +5558,16 @@ async function computeDriverHistory() {
         html += '</td>';
       }
       // else skip td due to rowspan
+
+      // 拆單按鈕
+      var groupLen = dv2State.groups[r.gi].orders.length;
+      if (groupLen > 1) {
+        html += '<td style="padding:3px 2px;border-bottom:1px solid #f1f5f9;text-align:center;">';
+        html += '<button class="dv2-split-btn" data-gi="' + r.gi + '" data-oi="' + r.oi + '" title="拆出此單" style="border:1px solid #e5e7eb;background:#fff;border-radius:4px;cursor:pointer;font-size:11px;padding:2px 6px;color:#6b7280;">✂️拆</button>';
+        html += '</td>';
+      } else {
+        html += '<td style="padding:3px 2px;border-bottom:1px solid #f1f5f9;"></td>';
+      }
 
       html += '</tr>';
     });
@@ -5592,6 +5648,15 @@ async function computeDriverHistory() {
         var gi = parseInt(sel.getAttribute('data-gi'), 10);
         dv2State.assignments[gi] = sel.value;
         renderDv2Summary();
+      });
+    });
+
+    // ── 綁定拆單按鈕 ──
+    body.querySelectorAll('.dv2-split-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var gi = parseInt(btn.getAttribute('data-gi'), 10);
+        var oi = parseInt(btn.getAttribute('data-oi'), 10);
+        splitOrderFromGroup(gi, oi);
       });
     });
   }
