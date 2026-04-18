@@ -1857,7 +1857,7 @@ function renderMenuPanel(ctx) {
   const cartNow = ctx === 'main' ? cart : pCart;
 
   cat.items.forEach((item, ii) => {
-    const cnt = cartNow.filter(c => c.vendorId === vid && c.name === item.name).length;
+    const cnt = cartNow.filter(c => c.vendorId === vid && c.name === item.name).reduce((s,c) => s + (c.qty || 1), 0);
     const hasOpts = (cat.sweetness && cat.sweetness.length) || (cat.ice && cat.ice.length) || (cat.toppings && cat.toppings.length) || cat.fixedSweetness || cat.fixedIce;
     const vName = (getAllVendorZones().flatMap(z=>z.vendors).find(v=>v.id===vid)||{}).name || vid;
 
@@ -1934,24 +1934,37 @@ function directChangeQty(e, ctx, qtyElId, rowElId, itemData, catData, delta) {
       return;
     }
 
-    if (delta > 0) {
+    if (ctx === 'parse') {
+      // Parse mode: update qty on existing entry or add new
+      var existIdx = cartNow.findIndex(function(c){ return c.vendorId===itemData.vendorId && c.name===itemData.name; });
+      if (existIdx >= 0) {
+        cartNow[existIdx].qty = Math.max(0, (cartNow[existIdx].qty || 1) + delta);
+        if (cartNow[existIdx].qty <= 0) cartNow.splice(existIdx, 1);
+      } else if (delta > 0) {
+        cartNow.push({
+          vendorId: itemData.vendorId, vendorName: itemData.vendorName,
+          catName: itemData.catName, name: itemData.name,
+          price: itemData.price, qty: 1, opts: null
+        });
+      }
+    } else if (delta > 0) {
       cartNow.push({
         vendorId: itemData.vendorId, vendorName: itemData.vendorName,
         catName: itemData.catName, name: itemData.name,
         price: itemData.price, qty: 1, opts: null
       });
     } else {
-      const idxArr = cartNow.map((c,i) => (c.vendorId===itemData.vendorId && c.name===itemData.name) ? i : -1).filter(i=>i>=0);
+      var idxArr = cartNow.map(function(c,i){ return (c.vendorId===itemData.vendorId && c.name===itemData.name) ? i : -1; }).filter(function(i){ return i>=0; });
       if (idxArr.length > 0) cartNow.splice(idxArr[idxArr.length-1], 1);
     }
 
-    const cnt = cartNow.filter(c => c.vendorId===itemData.vendorId && c.name===itemData.name).length;
+    const cnt = cartNow.filter(c => c.vendorId===itemData.vendorId && c.name===itemData.name).reduce((s,c) => s + (c.qty || 1), 0);
     const qn = document.getElementById(qtyElId);
     if (qn) qn.textContent = cnt;
     const row = document.getElementById(rowElId);
     if (row) row.classList.toggle('in-cart', cnt > 0);
 
-    if (ctx === 'main') renderCart(); else renderPCart();
+    if (ctx === 'main') renderCart(); else { renderPItems(); renderPCart(); }
   } catch(err) {
     console.error('directChangeQty error:', err);
   }
@@ -2114,7 +2127,7 @@ function updateItemBadge(ctx, vid, catIdx, itemIdx) {
   const db = DB.getMenus();
   const item = db[vid] && db[vid].categories[catIdx] && db[vid].categories[catIdx].items[itemIdx];
   if (!item) return;
-  const cnt = cartNow.filter(c => c.vendorId === vid && c.name === item.name).length;
+  const cnt = cartNow.filter(c => c.vendorId === vid && c.name === item.name).reduce((s,c) => s + (c.qty || 1), 0);
   const qn = document.getElementById(`${menuAreaId}-qty-${vid}-${catIdx}-${itemIdx}`);
   if (qn) qn.textContent = cnt;
   const row = document.getElementById(`${menuAreaId}-item-${vid}-${catIdx}-${itemIdx}`);
@@ -2679,11 +2692,43 @@ function fillParseResult(data) {
     el.classList.add('filled');
   }
   const db = DB.getMenus();
-  const allItems = Object.values(db).flatMap(m => m.categories.flatMap(c => c.items));
-  pCart = (data.items || []).map(item => {
-    const found = allItems.find(i => i.name === item.name || item.name.includes(i.name) || i.name.includes(item.name));
-    return { name: item.name, price: found ? found.price : (item.price || 0), qty: item.qty || 1, opts: item.opts || null, unmatched: !found };
+  const allVendors = getAllVendorZones().flatMap(z => z.vendors);
+  // Build enriched index: { name, price, vendorId, vendorName, catName, catIdx, itemIdx }
+  const menuIndex = [];
+  Object.entries(db).forEach(function(entry) {
+    var vid = entry[0], menu = entry[1];
+    var vDef = allVendors.find(function(v){ return v.id === vid; });
+    var vName = vDef ? vDef.name : vid;
+    (menu.categories || []).forEach(function(cat, ci) {
+      (cat.items || []).forEach(function(item, ii) {
+        menuIndex.push({ name: item.name, price: item.price, vendorId: vid, vendorName: vName, catName: cat.name, catIdx: ci, itemIdx: ii });
+      });
+    });
   });
+
+  var firstMatchedVid = null;
+  pCart = (data.items || []).map(function(item) {
+    // Fuzzy match: exact > contains > contained-by
+    var found = menuIndex.find(function(m){ return m.name === item.name; });
+    if (!found) found = menuIndex.find(function(m){ return item.name.includes(m.name); });
+    if (!found) found = menuIndex.find(function(m){ return m.name.includes(item.name); });
+    if (found) {
+      if (!firstMatchedVid) firstMatchedVid = found.vendorId;
+      return {
+        name: found.name, price: found.price, qty: item.qty || 1,
+        opts: item.opts || null, unmatched: false,
+        vendorId: found.vendorId, vendorName: found.vendorName, catName: found.catName
+      };
+    }
+    return { name: item.name, price: item.price || 0, qty: item.qty || 1, opts: item.opts || null, unmatched: true };
+  });
+
+  // Auto-select first matched vendor in parse-mode vendor picker & render menu panel
+  if (firstMatchedVid) {
+    selPVid = firstMatchedVid; activePCatIdx = 0;
+    renderVendorPicker('parse');
+    renderMenuPanel('parse');
+  }
   renderPItems(); renderPCart();
   const unBlock = document.getElementById('p-unrecog'), unList = document.getElementById('p-unrecog-list');
   if (data.unrecognized && data.unrecognized.length) { unBlock.classList.remove('hidden'); unList.innerHTML = data.unrecognized.map(u => `<div>・${esc(u)}</div>`).join(''); }
@@ -2697,7 +2742,8 @@ function renderPItems() {
   pCart.forEach((c, i) => {
     const d = document.createElement('div'); d.className = 'p-item-row';
     const infoD = document.createElement('div'); infoD.style.flex='1';
-    infoD.innerHTML = `<span style="font-size:13px;font-weight:500">${esc(c.name)}</span>${c.unmatched?'<span class="unmatched">⚠ 未比對</span>':''}<br>${c.opts?`<span style="font-size:11px;color:var(--text-hint)">${esc(c.opts)}</span>`:''}`;
+    var vendorTag = c.vendorName ? '<span style="font-size:10px;color:var(--green);background:var(--green-light);padding:1px 6px;border-radius:4px;margin-left:4px">' + esc(c.vendorName) + '</span>' : '';
+    infoD.innerHTML = '<span style="font-size:13px;font-weight:500">' + esc(c.name) + '</span>' + (c.unmatched ? '<span class="unmatched">⚠ 未比對</span>' : vendorTag) + '<br>' + (c.opts ? '<span style="font-size:11px;color:var(--text-hint)">' + esc(c.opts) + '</span>' : '');
     const qtyCtrl = document.createElement('div'); qtyCtrl.className='qty-ctrl';
     const minB = document.createElement('button'); minB.className='qty-btn'; minB.textContent='−';
     const qtyS = document.createElement('span'); qtyS.className='qty-num'; qtyS.textContent=c.qty;
@@ -2711,12 +2757,17 @@ function renderPItems() {
     priceInput.addEventListener('change',(function(idx){return function(){pCart[idx].price=Number(this.value);renderPCart();};})(i));
     priceDiv.appendChild(dollarS);priceDiv.appendChild(priceInput);
     const rmB = document.createElement('button'); rmB.className='cart-rm'; rmB.textContent='×';
-    rmB.addEventListener('click',(function(idx){return function(e){e.stopPropagation();pCart.splice(idx,1);renderPItems();renderPCart();};})(i));
+    rmB.addEventListener('click',(function(idx){return function(e){e.stopPropagation();pCart.splice(idx,1);renderPItems();renderPCart();if(selPVid)renderMenuPanel('parse');};})(i));
     d.appendChild(infoD);d.appendChild(qtyCtrl);d.appendChild(priceDiv);d.appendChild(rmB);
     el.appendChild(d);
   });
 }
-function changePQ(i, d) { pCart[i].qty = Math.max(1, pCart[i].qty + d); renderPItems(); renderPCart(); }
+function changePQ(i, d) {
+  pCart[i].qty = Math.max(1, pCart[i].qty + d);
+  renderPItems(); renderPCart();
+  // Refresh menu panel badges if a vendor is selected
+  if (selPVid) renderMenuPanel('parse');
+}
 function genParseOrder() {
   const f = getFormData('p-');
   if (!f.customer || !f.phone || !f.address) { showToast('訂購人、電話、地址為必填'); return; }
