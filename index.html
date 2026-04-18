@@ -4792,10 +4792,10 @@ async function computeDriverHistory() {
 
   // ── 配置 ──
   var DV2_CONFIG = {
-    MAX_BAG_UNITS: 9,         // 總馬鞍袋上限 (左4+右4+保冷1)
-    MAX_NORMAL_UNITS: 8,      // 常溫最多單位
-    MAX_COLD_UNITS: 4,        // 冷藏最多單位 (保冷袋1+馬鞍袋佔用)
-    MAX_HOT_UNITS: 4,         // 熱食最多單位
+    MAX_BAG_UNITS: 2,         // 一趟最多 2 馬鞍袋 (左1+右1)
+    MAX_NORMAL_UNITS: 2,      // 常溫最多
+    MAX_COLD_UNITS: 1.5,      // 冷藏（需保冷袋佔空間）
+    MAX_HOT_UNITS: 1.5,       // 熱食（需保溫佔空間）
     SCORE_MAX: 100,
     GOOGLE_MAPS_API_KEY: 'YOUR_GOOGLE_MAPS_API_KEY_HERE', // 需使用者申請後替換
     USE_GOOGLE_MAPS: false    // 預設關閉，有 key 再開啟
@@ -4812,24 +4812,57 @@ async function computeDriverHistory() {
   // 送貨地址 → 商圈粗估 (用地址關鍵字)
   function guessDeliveryZone(addr) {
     if (!addr) return 'unknown';
+    if (/科學園區|科學工業園區|園區|力行路|篤行|研新|工業東|創新/.test(addr)) return '新竹科學園區';
+    if (/竹東|工研院|中興路四段/.test(addr)) return '竹東';
     if (/竹北|新豐|湖口|關西/.test(addr)) return '竹北福興商圈';
-    if (/東區|光復|學府|建功|食品|食品路/.test(addr)) return '新竹東南商圈';
-    if (/北區|湳雅|經國|中華路/.test(addr)) return '新竹湳雅商圈';
+    if (/東區|光復|學府|建功|食品|食品路|東南街|中央路/.test(addr)) return '新竹東南商圈';
+    if (/北區|湳雅|經國|中華路|西大路/.test(addr)) return '新竹湳雅商圈';
     if (/香山/.test(addr)) return '新竹東南商圈';
     return '其他';
   }
 
   // 計算訂單馬鞍袋單位數
+  // 馬鞍袋結構：左右各一袋，中間層架，每袋分 4 格（左上/左下/右上/右下）
+  // 總共 8 格空間，每格容量依品類不同：
+  //   車輪餅/麻糬 (小件) → 每格約 15-20 個
+  //   便當 (大件) → 每格 2-3 個
+  //   飲料 → 每格 4 杯
+  var COMPARTMENT_CAPACITY = {
+    'default': 15,    // 小件（車輪餅、麻糬等）每格 15 個
+    'bento': 2,       // 便當每格 2 個
+    'drink': 4,       // 飲料每格 4 杯
+  };
+  var TOTAL_COMPARTMENTS = 8; // 左4+右4
+
+  function getItemType(item) {
+    var name = (item.name || '').toLowerCase();
+    var cat = (item.catName || '').toLowerCase();
+    if (/便當|飯|麵|餐盒|排骨|雞腿/.test(name + cat)) return 'bento';
+    if (/飲|茶|咖啡|奶|汁|冰|杯/.test(name + cat)) return 'drink';
+    return 'default'; // 車輪餅、麻糬等小件
+  }
+
   function getOrderUnits(order) {
-    var units = parseInt(order.baggageUnits, 10);
-    if (isNaN(units) || units < 1) {
-      // fallback 用 calcOrderBags (袋數 → 單位)
-      try {
-        var bags = (typeof calcOrderBags === 'function') ? calcOrderBags(order) : 1;
-        units = Math.max(1, Math.ceil(bags));
-      } catch(e) { units = 1; }
-    }
-    return Math.min(units, 9);
+    // 如果手動設定了 baggageUnits 且合理，直接用
+    var manual = parseFloat(order.baggageUnits);
+    if (!isNaN(manual) && manual >= 0.5 && manual <= 9) return manual;
+
+    // 自動計算：依品項類型估算佔幾格
+    var items = order.items || [];
+    if (!items.length) return 1;
+
+    var totalCompartments = 0;
+    items.forEach(function(it) {
+      var qty = it.qty || 1;
+      var type = getItemType(it);
+      var cap = COMPARTMENT_CAPACITY[type] || COMPARTMENT_CAPACITY['default'];
+      totalCompartments += qty / cap;
+    });
+
+    // 格數 → 馬鞍袋數（8格=1袋，取上整到 0.5）
+    var bags = totalCompartments / TOTAL_COMPARTMENTS;
+    bags = Math.ceil(bags * 2) / 2; // 四捨五入到 0.5
+    return Math.max(0.5, Math.min(bags, 9));
   }
 
   // 取得訂單主要商家 ID
@@ -5037,18 +5070,20 @@ async function computeDriverHistory() {
       reasons.push({ type: 'plus', text: '商家紅名單加分 (+30)' });
     }
 
-    // 準時度 ×4 (1-5 → 4-20)
+    // 準時度 (支援 1-5 星或 0-100 分)
     if (note.punctuality) {
-      var p = note.punctuality * 4;
+      var pRaw = note.punctuality > 5 ? note.punctuality / 20 : note.punctuality; // 正規化為 1-5
+      var p = Math.round(pRaw * 4);
       score += p;
-      reasons.push({ type: 'plus', text: '準時度 ' + note.punctuality + '★ (+' + p + ')' });
+      reasons.push({ type: 'plus', text: '準時度 ' + pRaw.toFixed(1) + '★ (+' + p + ')' });
     }
 
-    // 細心度 ×3
+    // 細心度
     if (note.carefulness) {
-      var c = note.carefulness * 3;
+      var cRaw = note.carefulness > 5 ? note.carefulness / 20 : note.carefulness;
+      var c = Math.round(cRaw * 3);
       score += c;
-      reasons.push({ type: 'plus', text: '細心度 ' + note.carefulness + '★ (+' + c + ')' });
+      reasons.push({ type: 'plus', text: '細心度 ' + cRaw.toFixed(1) + '★ (+' + c + ')' });
     }
 
     // 併單能力 (多單時才加)
@@ -5069,25 +5104,41 @@ async function computeDriverHistory() {
     if (will === 'high') { score += 5; reasons.push({ type: 'plus', text: '臨時加單意願高 (+5)' }); }
     if (will === 'low')  { score -= 5; reasons.push({ type: 'minus', text: '臨時加單意願低 (-5)' }); }
 
-    // 方向感 ×2
+    // 方向感
     if (note.navigation) {
-      var nv = note.navigation * 2;
+      var nvRaw = note.navigation > 5 ? note.navigation / 20 : note.navigation;
+      var nv = Math.round(nvRaw * 2);
       score += nv;
-      reasons.push({ type: 'plus', text: '方向感 ' + note.navigation + '★ (+' + nv + ')' });
+      reasons.push({ type: 'plus', text: '方向感 ' + nvRaw.toFixed(1) + '★ (+' + nv + ')' });
     }
 
-    // 今日已接訂單數 -3 per 單 (階段4 負載平衡強化)
+    // 今日已接訂單數 -8 per 單 (強化負載平衡)
     var load = (todayLoad && todayLoad[driverId]) || 0;
     if (load > 0) {
-      var penalty = load * 3;
+      var penalty = load * 8;
       score -= penalty;
-      reasons.push({ type: (load >= 3 ? 'minus' : 'plus'), text: '今日已接 ' + load + ' 單 (-' + penalty + ')' });
+      reasons.push({ type: 'minus', text: '今日已接 ' + load + ' 單 (-' + penalty + ')' });
     } else {
       reasons.push({ type: 'plus', text: '今日尚未接單' });
     }
 
+    // 偏好區域匹配
+    var prefAreas = note.preferredAreas || [];
+    if (prefAreas.length) {
+      var groupAreas = group.areas || [];
+      var areaMatch = groupAreas.filter(function(a){ return prefAreas.indexOf(a) !== -1; });
+      if (areaMatch.length) {
+        score += 12;
+        reasons.push({ type: 'plus', text: '熟悉區域 ' + areaMatch.join('/') + ' (+12)' });
+      } else {
+        score -= 5;
+        reasons.push({ type: 'minus', text: '非熟悉區域 (-5)' });
+      }
+    }
+
     // 內部標籤
     var tag = note.internalTag || '';
+    if (tag === 'veteran')  { score += 10; reasons.push({ type: 'plus', text: '資深外送員 (+10)' }); }
     if (tag === 'senior')   { score += 10; reasons.push({ type: 'plus', text: '資深外送員 (+10)' }); }
     if (tag === 'special')  { score += 15; reasons.push({ type: 'plus', text: '特派 (+15)' }); }
     if (tag === 'observing'){ score -= 20; reasons.push({ type: 'minus', text: '待觀察 (-20)' }); }
@@ -5311,6 +5362,8 @@ async function computeDriverHistory() {
     // 階段 4.2 歷史表現
     try { dv2State.driverHistory = await computeDriverHistory(); } catch(e) { dv2State.driverHistory = {}; }
     dv2State.dateStr = dateStr;
+    // 載入 shift bookings
+    try { dv2State.shiftBookings = await fbGet('/shiftBookings') || {}; } catch(e) { dv2State.shiftBookings = {}; }
   }
 
   /* ──────────────────────────────────────────
@@ -5365,20 +5418,71 @@ async function computeDriverHistory() {
      自動指派：為每組選最高分外送員
   ────────────────────────────────────────── */
   function autoAssignAllDrivers() {
-    // 建立每組的排名列表快取
+    // 複製今日負載，在指派過程中即時累加
+    var liveLoad = {};
+    Object.keys(dv2State.todayLoad || {}).forEach(function(k){
+      liveLoad[k] = dv2State.todayLoad[k];
+    });
+
+    // 追蹤每位外送員的時間佔用（分鐘區間）
+    var driverTimeBlocks = {};
+
+    // 先按時段排序 groups，讓早的時段先指派
+    var sortedGi = dv2State.groups.map(function(g, gi){ return gi; });
+    sortedGi.sort(function(a, b){
+      var tA = dv2State.groups[a].timeConstraint || '';
+      var tB = dv2State.groups[b].timeConstraint || '';
+      return tA < tB ? -1 : tA > tB ? 1 : 0;
+    });
+
     dv2State.rankedDrivers = {};
-    dv2State.groups.forEach(function(g, gi){
-      var filtered = filterAvailableDrivers(g, dv2State.allDrivers, dv2State.driverNotes, dv2State.schedules, dv2State.todayLoad);
+
+    sortedGi.forEach(function(gi){
+      var g = dv2State.groups[gi];
+      var filtered = filterAvailableDrivers(g, dv2State.allDrivers, dv2State.driverNotes, dv2State.schedules, liveLoad);
       var available = filtered.filter(function(r){ return !r.excluded; });
       var excluded = filtered.filter(function(r){ return r.excluded; });
+
+      // 計算此組的預估時間區間
+      var groupSlot = g.timeConstraint || (g.orders[0] && g.orders[0].timeslot) || '';
+      var groupStartMin = parseTimeslotMinutes(groupSlot);
+      var groupDuration = estimateGroupDuration(g);
+      if (groupStartMin == null) groupStartMin = 720; // 12:00 default
+      var departMin = groupStartMin - 15; // 提前 15 分出門
+      var returnMin = departMin + groupDuration + 15; // 加回程
+
       var scored = available.map(function(r){
-        var s = scoreDriverForOrderGroup(r.driverId, g, r.note, dv2State.todayLoad);
-        return { driverId: r.driverId, score: s.score, reasons: s.reasons };
+        var s = scoreDriverForOrderGroup(r.driverId, g, r.note, liveLoad);
+        var timeScore = s.score;
+
+        // 時間衝突檢查：如果此外送員在該時段已有行程，扣分
+        var blocks = driverTimeBlocks[r.driverId] || [];
+        var hasConflict = false;
+        blocks.forEach(function(blk){
+          // 有重疊
+          if (departMin < blk.end && returnMin > blk.start) {
+            hasConflict = true;
+          }
+        });
+        if (hasConflict) {
+          timeScore -= 40;
+          s.reasons.push({ type: 'minus', text: '時段衝突 (-40)' });
+        }
+
+        return { driverId: r.driverId, score: timeScore, reasons: s.reasons };
       }).sort(function(a,b){ return b.score - a.score; });
+
       dv2State.rankedDrivers[gi] = { scored: scored, excluded: excluded };
+
       // 自動指派最高分
       if (scored.length && !dv2State.assignments[gi]) {
-        dv2State.assignments[gi] = scored[0].driverId;
+        var chosen = scored[0].driverId;
+        dv2State.assignments[gi] = chosen;
+        // 即時更新負載
+        liveLoad[chosen] = (liveLoad[chosen] || 0) + g.orders.length;
+        // 記錄時間佔用
+        if (!driverTimeBlocks[chosen]) driverTimeBlocks[chosen] = [];
+        driverTimeBlocks[chosen].push({ start: departMin, end: returnMin });
       }
     });
   }
@@ -5478,6 +5582,55 @@ async function computeDriverHistory() {
     html += '<span><b>' + totalUnits + '</b> 馬鞍袋</span>';
     html += '<span><b>$' + totalAmt.toLocaleString() + '</b></span>';
     html += '</div>';
+
+    // 計算面板用的外送員負載
+    var liveLoadForPanel = {};
+    dv2State.groups.forEach(function(g, gi){
+      var d = dv2State.assignments[gi]; if(!d) return;
+      liveLoadForPanel[d] = (liveLoadForPanel[d]||0) + g.orders.length;
+    });
+
+    // ── 外送員排班列表 ──
+    html += '<div style="margin-bottom:12px;padding:10px 12px;background:#f0f9ff;border-radius:10px;border:1px solid #bfdbfe;">';
+    html += '<div style="font-weight:700;font-size:13px;margin-bottom:8px;">🛵 今日可派外送員</div>';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+    dv2State.allDrivers.forEach(function(d) {
+      if (d === '平台') return; // 排除平台
+      var sched = dv2State.schedules && dv2State.schedules[d];
+      var isOff = sched && sched[dv2State.dateStr] === 'off';
+      var note = (dv2State.driverNotes && dv2State.driverNotes[d]) || {};
+      var clr = driverColor(d);
+      // 取排班時段
+      var shiftText = '';
+      if (isOff) {
+        shiftText = '休假';
+      } else {
+        // 嘗試從 shiftBookings 取時段
+        var shifts = (dv2State.shiftBookings && dv2State.shiftBookings[d] && dv2State.shiftBookings[d][dv2State.dateStr]) || {};
+        var shiftKeys = Object.keys(shifts).filter(function(k){ return shifts[k]; }).sort();
+        if (shiftKeys.length) {
+          var first = shiftKeys[0].replace(/^B\d+_/, '');
+          var last = shiftKeys[shiftKeys.length-1].replace(/^B\d+_/, '');
+          var lastH = parseInt(last, 10);
+          var endH = lastH + 1;
+          shiftText = first.substring(0,2) + ':' + first.substring(2) + '-' + String(endH).padStart(2,'0') + ':00';
+        } else {
+          shiftText = '有班';
+        }
+      }
+
+      var bgColor = isOff ? '#f1f5f9' : (clr + '18');
+      var borderColor = isOff ? '#d1d5db' : clr;
+      var textColor = isOff ? '#9ca3af' : '#1e293b';
+      var load = liveLoadForPanel[d] || 0;
+
+      html += '<div style="display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:8px;border:1.5px solid ' + borderColor + ';background:' + bgColor + ';font-size:12px;color:' + textColor + ';' + (isOff ? 'opacity:0.5;text-decoration:line-through;' : '') + '">';
+      html += '<span style="font-weight:700;color:' + (isOff ? '#9ca3af' : clr) + ';">' + escHtml(d) + '</span>';
+      html += '<span style="color:#6b7280;">' + escHtml(shiftText) + '</span>';
+      if (!isOff && load > 0) html += '<span style="background:#fbbf24;color:#000;padding:0 4px;border-radius:4px;font-size:10px;font-weight:700;">' + load + '單</span>';
+      html += '</div>';
+    });
+    html += '</div></div>';
 
     // ── 表格 ──
     html += '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">';
