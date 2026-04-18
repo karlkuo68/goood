@@ -5445,18 +5445,25 @@ async function computeDriverHistory() {
     html += '<th style="padding:6px 8px;text-align:center;border-bottom:2px solid #e2e8f0;white-space:nowrap;">外送員</th>';
     html += '</tr></thead><tbody>';
 
-    // 記錄同組合併色帶
+    // 組別色帶：用外送員顏色淡化當底色，組間加粗分隔線
+    var GROUP_BG_COLORS = [
+      '#fff3e0','#e3f2fd','#e8f5e9','#f3e5f5','#fff8e1',
+      '#e0f7fa','#fce4ec','#e8eaf6','#f1f8e9','#fbe9e7'
+    ];
     var lastGi = -1;
-    var groupBg = false;
+    var groupColorIdx = -1;
 
     rows.forEach(function(r, ri){
-      // 組別交替底色
-      if (r.gi !== lastGi) { groupBg = !groupBg; lastGi = r.gi; }
-      var bg = groupBg ? '#fff' : '#f8fafc';
+      // 組別交替底色 — 每組用不同淡色
+      var isNewGroup = (r.gi !== lastGi);
+      if (isNewGroup) { groupColorIdx++; lastGi = r.gi; }
+      var bg = GROUP_BG_COLORS[groupColorIdx % GROUP_BG_COLORS.length];
       var vipStyle = r.order.isVIP ? 'border-left:3px solid #f59e0b;' : '';
       var drvColor = driverColor(r.driver);
+      // 組間加粗分隔線
+      var topBorder = (isNewGroup && ri > 0) ? 'border-top:2.5px solid #94a3b8;' : '';
 
-      html += '<tr style="background:' + bg + ';' + vipStyle + '">';
+      html += '<tr style="background:' + bg + ';' + vipStyle + topBorder + '">';
 
       // 預約時段
       html += '<td style="padding:5px 4px;border-bottom:1px solid #f1f5f9;white-space:nowrap;">' + escHtml(r.timeslot) + '</td>';
