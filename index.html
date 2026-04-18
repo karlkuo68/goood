@@ -1335,6 +1335,15 @@ textarea { resize: vertical; min-height: 60px; }
               <option value="low">低</option>
             </select>
           </label>
+          <label>交通工具
+            <select id="dn-vehicleType">
+              <option value="scooter">🛵 機車</option>
+              <option value="ebike">🚲 電動自行車</option>
+              <option value="car">🚗 汽車（大型載運）</option>
+              <option value="walk">🚶 步行</option>
+            </select>
+            <div class="cs-hint">外送員使用的交通工具類型</div>
+          </label>
           <label>內部標籤
             <select id="dn-internalTag">
               <option value="new">新人</option>
@@ -4223,7 +4232,7 @@ function csIsStaff() { return CS_ROLE === 'admin' || CS_ROLE === 'staff'; }
 var DRIVER_NOTES_FIELDS = [
   'punctuality','carefulness','navigation','communication','stamina','multiOrder',
   'trustLevel','cashReliability','incidents','vendorRedList','vendorBlackList',
-  'customerPrefs','driverConflicts','extraOrderWill','internalTag'
+  'customerPrefs','driverConflicts','extraOrderWill','internalTag','vehicleType'
 ];
 
 function dnDefault() {
@@ -4234,6 +4243,7 @@ function dnDefault() {
     incidents: '', vendorRedList: [], vendorBlackList: [],
     customerPrefs: '', driverConflicts: [],
     extraOrderWill: 'medium', internalTag: 'observing',
+    vehicleType: 'scooter',
     updatedAt: null
   };
 }
@@ -4328,7 +4338,7 @@ function dnFillForm(notes) {
     if (el) el.value = notes[k] == null ? '' : notes[k];
   });
   // 下拉
-  ['trustLevel','cashReliability','extraOrderWill','internalTag'].forEach(function(k){
+  ['trustLevel','cashReliability','extraOrderWill','internalTag','vehicleType'].forEach(function(k){
     var el = document.getElementById('dn-'+k);
     if (el) el.value = notes[k] || '';
   });
@@ -4355,7 +4365,7 @@ function dnCollectForm() {
       notes[k] = (isNaN(n) || n < 1 || n > 5) ? null : n;
     }
   });
-  ['trustLevel','cashReliability','extraOrderWill','internalTag'].forEach(function(k){
+  ['trustLevel','cashReliability','extraOrderWill','internalTag','vehicleType'].forEach(function(k){
     var el = document.getElementById('dn-'+k);
     if (el) notes[k] = el.value;
   });
@@ -4525,6 +4535,113 @@ document.addEventListener('DOMContentLoaded', function(){
 </div>
 
 <script>
+/* ════════════════════════════════════════════════
+   階段 3 — Google Maps Geocoding + Distance Matrix
+   階段 4.2 — 歷史表現學習
+════════════════════════════════════════════════ */
+
+// ── 3.1 Geocoding：地址 → 座標 (存入 order.coords) ──
+async function geocodeAddress(address) {
+  var key = (typeof DV2_CONFIG !== 'undefined' && DV2_CONFIG.GOOGLE_MAPS_API_KEY) || 'YOUR_GOOGLE_MAPS_API_KEY_HERE';
+  if (!address || key === 'YOUR_GOOGLE_MAPS_API_KEY_HERE') return null;
+  try {
+    var url = 'https://maps.googleapis.com/maps/api/geocode/json?address=' + encodeURIComponent(address) + '&region=tw&language=zh-TW&key=' + key;
+    var r = await fetch(url);
+    var data = await r.json();
+    if (data.status === 'OK' && data.results && data.results[0]) {
+      var loc = data.results[0].geometry.location;
+      return { lat: loc.lat, lng: loc.lng };
+    }
+  } catch(e) { console.warn('[Geocoding] 失敗', e); }
+  return null;
+}
+
+// ── 3.2 Distance Matrix：計算真實距離/時間 ──
+async function getDistanceMatrix(origins, destinations) {
+  var key = (typeof DV2_CONFIG !== 'undefined' && DV2_CONFIG.GOOGLE_MAPS_API_KEY) || 'YOUR_GOOGLE_MAPS_API_KEY_HERE';
+  if (key === 'YOUR_GOOGLE_MAPS_API_KEY_HERE') return null;
+  try {
+    var oStr = origins.map(function(p){ return p.lat + ',' + p.lng; }).join('|');
+    var dStr = destinations.map(function(p){ return p.lat + ',' + p.lng; }).join('|');
+    var url = 'https://maps.googleapis.com/maps/api/distancematrix/json?origins=' + encodeURIComponent(oStr) + '&destinations=' + encodeURIComponent(dStr) + '&mode=driving&language=zh-TW&key=' + key;
+    var r = await fetch(url);
+    var data = await r.json();
+    if (data.status === 'OK') return data;
+  } catch(e) { console.warn('[DistanceMatrix] 失敗', e); }
+  return null;
+}
+
+// ── 訂單儲存時自動 Geocoding (hook) ──
+var _origSaveOrder = (typeof saveOrder === 'function') ? saveOrder : null;
+function saveOrderWithGeocode() {
+  // 先執行原始 saveOrder
+  if (_origSaveOrder) _origSaveOrder();
+  // 非同步背景 geocode 最新訂單
+  setTimeout(async function(){
+    try {
+      var key = (typeof DV2_CONFIG !== 'undefined' && DV2_CONFIG.GOOGLE_MAPS_API_KEY) || '';
+      if (key === 'YOUR_GOOGLE_MAPS_API_KEY_HERE' || !key) return;
+      var orders = DB.getOrders();
+      if (!orders.length) return;
+      var last = orders[orders.length - 1];
+      if (last.coords) return; // 已有座標
+      if (!last.address) return;
+      var coords = await geocodeAddress(last.address);
+      if (coords) {
+        last.coords = coords;
+        DB.saveOrders(orders);
+        console.log('[Geocoding] 已為訂單', last.id, '取得座標:', coords);
+      }
+    } catch(e) { console.warn('[Geocoding] 背景處理失敗', e); }
+  }, 500);
+}
+// 替換全域 saveOrder
+if (_origSaveOrder) { window.saveOrder = saveOrderWithGeocode; }
+
+// ── 4.2 歷史表現學習：從 /trips 計算實際準時率和客訴率 ──
+async function computeDriverHistory() {
+  var history = {};
+  try {
+    var trips = await fbGet('/trips') || {};
+    Object.values(trips).forEach(function(trip){
+      var drv = trip.driver;
+      if (!drv) return;
+      if (!history[drv]) history[drv] = { totalTrips: 0, onTime: 0, late: 0, complaints: 0, ratings: [], completedOrders: 0 };
+      var h = history[drv];
+      h.totalTrips++;
+      h.completedOrders += (trip.orders || []).length;
+      // 從 trip status 判斷是否完成
+      if (trip.status === 'done') {
+        // 判斷準時：有 arrivedAt 和 timeslot 可比較
+        if (trip.arrivedAt && trip.timeslot) {
+          var slotMin = null;
+          var sm = trip.timeslot.match(/(\d{1,2}):(\d{2})/);
+          if (sm) slotMin = parseInt(sm[1]) * 60 + parseInt(sm[2]);
+          var arrDate = new Date(trip.arrivedAt);
+          var arrMin = arrDate.getHours() * 60 + arrDate.getMinutes();
+          if (slotMin != null) {
+            if (arrMin <= slotMin + 5) h.onTime++;  // 5分鐘內算準時
+            else h.late++;
+          }
+        }
+        // 客訴紀錄 (trip.complaint)
+        if (trip.complaint) h.complaints++;
+        // 評分 (trip.rating)
+        if (trip.rating) h.ratings.push(trip.rating);
+      }
+    });
+    // 計算比率
+    Object.keys(history).forEach(function(drv){
+      var h = history[drv];
+      var judged = h.onTime + h.late;
+      h.onTimeRate = judged > 0 ? Math.round(h.onTime / judged * 100) : null;
+      h.complaintRate = h.totalTrips > 0 ? Math.round(h.complaints / h.totalTrips * 100) : null;
+      h.avgRating = h.ratings.length > 0 ? Math.round(h.ratings.reduce(function(a,b){return a+b;},0) / h.ratings.length * 10) / 10 : null;
+    });
+  } catch(e) { console.warn('[History] 載入失敗', e); }
+  return history;
+}
+
 /* ════════════════════════════════════════════════
    DispatchV2 — 一鍵派單 (階段 2-4)
 ════════════════════════════════════════════════ */
@@ -4722,7 +4839,28 @@ document.addEventListener('DOMContentLoaded', function(){
         if (hit.length) reason = '商家黑名單命中 (' + hit.length + ' 家)';
       }
 
-      // 5. 內部標籤：實習中 + VIP/高單價訂單排除
+      // 5. 外送員衝突標註 — 若同批已指派的外送員有衝突則排除
+      if (!reason) {
+        var conflicts = note.driverConflicts || [];
+        if (conflicts.length && dv2State && dv2State.assignments) {
+          var assigned = Object.values(dv2State.assignments);
+          var conflictHit = assigned.filter(function(a){ return conflicts.indexOf(a) !== -1; });
+          if (conflictHit.length) reason = '與已指派外送員衝突 (' + conflictHit.join('、') + ')';
+        }
+      }
+
+      // 6. 交通工具不符合 — 大量訂單需汽車、步行不可接多單
+      if (!reason) {
+        var vehicle = note.vehicleType || 'scooter';
+        if (vehicle === 'walk' && group.totalUnits > 2) {
+          reason = '步行外送員無法承載 ' + group.totalUnits + ' 單位';
+        }
+        if (vehicle === 'ebike' && group.totalUnits > 4) {
+          reason = '電動自行車無法承載 ' + group.totalUnits + ' 單位';
+        }
+      }
+
+      // 7. 內部標籤：實習中 + VIP/高單價訂單排除
       if (!reason) {
         var tag = note.internalTag || '';
         var totalAmt = (group.orders || []).reduce(function(s,o){ return s + (o.total||0); }, 0);
@@ -4813,6 +4951,24 @@ document.addEventListener('DOMContentLoaded', function(){
     if (tag === 'observing'){ score -= 20; reasons.push({ type: 'minus', text: '待觀察 (-20)' }); }
     if (tag === 'intern')   { score -= 10; reasons.push({ type: 'minus', text: '實習中 (-10)' }); }
 
+    // 歷史表現加分 (階段 4.2)
+    if (dv2State && dv2State.driverHistory && dv2State.driverHistory[driverId]) {
+      var hist = dv2State.driverHistory[driverId];
+      if (hist.onTimeRate != null) {
+        if (hist.onTimeRate >= 90)      { score += 10; reasons.push({ type: 'plus', text: '歷史準時率 ' + hist.onTimeRate + '% (+10)' }); }
+        else if (hist.onTimeRate >= 70) { score += 5;  reasons.push({ type: 'plus', text: '歷史準時率 ' + hist.onTimeRate + '% (+5)' }); }
+        else                            { score -= 5;  reasons.push({ type: 'minus', text: '歷史準時率 ' + hist.onTimeRate + '% (-5)' }); }
+      }
+      if (hist.complaintRate != null && hist.complaintRate > 10) {
+        score -= 10;
+        reasons.push({ type: 'minus', text: '客訴率 ' + hist.complaintRate + '% (-10)' });
+      }
+      if (hist.avgRating != null) {
+        if (hist.avgRating >= 4.5)      { score += 5; reasons.push({ type: 'plus', text: '歷史評分 ' + hist.avgRating + '★ (+5)' }); }
+        else if (hist.avgRating < 3.0)  { score -= 5; reasons.push({ type: 'minus', text: '歷史評分 ' + hist.avgRating + '★ (-5)' }); }
+      }
+    }
+
     return { score: Math.max(0, Math.min(score, 150)), reasons: reasons };
   }
 
@@ -4820,6 +4976,8 @@ document.addEventListener('DOMContentLoaded', function(){
      階段 3 — 距離/時間估算 (簡化版，有 API key 再啟用真 Maps)
   ────────────────────────────────────────── */
   function estimateGroupDuration(group) {
+    // 如果有真實 Maps 數據 (透過 Distance Matrix 快取)
+    if (group._mapsMinutes) return group._mapsMinutes;
     // 簡化版：按商圈估算
     var areaCount = group.areas.length;
     var orderCount = group.orders.length;
@@ -4829,8 +4987,36 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 
   function estimateGroupDistance(group) {
+    // 如果有真實 Maps 數據
+    if (group._mapsKm) return group._mapsKm;
     // 簡化：每單 2km + 跨商圈 +5km
     return group.orders.length * 2 + (group.areas.length - 1) * 5;
+  }
+
+  // 階段3：用 Distance Matrix 填入真實距離 (需 API key)
+  async function enrichGroupsWithMaps(groups) {
+    if (!DV2_CONFIG.USE_GOOGLE_MAPS) return;
+    for (var gi = 0; gi < groups.length; gi++) {
+      var g = groups[gi];
+      var coordOrders = g.orders.filter(function(o){ return o.coords && o.coords.lat; });
+      if (coordOrders.length < 2) continue;
+      try {
+        var origins = [coordOrders[0].coords];
+        var dests = coordOrders.slice(1).map(function(o){ return o.coords; });
+        var dm = await getDistanceMatrix(origins, dests);
+        if (dm && dm.rows && dm.rows[0] && dm.rows[0].elements) {
+          var totalM = 0, totalSec = 0;
+          dm.rows[0].elements.forEach(function(el){
+            if (el.status === 'OK') {
+              totalM += el.distance.value;
+              totalSec += el.duration.value;
+            }
+          });
+          g._mapsKm = Math.round(totalM / 100) / 10;
+          g._mapsMinutes = Math.round(totalSec / 60);
+        }
+      } catch(e) { console.warn('[Maps] group enrichment 失敗', e); }
+    }
   }
 
   // 貪婪 TSP — 回傳重新排序後的訂單陣列
@@ -4920,6 +5106,7 @@ document.addEventListener('DOMContentLoaded', function(){
     groups: [],
     allDrivers: [],
     driverNotes: {},
+    driverHistory: {},
     schedules: {},
     todayLoad: {},
     assignments: {}, // { groupIdx: driverId }
@@ -4964,6 +5151,9 @@ document.addEventListener('DOMContentLoaded', function(){
     // 聚類
     dv2State.groups = clusterOrders(pending);
 
+    // 階段3: 用 Google Maps 充實距離資料 (若有 API key)
+    try { await enrichGroupsWithMaps(dv2State.groups); } catch(e) {}
+
     // 載入外送員 + 標註
     dv2State.allDrivers = (typeof getAvailableDrivers === 'function')
       ? getAvailableDrivers()
@@ -4972,6 +5162,8 @@ document.addEventListener('DOMContentLoaded', function(){
     try { dv2State.driverNotes = await fbGet('/driverNotes') || {}; } catch(e) { dv2State.driverNotes = {}; }
     try { dv2State.schedules  = await fbGet('/schedules')  || {}; } catch(e) { dv2State.schedules = {}; }
     dv2State.todayLoad = computeTodayLoad(tripsLocal, dateStr);
+    // 階段 4.2 歷史表現
+    try { dv2State.driverHistory = await computeDriverHistory(); } catch(e) { dv2State.driverHistory = {}; }
     dv2State.dateStr = dateStr;
   }
 
@@ -5329,6 +5521,7 @@ document.addEventListener('DOMContentLoaded', function(){
     estimateGroupDistance: estimateGroupDistance,
     computeTodayLoad: computeTodayLoad,
     exportDispatchCSV: exportDispatchCSV,
+    enrichGroupsWithMaps: enrichGroupsWithMaps,
     openModal: openDv2Modal,
     CONFIG: DV2_CONFIG
   };
@@ -5490,6 +5683,20 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('mainApp').style.display = '';
   }
 });
+</script>
+
+<!-- 階段3: Google Maps JavaScript API (需替換 API Key) -->
+<script>
+// Google Maps API 動態載入 (僅在 USE_GOOGLE_MAPS=true 且有 key 時載入)
+(function(){
+  if (typeof DV2_CONFIG !== 'undefined' && DV2_CONFIG.USE_GOOGLE_MAPS && DV2_CONFIG.GOOGLE_MAPS_API_KEY !== 'YOUR_GOOGLE_MAPS_API_KEY_HERE') {
+    var s = document.createElement('script');
+    s.src = 'https://maps.googleapis.com/maps/api/js?key=' + DV2_CONFIG.GOOGLE_MAPS_API_KEY + '&libraries=geometry&language=zh-TW';
+    s.async = true;
+    document.head.appendChild(s);
+    console.log('[Maps] Google Maps API 已載入');
+  }
+})();
 </script>
 </body>
 </html>
