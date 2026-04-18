@@ -5177,7 +5177,10 @@ async function computeDriverHistory() {
     bk.classList.add('on');
     dv2State.step = 1;
     dv2State.assignments = {};
-    prepareDv2Data().then(renderDv2Step1);
+    prepareDv2Data().then(function(){
+      autoAssignAllDrivers();
+      renderDv2Summary();
+    });
   }
 
   function closeDv2Modal() {
@@ -5220,6 +5223,201 @@ async function computeDriverHistory() {
     // 階段 4.2 歷史表現
     try { dv2State.driverHistory = await computeDriverHistory(); } catch(e) { dv2State.driverHistory = {}; }
     dv2State.dateStr = dateStr;
+  }
+
+  /* ──────────────────────────────────────────
+     自動指派：為每組選最高分外送員
+  ────────────────────────────────────────── */
+  function autoAssignAllDrivers() {
+    // 建立每組的排名列表快取
+    dv2State.rankedDrivers = {};
+    dv2State.groups.forEach(function(g, gi){
+      var filtered = filterAvailableDrivers(g, dv2State.allDrivers, dv2State.driverNotes, dv2State.schedules, dv2State.todayLoad);
+      var available = filtered.filter(function(r){ return !r.excluded; });
+      var excluded = filtered.filter(function(r){ return r.excluded; });
+      var scored = available.map(function(r){
+        var s = scoreDriverForOrderGroup(r.driverId, g, r.note, dv2State.todayLoad);
+        return { driverId: r.driverId, score: s.score, reasons: s.reasons };
+      }).sort(function(a,b){ return b.score - a.score; });
+      dv2State.rankedDrivers[gi] = { scored: scored, excluded: excluded };
+      // 自動指派最高分
+      if (scored.length && !dv2State.assignments[gi]) {
+        dv2State.assignments[gi] = scored[0].driverId;
+      }
+    });
+  }
+
+  /* ──────────────────────────────────────────
+     一鍵派單總表（取代 3 步驟）
+  ────────────────────────────────────────── */
+  function renderDv2Summary() {
+    var body = document.getElementById('dv2-mbody');
+    var foot = document.getElementById('dv2-mfoot');
+    document.getElementById('dv2-mtitle').textContent = '🚀 今日派單總表';
+
+    if (!dv2State.groups.length) {
+      body.innerHTML = '<div class="dv2-empty">🎉 今日無待派訂單</div>';
+      foot.innerHTML = '<button class="dv2-btn-cancel" id="dv2-btn-close">關閉</button>';
+      document.getElementById('dv2-btn-close').addEventListener('click', closeDv2Modal);
+      return;
+    }
+
+    // ── 統計 ──
+    var totalOrders = 0, totalUnits = 0, totalAmt = 0, driverSet = {}, driverLoad = {};
+    dv2State.groups.forEach(function(g, gi){
+      totalOrders += g.orders.length;
+      totalUnits += g.totalUnits;
+      g.orders.forEach(function(o){ totalAmt += (o.total || 0); });
+      var drv = dv2State.assignments[gi];
+      if (drv) { driverSet[drv] = true; driverLoad[drv] = (driverLoad[drv] || 0) + g.orders.length; }
+    });
+
+    var html = '';
+
+    // 頂部統計列
+    html += '<div class="dv2-stats" style="margin-bottom:12px;">';
+    html += '<div class="dv2-stat-box"><div class="sb-num">' + totalOrders + '</div><div class="sb-lbl">訂單</div></div>';
+    html += '<div class="dv2-stat-box"><div class="sb-num">' + dv2State.groups.length + '</div><div class="sb-lbl">趟次</div></div>';
+    html += '<div class="dv2-stat-box"><div class="sb-num">' + Object.keys(driverSet).length + '</div><div class="sb-lbl">外送員</div></div>';
+    html += '<div class="dv2-stat-box"><div class="sb-num">$' + totalAmt.toLocaleString() + '</div><div class="sb-lbl">總額</div></div>';
+    html += '</div>';
+
+    // ── 分組表格 ──
+    dv2State.groups.forEach(function(g, gi){
+      var ranked = dv2State.rankedDrivers[gi] || { scored: [], excluded: [] };
+      var assigned = dv2State.assignments[gi] || '';
+      var tempTag = g.tempTypes[0];
+      var tempText = tempTag === 'cold' ? '❄️冷藏' : tempTag === 'hot' ? '🔥熱食' : '📦常溫';
+      var vipClass = g.hasVIP ? ' vip' : '';
+
+      html += '<div class="dv2-group-card' + vipClass + '" style="position:relative;">';
+
+      // 組標頭 + 外送員 dropdown
+      html += '<div class="dv2-group-head" style="flex-wrap:wrap;gap:6px;">';
+      html += '<div class="dv2-group-ttl" style="flex:1;min-width:120px;">組 ' + (gi+1) + ' · ' + g.orders.length + '單 · ' + g.totalUnits + '袋</div>';
+
+      // driver select dropdown
+      html += '<div style="display:flex;align-items:center;gap:6px;">';
+      html += '<span style="font-size:13px;">🛵</span>';
+      html += '<select class="dv2-driver-select" data-gi="' + gi + '" style="padding:4px 8px;border-radius:8px;border:1.5px solid #d1d5db;font-size:13px;font-weight:600;min-width:80px;background:#fff;">';
+      if (!ranked.scored.length) {
+        html += '<option value="">無可用外送員</option>';
+      } else {
+        ranked.scored.forEach(function(d){
+          var sel = (d.driverId === assigned) ? ' selected' : '';
+          html += '<option value="' + escHtml(d.driverId) + '"' + sel + '>' + escHtml(d.driverId) + ' (' + Math.round(d.score) + '分)</option>';
+        });
+      }
+      html += '</select>';
+
+      // 分數標籤
+      var curDriver = ranked.scored.find(function(d){ return d.driverId === assigned; });
+      if (curDriver) {
+        html += '<span style="font-size:11px;color:#6b7280;">' + Math.round(curDriver.score) + '分</span>';
+      }
+      html += '</div>';
+
+      // 標籤列
+      html += '<div class="dv2-group-meta" style="width:100%;">';
+      html += '<span class="dv2-tag ' + tempTag + '">' + tempText + '</span>';
+      if (g.hasVIP) html += '<span class="dv2-tag vip">⭐VIP</span>';
+      html += '<span>📍' + g.areas.join('、') + '</span>';
+      if (g.timeConstraint) html += '<span>🕐' + escHtml(g.timeConstraint) + '</span>';
+      html += '</div>';
+      html += '</div>';
+
+      // 訂單列
+      g.orders.forEach(function(o, oi){
+        html += '<div class="dv2-order-mini" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">';
+        html += '<span class="oc-name" style="font-weight:600;min-width:60px;">' + escHtml(o.customer || '未命名') + '</span>';
+        html += '<span class="oc-addr" style="flex:1;color:#6b7280;font-size:12px;">' + escHtml(o.address || '') + '</span>';
+        html += '<span style="font-size:12px;color:#374151;">$' + (o.total||0).toLocaleString() + '</span>';
+        html += '<span class="oc-bag" style="font-size:11px;color:#9ca3af;">' + getOrderUnits(o) + '袋</span>';
+        // 移動按鈕
+        if (dv2State.groups.length > 1) {
+          if (gi > 0) html += '<button class="dv2-move-btn" data-action="move-up" data-gi="' + gi + '" data-oi="' + oi + '" title="移至上一組" style="padding:2px 6px;font-size:11px;border:1px solid #d1d5db;border-radius:4px;background:#f9fafb;cursor:pointer;">⬆</button>';
+          if (gi < dv2State.groups.length - 1) html += '<button class="dv2-move-btn" data-action="move-down" data-gi="' + gi + '" data-oi="' + oi + '" title="移至下一組" style="padding:2px 6px;font-size:11px;border:1px solid #d1d5db;border-radius:4px;background:#f9fafb;cursor:pointer;">⬇</button>';
+        }
+        html += '</div>';
+      });
+
+      // 評分理由 (可展開)
+      if (curDriver && curDriver.reasons && curDriver.reasons.length) {
+        html += '<details style="margin-top:6px;font-size:11px;">';
+        html += '<summary style="cursor:pointer;color:#6b7280;">📊 評分詳情</summary>';
+        html += '<div style="padding:4px 0;">';
+        curDriver.reasons.forEach(function(r){
+          var ico = r.type === 'minus' ? '✕' : '✓';
+          var clr = r.type === 'minus' ? '#ef4444' : '#10b981';
+          html += '<span style="color:' + clr + ';margin-right:8px;">' + ico + ' ' + escHtml(r.text) + '</span>';
+        });
+        html += '</div></details>';
+      }
+
+      // 被排除的外送員 (折疊)
+      if (ranked.excluded.length) {
+        html += '<details style="margin-top:4px;font-size:11px;">';
+        html += '<summary style="cursor:pointer;color:#9ca3af;">🚫 排除 ' + ranked.excluded.length + ' 人</summary>';
+        html += '<div style="padding:4px 0;color:#9ca3af;">';
+        ranked.excluded.forEach(function(r){
+          html += '<span style="margin-right:8px;">' + escHtml(r.driverId) + '(' + escHtml(r.excludeReason) + ')</span>';
+        });
+        html += '</div></details>';
+      }
+
+      html += '</div>';
+    });
+
+    // ── 負載分布 ──
+    var maxLoad = Math.max.apply(null, Object.values(driverLoad).concat([1]));
+    html += '<div style="margin-top:12px;padding:10px;background:#f0fdf4;border-radius:10px;">';
+    html += '<div style="font-weight:700;font-size:13px;margin-bottom:6px;">⚖️ 負載分布</div>';
+    Object.keys(driverLoad).forEach(function(drv){
+      var pct = (driverLoad[drv] / maxLoad) * 100;
+      html += '<div class="dv2-load-row">';
+      html += '<div class="lr-name">' + escHtml(drv) + '</div>';
+      html += '<div class="lr-bar"><div class="lr-fill" style="width:' + pct + '%"></div></div>';
+      html += '<div class="lr-num">' + driverLoad[drv] + ' 單</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+
+    body.innerHTML = html;
+
+    // ── 底部按鈕 ──
+    foot.innerHTML =
+      '<button class="dv2-btn-cancel" id="dv2-btn-cancel-s">取消</button>' +
+      '<button class="dv2-btn-cancel" id="dv2-btn-csv-s">📥 CSV</button>' +
+      '<button class="dv2-btn-confirm" id="dv2-btn-confirm-s" style="font-size:15px;">✅ 確認派單</button>';
+
+    document.getElementById('dv2-btn-cancel-s').addEventListener('click', closeDv2Modal);
+    document.getElementById('dv2-btn-csv-s').addEventListener('click', function(){
+      var gw = dv2State.groups.map(function(g, gi){ return { group: g, driver: dv2State.assignments[gi] }; });
+      exportDispatchCSV(gw, dv2State.dateStr);
+    });
+    document.getElementById('dv2-btn-confirm-s').addEventListener('click', confirmDv2Dispatch);
+
+    // ── 綁定 driver dropdown 切換 ──
+    body.querySelectorAll('.dv2-driver-select').forEach(function(sel){
+      sel.addEventListener('change', function(){
+        var gi = parseInt(sel.getAttribute('data-gi'), 10);
+        dv2State.assignments[gi] = sel.value;
+        renderDv2Summary(); // 重繪以更新統計
+      });
+    });
+
+    // ── 綁定移動按鈕 ──
+    body.querySelectorAll('.dv2-move-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var action = btn.getAttribute('data-action');
+        var gi = parseInt(btn.getAttribute('data-gi'), 10);
+        var oi = parseInt(btn.getAttribute('data-oi'), 10);
+        moveOrderBetweenGroups(gi, oi, action === 'move-up' ? -1 : 1);
+        // 移動後重新算分和指派
+        autoAssignAllDrivers();
+        renderDv2Summary();
+      });
+    });
   }
 
   function renderDv2Step1() {
@@ -5297,7 +5495,7 @@ async function computeDriverHistory() {
     dv2State.groups[toIdx] = makeGroup(toG.orders, toG.tempTypes[0]);
     // 過濾空 group
     dv2State.groups = dv2State.groups.filter(function(g){ return g.orders.length > 0; });
-    renderDv2Step1();
+    // renderDv2Step1(); // 由呼叫端決定重繪
   }
 
   function goToStep2() {
