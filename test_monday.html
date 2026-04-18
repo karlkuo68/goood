@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-TW"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>週一測試：10筆訂單 + 外送員排班</title>
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 700px; margin: 20px auto; padding: 0 16px; background: #f8fafc; }
+  h1 { font-size: 20px; }
+  .card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  .card h3 { margin: 0 0 8px; font-size: 15px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 5px 6px; border-bottom: 1px solid #e5e7eb; text-align: left; }
+  th { background: #f0f4f8; font-weight: 600; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; color: #fff; font-size: 11px; font-weight: 700; }
+  .btn { padding: 12px 24px; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; color: #fff; cursor: pointer; margin: 6px 4px; }
+  .btn-blue { background: #3b82f6; }
+  .btn-green { background: #10b981; }
+  .btn-red { background: #ef4444; }
+  .log { background: #1e293b; color: #a5f3fc; padding: 12px; border-radius: 8px; font-size: 12px; font-family: monospace; max-height: 300px; overflow-y: auto; white-space: pre-wrap; }
+  .ok { color: #4ade80; }
+  .err { color: #f87171; }
+</style>
+</head><body>
+<h1>🧪 週一測試情境：4/20 (一)</h1>
+
+<div class="card">
+  <h3>📦 10 筆測試訂單</h3>
+  <table>
+    <tr><th>#</th><th>時段</th><th>客戶</th><th>地點</th><th>品牌</th><th>金額</th><th>袋</th></tr>
+    <tr><td>1</td><td>12:00-12:30</td><td>林小姐</td><td>新竹市東區中央路 120 號</td><td style="color:#e67e22">鶴東南</td><td>$1,200</td><td>1</td></tr>
+    <tr><td>2</td><td>12:00-12:30</td><td>陳先生</td><td>新竹市北區西大路 58 號</td><td style="color:#27ae60">玉蘭</td><td>$850</td><td>1</td></tr>
+    <tr><td>3</td><td>13:00-13:30</td><td>台積七廠 張經理</td><td>新竹科學園區力行路 8 號</td><td style="color:#e67e22">鶴東南</td><td>$2,800</td><td>1.5</td></tr>
+    <tr><td>4</td><td>13:00-13:30</td><td>聯發科 王小姐</td><td>新竹科學園區篤行一路 1 號</td><td style="color:#e67e22">鶴東南</td><td>$1,650</td><td>1</td></tr>
+    <tr><td>5</td><td>13:30-14:00</td><td>瑞昱 李先生</td><td>新竹科學園區創新二路 2 號</td><td style="color:#27ae60">玉蘭</td><td>$920</td><td>1</td></tr>
+    <tr><td>6</td><td>13:30-14:00</td><td>宜特科技 陳經理</td><td>新竹科學園區園區二路 51 號</td><td style="color:#34495e">鐵東南</td><td>$1,580</td><td>1</td></tr>
+    <tr><td>7</td><td>14:00-14:30</td><td>智邦科技 吳先生</td><td>新竹科學園區研新一路 1 號</td><td style="color:#e67e22">鶴東南</td><td>$2,200</td><td>1</td></tr>
+    <tr><td>8</td><td>14:00-14:30</td><td>力積電 黃小姐</td><td>新竹科學園區力行六路 12 號</td><td style="color:#34495e">鐵東南</td><td>$1,900</td><td>1</td></tr>
+    <tr><td>9</td><td>15:00-15:30</td><td>瓦雷科技 趙先生</td><td>新竹科學園區工業東三路 6 號</td><td style="color:#e67e22">鶴東南</td><td>$680</td><td>1</td></tr>
+    <tr><td>10</td><td>14:30-15:00</td><td>工研院 周博士</td><td>新竹縣竹東鎮中興路四段 195 號</td><td style="color:#27ae60">玉蘭</td><td>$3,500</td><td>2</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h3>🛵 外送員排班（排除「平台」）</h3>
+  <table>
+    <tr><th>外送員</th><th>週一排班</th><th>設定</th></tr>
+    <tr><td>鎮哥</td><td>✅ 全天 (10-17)</td><td>資深、有車、科園區熟</td></tr>
+    <tr><td>小賴</td><td>✅ 全天 (10-17)</td><td>資深、機車、科園區熟</td></tr>
+    <tr><td>玉蕙</td><td>✅ 下午 (12-17)</td><td>中等、機車、市區熟</td></tr>
+    <tr><td>正志</td><td>✅ 上午 (10-14)</td><td>資深、機車</td></tr>
+    <tr><td>純如</td><td>✅ 下午 (13-17)</td><td>中等、機車</td></tr>
+    <tr><td>潘伊莎</td><td>❌ 休假</td><td>—</td></tr>
+    <tr><td>熊熊</td><td>❌ 休假</td><td>—</td></tr>
+    <tr><td>龍</td><td>✅ 全天 (10-17)</td><td>新人、機車</td></tr>
+    <tr><td>瑋瑋</td><td>✅ 下午 (12-16)</td><td>新人、機車</td></tr>
+    <tr><td>阿德</td><td>✅ 全天 (10-17)</td><td>中等、機車</td></tr>
+  </table>
+</div>
+
+<div style="text-align:center;margin:16px 0;">
+  <button class="btn btn-blue" id="btn-orders">📦 注入 10 筆訂單</button>
+  <button class="btn btn-green" id="btn-drivers">🛵 寫入排班 + 外送員設定</button>
+  <button class="btn btn-red" id="btn-clear">🗑️ 清除測試資料</button>
+</div>
+
+<div class="log" id="log">準備就緒。點按鈕開始注入測試資料。</div>
+
+<script>
+const FB_URL = 'https://goood-orders-default-rtdb.asia-southeast1.firebasedatabase.app';
+const DATE = '2026-04-20';
+const logEl = document.getElementById('log');
+
+function log(msg, cls) {
+  const span = document.createElement('span');
+  span.className = cls || '';
+  span.textContent = msg + '\n';
+  logEl.appendChild(span);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+// ── 10 筆訂單 ──
+const TEST_ORDERS = [
+  // 2 張市區
+  { id: Date.now()+1, date: DATE, timeslot: '12:00-12:30', customer: '林小姐', phone: '0912-111-001', address: '新竹市東區中央路 120 號',
+    items: [{vendorId:'v_qe',vendorName:'小鵲幸-東南店',name:'鵲幸紅豆',price:25,qty:8},{vendorId:'v_qe',vendorName:'小鵲幸-東南店',name:'香草牛奶',price:25,qty:6},{vendorId:'v_qe',vendorName:'小鵲幸-東南店',name:'起司薯薯',price:35,qty:6},{vendorId:'v_qe',vendorName:'小鵲幸-東南店',name:'熔岩可可',price:30,qty:4}],
+    total: 1200, payment: '匯款', payType: 'transfer', note: '', tempType: 'normal', baggageUnits: 1, isVIP: false, paymentStatus: 'paid', createdAt: new Date().toISOString() },
+  { id: Date.now()+2, date: DATE, timeslot: '12:00-12:30', customer: '陳先生', phone: '0912-111-002', address: '新竹市北區西大路 58 號',
+    items: [{vendorId:'v_yl',vendorName:'玉蘭 Youlan',name:'原味麻糬',price:35,qty:10},{vendorId:'v_yl',vendorName:'玉蘭 Youlan',name:'花生麻糬',price:35,qty:8},{vendorId:'v_yl',vendorName:'玉蘭 Youlan',name:'芝麻麻糬',price:40,qty:3}],
+    total: 850, payment: '貨到付款', payType: 'cash', note: '管理員代收', tempType: 'normal', baggageUnits: 1, isVIP: false, paymentStatus: 'unpaid', createdAt: new Date().toISOString() },
+  // 7 張科學園區
+  { id: Date.now()+3, date: DATE, timeslot: '13:00-13:30', customer: '台積七廠 張經理', phone: '0912-111-003', address: '新竹科學園區力行路 8 號',
+    items: [{vendorId:'v_qe',vendorName:'小鵲幸-東南店',name:'鵲幸紅豆',price:25,qty:40},{vendorId:'v_qe',vendorName:'小鵲幸-東南店',name:'香草珍珠',price:30,qty:40},{vendorId:'v_qe',vendorName:'小鵲幸-東南店',name:'起司薯薯',price:35,qty:10}],
+    total: 2800, payment: '匯款', payType: 'transfer', note: '大門警衛室', tempType: 'cold', baggageUnits: 2, isVIP: true, paymentStatus: 'paid', deliveryNote: '到大門打電話', createdAt: new Date().toISOString() },
+  { id: Date.now()+4, date: DATE, timeslot: '13:00-13:30', customer: '聯發科 王小姐', phone: '0912-111-004', address: '新竹科學園區篤行一路 1 號',
+    items: [{vendorId:'v_qe',vendorName:'小鵲幸-東南店',name:'香草牛奶',price:25,qty:30},{vendorId:'v_qe',vendorName:'小鵲幸-東南店',name:'抹茶麻糬',price:30,qty:25}],
+    total: 1650, payment: '匯款', payType: 'transfer', note: '', tempType: 'cold', baggageUnits: 1, isVIP: false, paymentStatus: 'paid', createdAt: new Date().toISOString() },
+  { id: Date.now()+5, date: DATE, timeslot: '13:30-14:00', customer: '瑞昱 李先生', phone: '0912-111-005', address: '新竹科學園區創新二路 2 號',
+    items: [{vendorId:'v_yl',vendorName:'玉蘭 Youlan',name:'原味麻糬',price:35,qty:15},{vendorId:'v_yl',vendorName:'玉蘭 Youlan',name:'花生麻糬',price:35,qty:8},{vendorId:'v_yl',vendorName:'玉蘭 Youlan',name:'紅豆麻糬',price:40,qty:2}],
+    total: 920, payment: '貨到付款', payType: 'cash', note: '', tempType: 'normal', baggageUnits: 1, isVIP: false, paymentStatus: 'unpaid', createdAt: new Date().toISOString() },
+  { id: Date.now()+6, date: DATE, timeslot: '13:30-14:00', customer: '宜特科技 陳經理', phone: '0912-111-006', address: '新竹科學園區園區二路 51 號',
+    items: [{vendorId:'v_te',vendorName:'鐵三角-東南總店',name:'招牌便當',price:100,qty:10},{vendorId:'v_te',vendorName:'鐵三角-東南總店',name:'雞腿便當',price:120,qty:5}],
+    total: 1580, payment: '匯款', payType: 'transfer', note: '一起出門', tempType: 'hot', baggageUnits: 1, isVIP: false, paymentStatus: 'paid', deliveryNote: 'B1 停車場入口', createdAt: new Date().toISOString() },
+  { id: Date.now()+7, date: DATE, timeslot: '14:00-14:30', customer: '智邦科技 吳先生', phone: '0912-111-007', address: '新竹科學園區研新一路 1 號',
+    items: [{vendorId:'v_qe',vendorName:'小鵲幸-東南店',name:'鵲幸紅豆',price:25,qty:50},{vendorId:'v_qe',vendorName:'小鵲幸-東南店',name:'香草牛奶',price:25,qty:38}],
+    total: 2200, payment: '匯款', payType: 'transfer', note: '', tempType: 'cold', baggageUnits: 1, isVIP: false, paymentStatus: 'paid', createdAt: new Date().toISOString() },
+  { id: Date.now()+8, date: DATE, timeslot: '14:00-14:30', customer: '力積電 黃小姐', phone: '0912-111-008', address: '新竹科學園區力行六路 12 號',
+    items: [{vendorId:'v_te',vendorName:'鐵三角-東南總店',name:'招牌便當',price:100,qty:12},{vendorId:'v_te',vendorName:'鐵三角-東南總店',name:'排骨便當',price:110,qty:5}],
+    total: 1900, payment: '貨到付款', payType: 'cash', note: '', tempType: 'hot', baggageUnits: 1, isVIP: false, paymentStatus: 'unpaid', createdAt: new Date().toISOString() },
+  { id: Date.now()+9, date: DATE, timeslot: '15:00-15:30', customer: '瓦雷科技 趙先生', phone: '0912-111-009', address: '新竹科學園區工業東三路 6 號',
+    items: [{vendorId:'v_qe',vendorName:'小鵲幸-東南店',name:'鵲幸紅豆',price:25,qty:12},{vendorId:'v_qe',vendorName:'小鵲幸-東南店',name:'熔岩可可',price:30,qty:8},{vendorId:'v_qe',vendorName:'小鵲幸-東南店',name:'香草珍珠',price:30,qty:2}],
+    total: 680, payment: '匯款', payType: 'transfer', note: '', tempType: 'normal', baggageUnits: 1, isVIP: false, paymentStatus: 'paid', createdAt: new Date().toISOString() },
+  // 1 張竹東工研院
+  { id: Date.now()+10, date: DATE, timeslot: '14:30-15:00', customer: '工研院 周博士', phone: '0912-111-010', address: '新竹縣竹東鎮中興路四段 195 號',
+    items: [{vendorId:'v_yl',vendorName:'玉蘭 Youlan',name:'原味麻糬',price:35,qty:40},{vendorId:'v_yl',vendorName:'玉蘭 Youlan',name:'花生麻糬',price:35,qty:30},{vendorId:'v_yl',vendorName:'玉蘭 Youlan',name:'芝麻麻糬',price:40,qty:30}],
+    total: 3500, payment: '匯款', payType: 'transfer', note: '量大請小心搬運', tempType: 'cold', baggageUnits: 2, isVIP: true, paymentStatus: 'paid', deliveryNote: '51 館大門', createdAt: new Date().toISOString() },
+];
+
+// ── 外送員設定 ──
+const DRIVER_NOTES = {
+  '鎮哥': { vehicleType:'car', trustLevel:'vip', preferredAreas:['科學園區','東區'], internalTag:'veteran', vendorBlackList:[], driverConflicts:[], punctuality:95, carefulness:90, navigation:95, speed:85, capacity:90 },
+  '小賴': { vehicleType:'scooter', trustLevel:'vip', preferredAreas:['科學園區','東區'], internalTag:'veteran', vendorBlackList:[], driverConflicts:[], punctuality:90, carefulness:88, navigation:92, speed:90, capacity:80 },
+  '玉蕙': { vehicleType:'scooter', trustLevel:'highValue', preferredAreas:['東區','北區','市區'], internalTag:'regular', vendorBlackList:[], driverConflicts:[], punctuality:88, carefulness:85, navigation:80, speed:82, capacity:75 },
+  '正志': { vehicleType:'scooter', trustLevel:'vip', preferredAreas:['東區','科學園區'], internalTag:'veteran', vendorBlackList:[], driverConflicts:[], punctuality:92, carefulness:90, navigation:88, speed:85, capacity:80 },
+  '純如': { vehicleType:'scooter', trustLevel:'normal', preferredAreas:['東區','香山區'], internalTag:'regular', vendorBlackList:[], driverConflicts:[], punctuality:85, carefulness:82, navigation:78, speed:80, capacity:75 },
+  '潘伊莎': { vehicleType:'scooter', trustLevel:'normal', preferredAreas:['竹北市','東區'], internalTag:'regular', vendorBlackList:[], driverConflicts:[], punctuality:80, carefulness:80, navigation:75, speed:78, capacity:70 },
+  '熊熊': { vehicleType:'scooter', trustLevel:'normal', preferredAreas:['東區'], internalTag:'regular', vendorBlackList:[], driverConflicts:[], punctuality:78, carefulness:75, navigation:72, speed:80, capacity:70 },
+  '龍': { vehicleType:'scooter', trustLevel:'normal', preferredAreas:['東區'], internalTag:'new', vendorBlackList:[], driverConflicts:[], punctuality:70, carefulness:70, navigation:65, speed:75, capacity:70 },
+  '瑋瑋': { vehicleType:'scooter', trustLevel:'normal', preferredAreas:['東區','北區'], internalTag:'new', vendorBlackList:[], driverConflicts:[], punctuality:72, carefulness:68, navigation:60, speed:72, capacity:65 },
+  '阿德': { vehicleType:'scooter', trustLevel:'normal', preferredAreas:['東區','竹東鎮'], internalTag:'regular', vendorBlackList:[], driverConflicts:[], punctuality:82, carefulness:80, navigation:80, speed:80, capacity:75 },
+};
+
+// 排班：on/off
+const SCHEDULES = {
+  '鎮哥':    { [DATE]: 'on' },
+  '小賴':    { [DATE]: 'on' },
+  '玉蕙':    { [DATE]: 'on' },
+  '正志':    { [DATE]: 'on' },
+  '純如':    { [DATE]: 'on' },
+  '潘伊莎':  { [DATE]: 'off' },
+  '熊熊':    { [DATE]: 'off' },
+  '龍':      { [DATE]: 'on' },
+  '瑋瑋':    { [DATE]: 'on' },
+  '阿德':    { [DATE]: 'on' },
+};
+
+// Shift bookings (for driver.html compatibility)
+const SHIFT_BOOKINGS = {
+  '鎮哥':    { [DATE]: { 'B1_1000': true, 'B2_1100': true, 'B3_1200': true, 'B4_1300': true, 'B5_1400': true, 'B6_1500': true, 'B7_1600': true } },
+  '小賴':    { [DATE]: { 'B1_1000': true, 'B2_1100': true, 'B3_1200': true, 'B4_1300': true, 'B5_1400': true, 'B6_1500': true, 'B7_1600': true } },
+  '玉蕙':    { [DATE]: { 'B3_1200': true, 'B4_1300': true, 'B5_1400': true, 'B6_1500': true, 'B7_1600': true } },
+  '正志':    { [DATE]: { 'B1_1000': true, 'B2_1100': true, 'B3_1200': true, 'B4_1300': true } },
+  '純如':    { [DATE]: { 'B4_1300': true, 'B5_1400': true, 'B6_1500': true, 'B7_1600': true } },
+  '龍':      { [DATE]: { 'B1_1000': true, 'B2_1100': true, 'B3_1200': true, 'B4_1300': true, 'B5_1400': true, 'B6_1500': true, 'B7_1600': true } },
+  '瑋瑋':    { [DATE]: { 'B3_1200': true, 'B4_1300': true, 'B5_1400': true, 'B6_1500': true } },
+  '阿德':    { [DATE]: { 'B1_1000': true, 'B2_1100': true, 'B3_1200': true, 'B4_1300': true, 'B5_1400': true, 'B6_1500': true, 'B7_1600': true } },
+};
+
+// ── Firebase helpers ──
+async function fbPatch(path, data) {
+  const r = await fetch(FB_URL + path + '.json', { method: 'PATCH', body: JSON.stringify(data), headers: {'Content-Type':'application/json'} });
+  if (!r.ok) throw new Error('Firebase PATCH ' + path + ' failed: ' + r.status);
+  return r.json();
+}
+
+// ── 按鈕邏輯 ──
+document.getElementById('btn-orders').addEventListener('click', async function() {
+  log('── 注入 10 筆訂單 (' + DATE + ') ──');
+  try {
+    const existing = JSON.parse(localStorage.getItem('goood_orders') || '[]');
+    // 移除同日舊測試單
+    const cleaned = existing.filter(function(o){ return o.date !== DATE || !String(o.phone).startsWith('0912-111-'); });
+    const merged = cleaned.concat(TEST_ORDERS);
+    localStorage.setItem('goood_orders', JSON.stringify(merged));
+    log('✓ 已注入 ' + TEST_ORDERS.length + ' 筆訂單到 localStorage', 'ok');
+    log('  市區: 2 筆 (林小姐、陳先生)', 'ok');
+    log('  科園區: 7 筆 (台積、聯發、瑞昱、宜特、智邦、力積電、瓦雷)', 'ok');
+    log('  竹東工研院: 1 筆 (周博士)', 'ok');
+    log('  VIP: 2 筆 (台積七廠、工研院)', 'ok');
+    log('');
+    log('→ 請到 index.html 派單頁面，將日期切為 4/20 (一) 後按「一鍵派單」');
+  } catch(e) {
+    log('✕ 注入失敗: ' + e.message, 'err');
+  }
+});
+
+document.getElementById('btn-drivers').addEventListener('click', async function() {
+  log('── 寫入外送員排班 + 設定到 Firebase ──');
+  var ok = 0, fail = 0;
+  // 1. driverNotes
+  try {
+    await fbPatch('/driverNotes', DRIVER_NOTES);
+    log('✓ driverNotes 已寫入 (' + Object.keys(DRIVER_NOTES).length + ' 人)', 'ok');
+    ok++;
+  } catch(e) { log('✕ driverNotes 失敗: ' + e.message, 'err'); fail++; }
+
+  // 2. schedules
+  try {
+    await fbPatch('/schedules', SCHEDULES);
+    log('✓ schedules 已寫入', 'ok');
+    log('  上班: 鎮哥、小賴、玉蕙、正志、純如、龍、瑋瑋、阿德', 'ok');
+    log('  休假: 潘伊莎、熊熊', 'ok');
+    ok++;
+  } catch(e) { log('✕ schedules 失敗: ' + e.message, 'err'); fail++; }
+
+  // 3. shiftBookings
+  try {
+    await fbPatch('/shiftBookings', SHIFT_BOOKINGS);
+    log('✓ shiftBookings 已寫入', 'ok');
+    ok++;
+  } catch(e) { log('✕ shiftBookings 失敗: ' + e.message, 'err'); fail++; }
+
+  log('');
+  if (fail === 0) {
+    log('🎉 全部完成！' + ok + '/3 項成功', 'ok');
+  } else {
+    log('⚠ 完成 ' + ok + '/3 項，失敗 ' + fail + ' 項', 'err');
+  }
+});
+
+document.getElementById('btn-clear').addEventListener('click', function() {
+  const existing = JSON.parse(localStorage.getItem('goood_orders') || '[]');
+  const cleaned = existing.filter(function(o){ return o.date !== DATE || !String(o.phone).startsWith('0912-111-'); });
+  localStorage.setItem('goood_orders', JSON.stringify(cleaned));
+  log('🗑️ 已清除 ' + DATE + ' 的測試訂單 (保留其他訂單)', 'ok');
+});
+</script>
+</body></html>
