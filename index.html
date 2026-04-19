@@ -1658,6 +1658,21 @@ const DB = {
       const m = JSON.parse(saved);
       // 補充預設商家
       Object.keys(DEFAULT_MENUS).forEach(vid => { if (!m[vid]) m[vid] = DEFAULT_MENUS[vid]; });
+      // 自動同步 tempType：從 DEFAULT_MENUS 補到已儲存的菜單
+      Object.keys(DEFAULT_MENUS).forEach(function(vid) {
+        if (!m[vid]) return;
+        var defCats = DEFAULT_MENUS[vid].categories || [];
+        var savCats = m[vid].categories || [];
+        defCats.forEach(function(defCat) {
+          var savCat = savCats.find(function(c) { return c.name === defCat.name; });
+          if (!savCat) return;
+          (defCat.items || []).forEach(function(defItem) {
+            if (!defItem.tempType) return;
+            var savItem = (savCat.items || []).find(function(si) { return si.name === defItem.name; });
+            if (savItem) savItem.tempType = defItem.tempType;
+          });
+        });
+      });
       return m;
     } catch(e) { return JSON.parse(JSON.stringify(DEFAULT_MENUS)); }
   },
@@ -1667,37 +1682,6 @@ const DB = {
   getAddrs() { try { return JSON.parse(localStorage.getItem('goood_addrs') || '[]'); } catch(e) { return []; } },
   saveAddrs(d) { localStorage.setItem('goood_addrs', JSON.stringify(d)); },
 };
-
-// ═══ 一次性遷移：把 DEFAULT_MENUS 的 tempType 同步到已儲存的菜單 ═══
-(function migrateTempTypes() {
-  var migKey = 'goood_temptype_migrated_v2';
-  if (localStorage.getItem(migKey)) return;
-  try {
-    var saved = localStorage.getItem('goood_menus');
-    if (!saved || saved === '{}') { localStorage.setItem(migKey, '1'); return; }
-    var menus = JSON.parse(saved);
-    var changed = false;
-    Object.keys(DEFAULT_MENUS).forEach(function(vid) {
-      if (!menus[vid]) return;
-      var defCats = DEFAULT_MENUS[vid].categories || [];
-      var savCats = menus[vid].categories || [];
-      defCats.forEach(function(defCat) {
-        var savCat = savCats.find(function(c) { return c.name === defCat.name; });
-        if (!savCat) return;
-        (defCat.items || []).forEach(function(defItem) {
-          if (!defItem.tempType) return;
-          var savItem = savCat.items.find(function(si) { return si.name === defItem.name; });
-          if (savItem && savItem.tempType !== defItem.tempType) {
-            savItem.tempType = defItem.tempType;
-            changed = true;
-          }
-        });
-      });
-    });
-    if (changed) localStorage.setItem('goood_menus', JSON.stringify(menus));
-    localStorage.setItem(migKey, '1');
-  } catch(e) { console.warn('tempType migration error:', e); }
-})();
 
 // ════════════════════════════════════════════════
 // 全域狀態（簡單明確）
