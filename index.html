@@ -2991,6 +2991,7 @@ function addCustomVendor() {
   renderVendorPicker('main');
   renderVendorPicker('parse');
   populateUploadSel();
+  renderVendorBagSettings();
   showToast(`已新增「${name}」！`);
 }
 
@@ -3006,6 +3007,7 @@ function deleteCustomVendor(id, name) {
   renderVendorPicker('main');
   renderVendorPicker('parse');
   populateUploadSel();
+  renderVendorBagSettings();
   showToast(`已刪除「${name}」`);
 }
 
@@ -3070,7 +3072,8 @@ function renderVendorBagSettings() {
   const el = document.getElementById('vendor-extra-settings'); if (!el) return;
   el.innerHTML = '';
   const db = DB.getMenus();
-  ALL_VENDORS.forEach(v => {
+  const allV = getAllVendorZones().flatMap(z=>z.vendors);
+  allV.forEach(v => {
     if (!db[v.id]) return;
     // itemsPerHalfBag：幾個商品 = 0.5 袋，預設 1
     const itemsPerHalfBag = settings[v.id] ? (settings[v.id].itemsPerHalfBag || 1) : 1;
@@ -3122,7 +3125,7 @@ function saveVendorAddrSetting(vid, addr) {
 // ════════════════════════════════════════════════
 function openEditor(vid) {
   const db = DB.getMenus(); edVid = vid; edData = JSON.parse(JSON.stringify(db[vid])); edCatIdx = 0;
-  const vDef = ALL_VENDORS.find(v => v.id === vid);
+  const vDef = getAllVendorZones().flatMap(z=>z.vendors).find(v => v.id === vid) || ALL_VENDORS.find(v => v.id === vid);
   document.getElementById('ed-title').textContent = `${vDef ? vDef.emoji : ''} ${vDef ? vDef.name : vid}`;
   updateEdMeta(); document.getElementById('editor-card').classList.remove('hidden');
   renderEdCatBar(); renderEdPanel();
@@ -3212,7 +3215,7 @@ function edAddItem() { edData.categories[edCatIdx].items.push({name:'',price:0,d
 function edRmItem(i) { if (!confirm('確定刪除？')) return; edData.categories[edCatIdx].items.splice(i,1); renderEdItems(edData.categories[edCatIdx].items); updateEdMeta(); }
 function edAddCat() { const n = prompt('新分類名稱：'); if (!n) return; edData.categories.push({name:n,isDrink:false,sweetness:[],ice:[],fixedSweetness:null,fixedIce:null,toppings:[],items:[]}); edCatIdx=edData.categories.length-1; renderEdCatBar(); renderEdPanel(); updateEdMeta(); }
 function edDelCat(e,i) { e.stopPropagation(); if (!confirm(`確定刪除分類「${edData.categories[i].name}」？`)) return; edData.categories.splice(i,1); if(edCatIdx>=edData.categories.length)edCatIdx=Math.max(0,edData.categories.length-1); renderEdCatBar(); renderEdPanel(); updateEdMeta(); }
-function delVendorMenu() { if(!edVid)return; const vDef=ALL_VENDORS.find(v=>v.id===edVid); if(!confirm(`確定刪除「${vDef?.name}」的全部菜單？`))return; const db=DB.getMenus(); delete db[edVid]; DB.saveMenus(db); closeEditor(); renderVendorMgmt(); renderVendorPicker('main'); renderVendorPicker('parse'); showToast('已刪除'); }
+function delVendorMenu() { if(!edVid)return; const vDef=getAllVendorZones().flatMap(z=>z.vendors).find(v=>v.id===edVid)||{name:edVid}; if(!confirm(`確定刪除「${vDef?.name}」的全部菜單？`))return; const db=DB.getMenus(); delete db[edVid]; DB.saveMenus(db); closeEditor(); renderVendorMgmt(); renderVendorPicker('main'); renderVendorPicker('parse'); showToast('已刪除'); }
 function saveEditorData() { if(!edVid||!edData)return; const db=DB.getMenus(); db[edVid]=edData; DB.saveMenus(db); renderVendorMgmt(); renderVendorPicker('main'); renderVendorPicker('parse'); const b=document.getElementById('saved-badge'); b.style.opacity='1'; setTimeout(()=>b.style.opacity='0',2500); showToast('菜單已儲存！'); }
 
 // ════════════════════════════════════════════════
@@ -4519,8 +4522,9 @@ function dnPopulateDriverSelect(list) {
 }
 
 function dnPopulateVendorSelects() {
-  var vendorHtml = (typeof ALL_VENDORS !== 'undefined' && ALL_VENDORS.length)
-    ? ALL_VENDORS.map(function(v){ return '<option value="'+v.id+'">'+v.name+'</option>'; }).join('')
+  var allV = (typeof getAllVendorZones === 'function') ? getAllVendorZones().flatMap(function(z){return z.vendors;}) : ALL_VENDORS;
+  var vendorHtml = (allV && allV.length)
+    ? allV.map(function(v){ return '<option value="'+v.id+'">'+v.name+'</option>'; }).join('')
     : '';
   ['dn-vendorRedList','dn-vendorBlackList'].forEach(function(id){
     var el = document.getElementById(id);
