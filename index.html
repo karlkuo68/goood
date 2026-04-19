@@ -1102,6 +1102,24 @@ textarea { resize: vertical; min-height: 60px; }
         <button class="btn btn-ghost btn-sm" onclick="closeEditor()">關閉</button>
       </div>
     </div>
+    <!-- 派單設定 -->
+    <div id="ed-dispatch-settings" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+      <div>
+        <label style="font-size:12px;color:var(--text-sub);display:block;margin-bottom:4px">🧳 馬鞍袋容量</label>
+        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+          <span style="font-size:12px">每</span>
+          <input type="number" step="1" min="1" max="99" id="ed-bag-input"
+            style="width:50px;font-size:13px;padding:5px 6px;text-align:center;border:1px solid var(--border);border-radius:5px"/>
+          <span style="font-size:12px">個 = 0.5 袋</span>
+        </div>
+        <div style="font-size:10px;color:var(--text-hint);margin-top:3px" id="ed-bag-hint"></div>
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--text-sub);display:block;margin-bottom:4px">📍 出發地址</label>
+        <input type="text" id="ed-addr-input"
+          style="font-size:12px;padding:5px 6px;border:1px solid var(--border);border-radius:5px;width:100%"/>
+      </div>
+    </div>
     <div class="ed-layout">
       <div class="ed-cat">
         <div class="ed-cat-items" id="ed-cat-bar"></div>
@@ -3029,8 +3047,6 @@ function renderCustomVendorList() {
 // ════════════════════════════════════════════════
 function renderVendorMgmt() {
   const db = DB.getMenus();
-  const bagSettings = JSON.parse(localStorage.getItem('goood_vendor_bag_settings') || '{}');
-  const addrMap = JSON.parse(localStorage.getItem('goood_vendor_addrs') || '{}');
   const el = document.getElementById('vendor-mgmt-list'); if (!el) return;
   el.innerHTML = '';
   const zones = getAllVendorZones();
@@ -3040,47 +3056,16 @@ function renderVendorMgmt() {
       const menu = db[v.id];
       const total = menu ? menu.categories.reduce((s, c) => s + c.items.length, 0) : 0;
       const isCustom = v.id.startsWith('v_custom_');
-      const d = document.createElement('div'); d.className = 'v-mgmt-row'; d.style.flexWrap = 'wrap';
+      const d = document.createElement('div'); d.className = 'v-mgmt-row';
       const customBadge = isCustom ? '<span style="font-size:10px;background:#f3f4f6;color:#6b7280;padding:1px 6px;border-radius:3px;margin-left:4px">自訂</span>' : '';
-      // 第一行：商家名 + 按鈕
       d.innerHTML = `<div style="font-size:20px;width:32px;text-align:center">${v.emoji}</div><div style="flex:1"><span style="font-size:13px;font-weight:600">${esc(v.name)}</span>${menu?`<span class="has-badge">${total}項</span>`:'<span class="no-badge">尚無菜單</span>'}${customBadge}</div>`;
       const btnRow = document.createElement('div'); btnRow.className='btn-row';
-      if(menu){const editB=document.createElement('button');editB.className='btn btn-sm';editB.textContent='編輯菜單';editB.addEventListener('click',(function(vid2){return function(){openEditor(vid2);};})(v.id));btnRow.appendChild(editB);}
+      if(menu){const editB=document.createElement('button');editB.className='btn btn-sm';editB.textContent='編輯';editB.addEventListener('click',(function(vid2){return function(){openEditor(vid2);};})(v.id));btnRow.appendChild(editB);}
       if(isCustom){const delB=document.createElement('button');delB.className='btn btn-sm btn-danger';delB.textContent='刪除商家';delB.addEventListener('click',(function(vid2,name2){return function(){deleteCustomVendor(vid2,name2);};})(v.id,v.name));btnRow.appendChild(delB);}
       else if(menu){const delB=document.createElement('button');delB.className='btn btn-sm btn-danger';delB.textContent='刪除菜單';delB.addEventListener('click',(function(vid2,name2){return function(){deleteVendorMenuById(vid2,name2);};})(v.id,v.name));btnRow.appendChild(delB);}
       d.appendChild(btnRow);
-      // 第二行：派單設定（馬鞍袋容量 + 出發地址）
-      const itemsPerHalfBag = bagSettings[v.id] ? (bagSettings[v.id].itemsPerHalfBag || 1) : 1;
-      const addr = addrMap[v.id] || getVendorAddr(v.id);
-      const settingsRow = document.createElement('div');
-      settingsRow.style.cssText = 'width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;padding:8px 10px;background:#f8fafc;border-radius:6px;margin-left:42px;width:calc(100% - 42px);';
-      settingsRow.innerHTML = `
-        <div>
-          <label style="font-size:11px;color:var(--text-sub);display:block;margin-bottom:3px">🧳 馬鞍袋容量</label>
-          <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
-            <span style="font-size:12px">每</span>
-            <input type="number" step="1" min="1" max="99" value="${itemsPerHalfBag}"
-              class="vmgmt-bag-input" data-vid="${v.id}"
-              style="width:48px;font-size:13px;padding:4px 6px;text-align:center;border:1px solid var(--border);border-radius:4px"/>
-            <span style="font-size:12px">個 = 0.5袋</span>
-          </div>
-          <div style="font-size:10px;color:var(--text-hint);margin-top:2px">1個 = ${(0.5/itemsPerHalfBag).toFixed(2)}袋</div>
-        </div>
-        <div>
-          <label style="font-size:11px;color:var(--text-sub);display:block;margin-bottom:3px">📍 出發地址</label>
-          <input type="text" value="${esc(addr)}" class="vmgmt-addr-input" data-vid="${v.id}"
-            style="font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;width:100%"/>
-        </div>`;
-      d.appendChild(settingsRow);
       el.appendChild(d);
     });
-  });
-  // 綁定設定欄位事件
-  el.querySelectorAll('.vmgmt-bag-input').forEach(function(inp){
-    inp.addEventListener('change', function(){ saveBagSetting(inp.getAttribute('data-vid'), Number(inp.value)); });
-  });
-  el.querySelectorAll('.vmgmt-addr-input').forEach(function(inp){
-    inp.addEventListener('change', function(){ saveVendorAddrSetting(inp.getAttribute('data-vid'), inp.value); });
   });
   renderCustomVendorList();
 }
@@ -3099,7 +3084,6 @@ function saveBagSetting(vid, itemsPerHalfBag) {
   s[vid].bagPerItem = 0.5 / itemsPerHalfBag;
   localStorage.setItem('goood_vendor_bag_settings', JSON.stringify(s));
   showToast('已儲存');
-  renderVendorMgmt(); // 重新渲染更新顯示
 }
 function saveVendorAddrSetting(vid, addr) {
   const s = JSON.parse(localStorage.getItem('goood_vendor_addrs') || '{}');
@@ -3113,6 +3097,17 @@ function openEditor(vid) {
   const db = DB.getMenus(); edVid = vid; edData = JSON.parse(JSON.stringify(db[vid])); edCatIdx = 0;
   const vDef = getAllVendorZones().flatMap(z=>z.vendors).find(v => v.id === vid) || ALL_VENDORS.find(v => v.id === vid);
   document.getElementById('ed-title').textContent = `${vDef ? vDef.emoji : ''} ${vDef ? vDef.name : vid}`;
+  // 派單設定填入
+  var bagSettings = JSON.parse(localStorage.getItem('goood_vendor_bag_settings') || '{}');
+  var addrMap = JSON.parse(localStorage.getItem('goood_vendor_addrs') || '{}');
+  var itemsPerHalfBag = bagSettings[vid] ? (bagSettings[vid].itemsPerHalfBag || 1) : 1;
+  var addr = addrMap[vid] || getVendorAddr(vid);
+  var bagInp = document.getElementById('ed-bag-input');
+  var addrInp = document.getElementById('ed-addr-input');
+  var bagHint = document.getElementById('ed-bag-hint');
+  if (bagInp) { bagInp.value = itemsPerHalfBag; bagInp.onchange = function(){ saveBagSetting(vid, Number(bagInp.value)); if(bagHint) bagHint.textContent = '1個 = ' + (0.5/Number(bagInp.value)).toFixed(2) + '袋'; }; }
+  if (addrInp) { addrInp.value = addr; addrInp.onchange = function(){ saveVendorAddrSetting(vid, addrInp.value); }; }
+  if (bagHint) bagHint.textContent = '1個 = ' + (0.5/itemsPerHalfBag).toFixed(2) + '袋';
   updateEdMeta(); document.getElementById('editor-card').classList.remove('hidden');
   renderEdCatBar(); renderEdPanel();
   document.getElementById('editor-card').scrollIntoView({ behavior: 'smooth' });
