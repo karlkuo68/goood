@@ -1088,12 +1088,6 @@ textarea { resize: vertical; min-height: 60px; }
     <div id="custom-vendor-list" style="margin-top:8px"></div>
   </div>
 
-  <!-- 派單設定 -->
-  <div class="card">
-    <div class="card-title">派單設定（馬鞍袋容量 & 出發地址）</div>
-    <p style="font-size:12px;color:var(--text-sub);margin-bottom:12px">設定每個商家的產品體積（幾個馬鞍袋）和出發地址，用於計算派單建議和導航距離。</p>
-    <div id="vendor-extra-settings"></div>
-  </div>
 
   <!-- 編輯器 -->
   <div class="card hidden" id="editor-card">
@@ -1717,7 +1711,7 @@ function switchPage(id) {
   if (id === 'order') { renderVendorPicker('main'); renderAddrChips(); }
   if (id === 'parse') renderVendorPicker('parse');
   if (id === 'orders') renderOrdersList();
-  if (id === 'vendors') { renderVendorMgmt(); populateUploadSel(); setTimeout(renderVendorBagSettings, 100); renderCustomVendorList(); }
+  if (id === 'vendors') { renderVendorMgmt(); populateUploadSel(); renderCustomVendorList(); }
   if (id === 'dispatch') { renderDispatchDateTabs(); loadFbTrips(); }
   if (id === 'dashboard') { refreshDashboard(); startDashboardPoll(); } else { stopDashboardPoll(); }
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2991,7 +2985,6 @@ function addCustomVendor() {
   renderVendorPicker('main');
   renderVendorPicker('parse');
   populateUploadSel();
-  renderVendorBagSettings();
   showToast(`已新增「${name}」！`);
 }
 
@@ -3007,7 +3000,6 @@ function deleteCustomVendor(id, name) {
   renderVendorPicker('main');
   renderVendorPicker('parse');
   populateUploadSel();
-  renderVendorBagSettings();
   showToast(`已刪除「${name}」`);
 }
 
@@ -3037,6 +3029,8 @@ function renderCustomVendorList() {
 // ════════════════════════════════════════════════
 function renderVendorMgmt() {
   const db = DB.getMenus();
+  const bagSettings = JSON.parse(localStorage.getItem('goood_vendor_bag_settings') || '{}');
+  const addrMap = JSON.parse(localStorage.getItem('goood_vendor_addrs') || '{}');
   const el = document.getElementById('vendor-mgmt-list'); if (!el) return;
   el.innerHTML = '';
   const zones = getAllVendorZones();
@@ -3046,16 +3040,47 @@ function renderVendorMgmt() {
       const menu = db[v.id];
       const total = menu ? menu.categories.reduce((s, c) => s + c.items.length, 0) : 0;
       const isCustom = v.id.startsWith('v_custom_');
-      const d = document.createElement('div'); d.className = 'v-mgmt-row';
+      const d = document.createElement('div'); d.className = 'v-mgmt-row'; d.style.flexWrap = 'wrap';
       const customBadge = isCustom ? '<span style="font-size:10px;background:#f3f4f6;color:#6b7280;padding:1px 6px;border-radius:3px;margin-left:4px">自訂</span>' : '';
+      // 第一行：商家名 + 按鈕
       d.innerHTML = `<div style="font-size:20px;width:32px;text-align:center">${v.emoji}</div><div style="flex:1"><span style="font-size:13px;font-weight:600">${esc(v.name)}</span>${menu?`<span class="has-badge">${total}項</span>`:'<span class="no-badge">尚無菜單</span>'}${customBadge}</div>`;
       const btnRow = document.createElement('div'); btnRow.className='btn-row';
-      if(menu){const editB=document.createElement('button');editB.className='btn btn-sm';editB.textContent='編輯';editB.addEventListener('click',(function(vid2){return function(){openEditor(vid2);};})(v.id));btnRow.appendChild(editB);}
+      if(menu){const editB=document.createElement('button');editB.className='btn btn-sm';editB.textContent='編輯菜單';editB.addEventListener('click',(function(vid2){return function(){openEditor(vid2);};})(v.id));btnRow.appendChild(editB);}
       if(isCustom){const delB=document.createElement('button');delB.className='btn btn-sm btn-danger';delB.textContent='刪除商家';delB.addEventListener('click',(function(vid2,name2){return function(){deleteCustomVendor(vid2,name2);};})(v.id,v.name));btnRow.appendChild(delB);}
       else if(menu){const delB=document.createElement('button');delB.className='btn btn-sm btn-danger';delB.textContent='刪除菜單';delB.addEventListener('click',(function(vid2,name2){return function(){deleteVendorMenuById(vid2,name2);};})(v.id,v.name));btnRow.appendChild(delB);}
       d.appendChild(btnRow);
+      // 第二行：派單設定（馬鞍袋容量 + 出發地址）
+      const itemsPerHalfBag = bagSettings[v.id] ? (bagSettings[v.id].itemsPerHalfBag || 1) : 1;
+      const addr = addrMap[v.id] || getVendorAddr(v.id);
+      const settingsRow = document.createElement('div');
+      settingsRow.style.cssText = 'width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;padding:8px 10px;background:#f8fafc;border-radius:6px;margin-left:42px;width:calc(100% - 42px);';
+      settingsRow.innerHTML = `
+        <div>
+          <label style="font-size:11px;color:var(--text-sub);display:block;margin-bottom:3px">🧳 馬鞍袋容量</label>
+          <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+            <span style="font-size:12px">每</span>
+            <input type="number" step="1" min="1" max="99" value="${itemsPerHalfBag}"
+              class="vmgmt-bag-input" data-vid="${v.id}"
+              style="width:48px;font-size:13px;padding:4px 6px;text-align:center;border:1px solid var(--border);border-radius:4px"/>
+            <span style="font-size:12px">個 = 0.5袋</span>
+          </div>
+          <div style="font-size:10px;color:var(--text-hint);margin-top:2px">1個 = ${(0.5/itemsPerHalfBag).toFixed(2)}袋</div>
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--text-sub);display:block;margin-bottom:3px">📍 出發地址</label>
+          <input type="text" value="${esc(addr)}" class="vmgmt-addr-input" data-vid="${v.id}"
+            style="font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;width:100%"/>
+        </div>`;
+      d.appendChild(settingsRow);
       el.appendChild(d);
     });
+  });
+  // 綁定設定欄位事件
+  el.querySelectorAll('.vmgmt-bag-input').forEach(function(inp){
+    inp.addEventListener('change', function(){ saveBagSetting(inp.getAttribute('data-vid'), Number(inp.value)); });
+  });
+  el.querySelectorAll('.vmgmt-addr-input').forEach(function(inp){
+    inp.addEventListener('change', function(){ saveVendorAddrSetting(inp.getAttribute('data-vid'), inp.value); });
   });
   renderCustomVendorList();
 }
@@ -3065,46 +3090,7 @@ function deleteVendorMenuById(vid, name) {
   renderVendorMgmt(); renderVendorPicker('main'); renderVendorPicker('parse'); showToast('已刪除');
 }
 
-// 馬鞍袋設定
-function renderVendorBagSettings() {
-  const settings = JSON.parse(localStorage.getItem('goood_vendor_bag_settings') || '{}');
-  const addrMap = JSON.parse(localStorage.getItem('goood_vendor_addrs') || '{}');
-  const el = document.getElementById('vendor-extra-settings'); if (!el) return;
-  el.innerHTML = '';
-  const db = DB.getMenus();
-  const allV = getAllVendorZones().flatMap(z=>z.vendors);
-  allV.forEach(v => {
-    if (!db[v.id]) return;
-    // itemsPerHalfBag：幾個商品 = 0.5 袋，預設 1
-    const itemsPerHalfBag = settings[v.id] ? (settings[v.id].itemsPerHalfBag || 1) : 1;
-    const addr = addrMap[v.id] || getVendorAddr(v.id);
-    const d = document.createElement('div'); d.style.cssText = 'padding:12px 0;border-bottom:1px solid var(--border)';
-    d.innerHTML = `
-      <div style="font-size:13px;font-weight:600;margin-bottom:10px">${v.emoji} ${esc(v.name)}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div>
-          <label style="font-size:12px;color:var(--text-sub);display:block;margin-bottom:5px">馬鞍袋容量</label>
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-            <span style="font-size:13px;white-space:nowrap">每</span>
-            <input type="number" step="1" min="1" max="99" value="${itemsPerHalfBag}"
-              style="width:54px;font-size:14px;padding:7px 8px;text-align:center"
-              onchange="saveBagSetting('${v.id}', Number(this.value))"/>
-            <span style="font-size:13px;white-space:nowrap">個 = 0.5 袋</span>
-          </div>
-          <div style="font-size:11px;color:var(--text-hint);margin-top:4px">
-            目前：1個商品 = ${(0.5/itemsPerHalfBag).toFixed(2)}袋
-          </div>
-        </div>
-        <div>
-          <label style="font-size:12px;color:var(--text-sub);display:block;margin-bottom:5px">出發地址</label>
-          <input type="text" value="${esc(addr)}" style="font-size:12px"
-            onchange="saveVendorAddrSetting('${v.id}', this.value)"/>
-        </div>
-      </div>`;
-    el.appendChild(d);
-  });
-  if (!el.children.length) el.innerHTML = '<div style="font-size:12px;color:var(--text-hint);padding:8px 0">請先上傳商家菜單後才能設定</div>';
-}
+// 馬鞍袋設定（已整合至 renderVendorMgmt）
 function saveBagSetting(vid, itemsPerHalfBag) {
   const s = JSON.parse(localStorage.getItem('goood_vendor_bag_settings') || '{}');
   if (!s[vid]) s[vid] = {};
@@ -3113,7 +3099,7 @@ function saveBagSetting(vid, itemsPerHalfBag) {
   s[vid].bagPerItem = 0.5 / itemsPerHalfBag;
   localStorage.setItem('goood_vendor_bag_settings', JSON.stringify(s));
   showToast('已儲存');
-  renderVendorBagSettings(); // 重新渲染更新顯示
+  renderVendorMgmt(); // 重新渲染更新顯示
 }
 function saveVendorAddrSetting(vid, addr) {
   const s = JSON.parse(localStorage.getItem('goood_vendor_addrs') || '{}');
