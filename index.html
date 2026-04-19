@@ -219,11 +219,40 @@ textarea { resize: vertical; min-height: 60px; }
 .filter-row { display: flex; gap: 6px; margin-bottom: 12px; }
 .f-btn { padding: 5px 14px; border: 1px solid var(--border); border-radius: 20px; font-size: 12px; background: white; cursor: pointer; color: var(--text-sub); font-family: inherit; transition: all .15s; }
 .f-btn.active { background: var(--green); border-color: var(--green); color: white; }
-.order-card { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 8px; transition: box-shadow .15s; }
+.order-card { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 8px; transition: box-shadow .15s; position: relative; }
 .order-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.order-card.selected { border-color: var(--green); background: #f0fdf4; }
 .order-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
 .order-num { font-size: 11px; font-weight: 700; color: var(--text-hint); }
 .order-amt { font-size: 16px; font-weight: 700; color: var(--green); }
+.order-actions { display: flex; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+.order-actions button { flex: 1; padding: 6px 0; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; font-family: inherit; cursor: pointer; background: white; color: var(--text-sub); transition: all .15s; }
+.order-actions button:active { transform: scale(.97); }
+.order-actions .btn-view { color: #2563eb; border-color: #93c5fd; background: #eff6ff; }
+.order-actions .btn-edit { color: #d97706; border-color: #fcd34d; background: #fffbeb; }
+.order-actions .btn-del { color: #dc2626; border-color: #fca5a5; background: #fef2f2; }
+.order-select-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; padding: 8px 12px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 10px; }
+.order-select-bar .sel-count { font-size: 13px; font-weight: 600; color: var(--green); flex: 1; }
+.order-select-bar button { padding: 5px 12px; border-radius: 6px; font-size: 12px; font-family: inherit; cursor: pointer; border: none; }
+.order-select-bar .sel-cancel { background: white; border: 1px solid var(--border); color: var(--text-sub); }
+.order-select-bar .sel-del { background: #dc2626; color: white; }
+/* 訂單詳情 modal */
+.order-detail-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.45); z-index: 9999; display: flex; align-items: flex-end; justify-content: center; }
+.order-detail-sheet { background: white; border-radius: 16px 16px 0 0; width: 100%; max-width: 500px; max-height: 85vh; overflow-y: auto; padding: 20px 16px 30px; animation: slideUp .25s ease; }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.order-detail-sheet .od-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.order-detail-sheet .od-title { font-size: 16px; font-weight: 700; }
+.order-detail-sheet .od-close { width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--gray-100); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.order-detail-sheet .od-field { display: flex; padding: 8px 0; border-bottom: 1px solid var(--gray-100); font-size: 13px; }
+.order-detail-sheet .od-label { width: 70px; color: var(--text-hint); flex-shrink: 0; }
+.order-detail-sheet .od-val { flex: 1; color: var(--text-main); word-break: break-all; }
+.order-detail-sheet .od-items { margin-top: 10px; }
+.order-detail-sheet .od-item-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; border-bottom: 1px solid var(--gray-50); }
+.order-detail-sheet .od-actions { display: flex; gap: 8px; margin-top: 16px; }
+.order-detail-sheet .od-actions button { flex: 1; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; border: none; }
+.order-detail-sheet .od-btn-edit { background: #fffbeb; color: #d97706; }
+.order-detail-sheet .od-btn-del { background: #fef2f2; color: #dc2626; }
+.order-detail-sheet .od-btn-copy { background: #eff6ff; color: #2563eb; }
 .order-name { font-size: 14px; font-weight: 600; }
 .order-meta { font-size: 12px; color: var(--text-sub); line-height: 1.7; margin-top: 3px; }
 .order-items { font-size: 11px; color: var(--text-hint); margin-top: 4px; }
@@ -3294,22 +3323,169 @@ function saveEditorData() { if(!edVid||!edData)return; const db=DB.getMenus(); d
 // ════════════════════════════════════════════════
 // 訂單列表
 // ════════════════════════════════════════════════
+var orderSelectMode = false;
+var selectedOrderIds = new Set();
+
 function renderOrdersList() {
   const orders = DB.getOrders();
   let fl = orders;
   if (curFilter === 'cash') fl = orders.filter(o => o.payType !== 'transfer');
   else if (curFilter === 'transfer') fl = orders.filter(o => o.payType === 'transfer');
   const el = document.getElementById('orders-list'); if (!el) return;
-  if (!fl.length) { el.innerHTML = '<div class="empty-orders">尚無訂單</div>'; updateStats(orders); return; }
+  if (!fl.length) { el.innerHTML = '<div class="empty-orders">尚無訂單</div>'; updateStats(orders); renderSelectBar(); return; }
   el.innerHTML = '';
+  // 多選操作列
+  renderSelectBar();
   fl.slice().reverse().forEach((o, i) => {
     const items = (o.items||[]).map(it => `${it.name}×${it.qty||1}`).join('・');
     const badge = o.payType === 'transfer' ? '<span class="badge bt">轉帳</span>' : '<span class="badge bc">現金</span>';
-    const d = document.createElement('div'); d.className = 'order-card';
-    d.innerHTML = `<div class="order-head"><span class="order-num">#${String(fl.length-i).padStart(3,'0')}</span><span class="order-amt">$${(o.total||0).toLocaleString()}</span></div><div><span class="order-name">${esc(o.customer||'')}</span>${badge}${o.driver?`<span style="font-size:12px;color:var(--text-hint);margin-left:5px">· ${esc(o.driver)}</span>`:''}</div><div class="order-meta">${esc(o.date||'')} ${esc(o.timeslot||'')} &nbsp;|&nbsp; ${esc(o.address||'')}</div><div class="order-items">${esc(items)}</div>${o.note?`<span class="note-pill">備：${esc(o.note)}</span>`:''}`;
+    const tempBadge = (function(){
+      var temps = (o.items||[]).map(function(it){ return it.tempType || 'normal'; });
+      var hasHot = temps.indexOf('hot') >= 0, hasCold = temps.indexOf('cold') >= 0;
+      if (hasHot && hasCold) return '<span class="badge" style="background:#fef3c7;color:#92400e;margin-left:4px">🔥🧊 混溫</span>';
+      if (hasHot) return '<span class="badge" style="background:#fee2e2;color:#dc2626;margin-left:4px">🔥 熱</span>';
+      if (hasCold) return '<span class="badge" style="background:#dbeafe;color:#1e40af;margin-left:4px">🧊 冷</span>';
+      return '';
+    })();
+    const d = document.createElement('div'); d.className = 'order-card' + (selectedOrderIds.has(String(o.id)) ? ' selected' : '');
+    d.setAttribute('data-oid', String(o.id));
+    const num = '#' + String(fl.length - i).padStart(3, '0');
+    d.innerHTML = `<div class="order-head"><span class="order-num">${num}</span><span class="order-amt">$${(o.total||0).toLocaleString()}</span></div><div><span class="order-name">${esc(o.customer||'')}</span>${badge}${tempBadge}${o.driver?`<span style="font-size:12px;color:var(--text-hint);margin-left:5px">· ${esc(o.driver)}</span>`:''}</div><div class="order-meta">${esc(o.date||'')} ${esc(o.timeslot||'')} &nbsp;|&nbsp; ${esc(o.address||'')}</div><div class="order-items">${esc(items)}</div>${o.note?`<span class="note-pill">備：${esc(o.note)}</span>`:''}` +
+      `<div class="order-actions"><button class="btn-view" data-act="view">📋 詳情</button><button class="btn-edit" data-act="edit">✏️ 編輯</button><button class="btn-del" data-act="del">🗑️ 刪除</button><button class="btn-view" data-act="select" style="flex:0.6">${selectedOrderIds.has(String(o.id))?'✅':'☐'}</button></div>`;
+    // 綁定按鈕事件 (iOS safe)
+    d.querySelectorAll('.order-actions button').forEach(function(btn){
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        var act = btn.getAttribute('data-act');
+        if (act === 'view') openOrderDetail(String(o.id));
+        else if (act === 'edit') editOrder(String(o.id));
+        else if (act === 'del') deleteOrder(String(o.id));
+        else if (act === 'select') toggleSelectOrder(String(o.id));
+      });
+    });
     el.appendChild(d);
   });
   updateStats(orders);
+}
+
+function renderSelectBar() {
+  var existing = document.getElementById('order-select-bar');
+  if (existing) existing.remove();
+  if (selectedOrderIds.size === 0) return;
+  var bar = document.createElement('div');
+  bar.className = 'order-select-bar'; bar.id = 'order-select-bar';
+  bar.innerHTML = '<span class="sel-count">已選 ' + selectedOrderIds.size + ' 筆</span><button class="sel-cancel">取消</button><button class="sel-del">🗑️ 批次刪除</button>';
+  bar.querySelector('.sel-cancel').addEventListener('click', function(){ selectedOrderIds.clear(); renderOrdersList(); });
+  bar.querySelector('.sel-del').addEventListener('click', function(){ batchDeleteOrders(); });
+  var el = document.getElementById('orders-list');
+  if (el) el.parentNode.insertBefore(bar, el);
+}
+
+function toggleSelectOrder(id) {
+  if (selectedOrderIds.has(id)) selectedOrderIds.delete(id);
+  else selectedOrderIds.add(id);
+  renderOrdersList();
+}
+
+function deleteOrder(id) {
+  if (!confirm('確定要刪除這筆訂單嗎？')) return;
+  var orders = DB.getOrders().filter(function(o){ return String(o.id) !== id; });
+  DB.saveOrders(orders);
+  selectedOrderIds.delete(id);
+  closeOrderDetail();
+  renderOrdersList();
+  showToast('已刪除訂單');
+}
+
+function batchDeleteOrders() {
+  if (!confirm('確定要刪除已選的 ' + selectedOrderIds.size + ' 筆訂單嗎？')) return;
+  var orders = DB.getOrders().filter(function(o){ return !selectedOrderIds.has(String(o.id)); });
+  DB.saveOrders(orders);
+  selectedOrderIds.clear();
+  renderOrdersList();
+  showToast('已批次刪除訂單');
+}
+
+function openOrderDetail(id) {
+  var o = DB.getOrders().find(function(x){ return String(x.id) === id; });
+  if (!o) return;
+  var overlay = document.createElement('div');
+  overlay.className = 'order-detail-overlay'; overlay.id = 'order-detail-overlay';
+  var itemsHtml = (o.items||[]).map(function(it){
+    var tempLabel = it.tempType === 'hot' ? '🔥' : it.tempType === 'cold' ? '🧊' : '📦';
+    return '<div class="od-item-row"><span>' + tempLabel + ' ' + esc(it.name) + (it.ice ? ' (' + esc(it.ice) + ')' : '') + (it.sugar ? ' ' + esc(it.sugar) : '') + '</span><span>×' + (it.qty||1) + ' $' + ((it.price||0)*(it.qty||1)) + '</span></div>';
+  }).join('');
+  overlay.innerHTML = '<div class="order-detail-sheet">' +
+    '<div class="od-header"><span class="od-title">訂單詳情</span><button class="od-close" data-act="close">✕</button></div>' +
+    '<div class="od-field"><span class="od-label">訂購人</span><span class="od-val">' + esc(o.customer||'') + '</span></div>' +
+    '<div class="od-field"><span class="od-label">電話</span><span class="od-val">' + esc(o.phone||'') + (o.phone2 ? ' / ' + esc(o.phone2) : '') + '</span></div>' +
+    '<div class="od-field"><span class="od-label">地址</span><span class="od-val">' + esc(o.address||'') + '</span></div>' +
+    '<div class="od-field"><span class="od-label">日期</span><span class="od-val">' + esc(o.date||'') + ' ' + esc(o.timeslot||'') + '</span></div>' +
+    '<div class="od-field"><span class="od-label">付款</span><span class="od-val">' + (o.payType==='transfer'?'轉帳':'現金') + (o.taxid ? '　統編: '+esc(o.taxid) : '') + '</span></div>' +
+    '<div class="od-field"><span class="od-label">金額</span><span class="od-val" style="font-weight:700;color:var(--green)">$' + (o.total||0).toLocaleString() + '</span></div>' +
+    (o.driver ? '<div class="od-field"><span class="od-label">外送員</span><span class="od-val">' + esc(o.driver) + '</span></div>' : '') +
+    (o.note ? '<div class="od-field"><span class="od-label">備註</span><span class="od-val">' + esc(o.note) + '</span></div>' : '') +
+    '<div class="od-items"><div style="font-size:12px;color:var(--text-hint);margin-bottom:4px">品項明細</div>' + itemsHtml + '</div>' +
+    '<div class="od-actions"><button class="od-btn-copy" data-act="copy">📋 複製確認訊息</button><button class="od-btn-edit" data-act="edit">✏️ 編輯</button><button class="od-btn-del" data-act="del">🗑️ 刪除</button></div>' +
+    '</div>';
+  // 綁事件
+  overlay.querySelector('[data-act="close"]').addEventListener('click', closeOrderDetail);
+  overlay.querySelector('[data-act="copy"]').addEventListener('click', function(){ copyOrderConfirm(id); });
+  overlay.querySelector('[data-act="edit"]').addEventListener('click', function(){ closeOrderDetail(); editOrder(id); });
+  overlay.querySelector('[data-act="del"]').addEventListener('click', function(){ deleteOrder(id); });
+  overlay.addEventListener('click', function(e){ if (e.target === overlay) closeOrderDetail(); });
+  document.body.appendChild(overlay);
+}
+
+function closeOrderDetail() {
+  var ov = document.getElementById('order-detail-overlay');
+  if (ov) ov.remove();
+}
+
+function editOrder(id) {
+  var orders = DB.getOrders();
+  var idx = orders.findIndex(function(o){ return String(o.id) === id; });
+  if (idx < 0) { showToast('找不到訂單'); return; }
+  var o = orders[idx];
+  // 開啟編輯 modal
+  var overlay = document.createElement('div');
+  overlay.className = 'order-detail-overlay'; overlay.id = 'order-edit-overlay';
+  overlay.innerHTML = '<div class="order-detail-sheet" style="padding-bottom:40px">' +
+    '<div class="od-header"><span class="od-title">✏️ 編輯訂單</span><button class="od-close" data-act="close">✕</button></div>' +
+    '<div style="display:grid;gap:10px">' +
+    '<div><label style="font-size:12px;color:var(--text-hint)">訂購人</label><input id="oe-customer" value="' + esc(o.customer||'') + '" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:14px;box-sizing:border-box"></div>' +
+    '<div><label style="font-size:12px;color:var(--text-hint)">電話</label><input id="oe-phone" value="' + esc(o.phone||'') + '" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:14px;box-sizing:border-box"></div>' +
+    '<div><label style="font-size:12px;color:var(--text-hint)">地址</label><input id="oe-address" value="' + esc(o.address||'') + '" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:14px;box-sizing:border-box"></div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+    '<div><label style="font-size:12px;color:var(--text-hint)">日期</label><input id="oe-date" type="date" value="' + esc(o.date||'') + '" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:14px;box-sizing:border-box"></div>' +
+    '<div><label style="font-size:12px;color:var(--text-hint)">時段</label><input id="oe-timeslot" value="' + esc(o.timeslot||'') + '" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:14px;box-sizing:border-box"></div>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+    '<div><label style="font-size:12px;color:var(--text-hint)">付款方式</label><select id="oe-paytype" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:14px;box-sizing:border-box"><option value="cash"' + (o.payType!=='transfer'?' selected':'') + '>現金</option><option value="transfer"' + (o.payType==='transfer'?' selected':'') + '>轉帳</option></select></div>' +
+    '<div><label style="font-size:12px;color:var(--text-hint)">金額</label><input id="oe-total" type="number" value="' + (o.total||0) + '" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:14px;box-sizing:border-box"></div>' +
+    '</div>' +
+    '<div><label style="font-size:12px;color:var(--text-hint)">備註</label><textarea id="oe-note" rows="2" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:14px;box-sizing:border-box;resize:vertical">' + esc(o.note||'') + '</textarea></div>' +
+    '</div>' +
+    '<div style="display:flex;gap:8px;margin-top:16px"><button data-act="cancel" style="flex:1;padding:10px;border-radius:8px;font-size:14px;font-weight:600;border:1px solid var(--border);background:white;color:var(--text-sub);cursor:pointer;font-family:inherit">取消</button><button data-act="save" style="flex:1;padding:10px;border-radius:8px;font-size:14px;font-weight:600;border:none;background:var(--green);color:white;cursor:pointer;font-family:inherit">💾 儲存</button></div>' +
+    '</div>';
+  overlay.querySelector('[data-act="close"]').addEventListener('click', function(){ overlay.remove(); });
+  overlay.querySelector('[data-act="cancel"]').addEventListener('click', function(){ overlay.remove(); });
+  overlay.querySelector('[data-act="save"]').addEventListener('click', function(){
+    orders[idx].customer = document.getElementById('oe-customer').value.trim();
+    orders[idx].phone = document.getElementById('oe-phone').value.trim();
+    orders[idx].address = document.getElementById('oe-address').value.trim();
+    orders[idx].date = document.getElementById('oe-date').value;
+    orders[idx].timeslot = document.getElementById('oe-timeslot').value.trim();
+    orders[idx].payType = document.getElementById('oe-paytype').value;
+    orders[idx].total = parseInt(document.getElementById('oe-total').value) || 0;
+    orders[idx].note = document.getElementById('oe-note').value.trim();
+    DB.saveOrders(orders);
+    overlay.remove();
+    renderOrdersList();
+    showToast('訂單已更新');
+  });
+  overlay.addEventListener('click', function(e){ if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
 }
 function updateStats(orders) {
   const today = new Date().toISOString().slice(0,10);
