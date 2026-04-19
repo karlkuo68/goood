@@ -3174,14 +3174,19 @@ function openEditor(vid) {
       var modes = JSON.parse(localStorage.getItem('goood_vendor_temp_mode') || '{}');
       modes[vid] = mode;
       localStorage.setItem('goood_vendor_temp_mode', JSON.stringify(modes));
-      // 固定模式：批量套用 tempType 到所有品項
       if (mode !== 'dynamic' && edData) {
+        // 固定模式：批量套用 tempType 到所有品項
         edData.categories.forEach(function(cat) {
           (cat.items || []).forEach(function(item) { item.tempType = mode; });
         });
         renderEdPanel();
         showToast('已套用「' + {normal:'常溫',cold:'冷藏',hot:'熱食'}[mode] + '」到所有品項');
-      } else {
+      } else if (edData) {
+        // 不固定模式：清除品項溫度設定，由點單時冰塊選項決定
+        edData.categories.forEach(function(cat) {
+          (cat.items || []).forEach(function(item) { delete item.tempType; });
+        });
+        renderEdPanel();
         showToast('已設為「依消費者選擇」，點單時由冰塊選項決定冷熱');
       }
       if (tempHint) tempHint.textContent = mode === 'dynamic' ? '點單時依冰塊選項自動判定' : '已套用到所有品項，可在品項中個別調整';
@@ -3260,13 +3265,19 @@ function renderEdItems(items) {
     n2.addEventListener('input',(function(idx){return function(){edData.categories[edCatIdx].items[idx].price=Number(this.value);};})(i));
     const n3=document.createElement('input');n3.type='text';n3.value=item.desc||'';n3.style.flex='2';n3.placeholder='說明（選填）';
     n3.addEventListener('input',(function(idx){return function(){edData.categories[edCatIdx].items[idx].desc=this.value;};})(i));
-    const n4=document.createElement('select');n4.style.cssText='flex:1;min-width:72px;font-size:12px';
-    n4.innerHTML='<option value="normal">📦常溫</option><option value="cold">🧊冷藏</option><option value="hot">🔥熱食</option>';
-    n4.value=item.tempType||'normal';
-    n4.addEventListener('change',(function(idx){return function(){edData.categories[edCatIdx].items[idx].tempType=this.value;};})(i));
+    // 「依消費者選擇」模式的商家不顯示品項溫度選單
+    var vendorTempMode = 'normal';
+    try { var vtm = JSON.parse(localStorage.getItem('goood_vendor_temp_mode') || '{}'); vendorTempMode = vtm[edVid] || 'normal'; } catch(e){}
+    if (vendorTempMode !== 'dynamic') {
+      const n4=document.createElement('select');n4.style.cssText='flex:1;min-width:72px;font-size:12px';
+      n4.innerHTML='<option value="normal">📦常溫</option><option value="cold">🧊冷藏</option><option value="hot">🔥熱食</option>';
+      n4.value=item.tempType||'normal';
+      n4.addEventListener('change',(function(idx){return function(){edData.categories[edCatIdx].items[idx].tempType=this.value;};})(i));
+      d.appendChild(n4);
+    }
     const rb=document.createElement('button');rb.className='rm-btn';rb.textContent='×';
     rb.addEventListener('click',(function(idx){return function(){edRmItem(idx);};})(i));
-    d.appendChild(n1);d.appendChild(n2);d.appendChild(n3);d.appendChild(n4);d.appendChild(rb);el.appendChild(d); });
+    d.appendChild(n1);d.appendChild(n2);d.appendChild(n3);d.appendChild(rb);el.appendChild(d); });
 }
 function edToggleDrink() { const cat = edData.categories[edCatIdx]; cat.isDrink = !cat.isDrink; if (cat.isDrink && !cat.sweetness?.length) { cat.sweetness = ['0%無糖','10%一分糖','30%三分糖','50%半糖','70%七分糖','100%全糖']; cat.ice = ['熱','去冰','10%少冰','30%','50%','正常冰']; cat.toppings = []; } renderEdPanel(); }
 function edAddOpt(type, inputId) { const v = document.getElementById(inputId)?.value.trim(); if (!v) return; if (!edData.categories[edCatIdx][type]) edData.categories[edCatIdx][type] = []; edData.categories[edCatIdx][type].push(v); document.getElementById(inputId).value = ''; if (type === 'sweetness') renderEdOptChips('sweetness','ed-sweet',edData.categories[edCatIdx].sweetness); else renderEdOptChips('ice','ed-ice',edData.categories[edCatIdx].ice); }
