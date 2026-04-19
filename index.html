@@ -710,18 +710,20 @@ textarea { resize: vertical; min-height: 60px; }
     </div>
     <div class="row row-2">
       <div>
-        <label>佔馬鞍袋單位數（1-9）</label>
-        <input type="number" id="f-baggageUnits" min="1" max="9" value="1"/>
-        <div style="font-size:11px;color:var(--text-hint);margin-top:3px;">每位外送員：左 4 + 右 4 + 保冷袋 1 = 共 9 單位</div>
+        <label>馬鞍袋佔用（自動計算）</label>
+        <div id="f-bag-display" style="display:flex;align-items:center;gap:8px;margin-top:4px;padding:8px 10px;background:var(--gray-50);border:1px solid var(--border);border-radius:8px;min-height:36px;">
+          <span id="f-bag-units-text" style="font-size:14px;font-weight:600;color:var(--green)">0 / 2.5 單位</span>
+          <div id="f-bag-slots" style="display:flex;gap:3px;margin-left:4px;"></div>
+        </div>
+        <div style="font-size:11px;color:var(--text-hint);margin-top:3px;">5 格位共 2.5 單位：左上・左下・右上・右下各 0.5 + 肩背保溫袋 0.5</div>
       </div>
       <div>
-        <label>冷/熱標記</label>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px;font-size:13px;">
-          <label style="display:inline-flex;align-items:center;gap:3px;cursor:pointer;"><input type="radio" name="f-tempType" value="cold"/>❄️ 冷藏</label>
-          <label style="display:inline-flex;align-items:center;gap:3px;cursor:pointer;"><input type="radio" name="f-tempType" value="hot"/>🔥 熱食</label>
-          <label style="display:inline-flex;align-items:center;gap:3px;cursor:pointer;"><input type="radio" name="f-tempType" value="normal" checked/>📦 常溫</label>
+        <label>溫層（由商品自動決定）</label>
+        <div id="f-temp-display" style="display:flex;align-items:center;gap:6px;margin-top:4px;padding:8px 10px;background:var(--gray-50);border:1px solid var(--border);border-radius:8px;min-height:36px;">
+          <span id="f-temp-badge" style="font-size:22px;">📦</span>
+          <span id="f-temp-label" style="font-size:13px;font-weight:600;color:var(--text-sub)">常溫</span>
         </div>
-        <div style="font-size:11px;color:var(--text-hint);margin-top:3px;">冷熱不能放同一個馬鞍袋</div>
+        <div style="font-size:11px;color:var(--text-hint);margin-top:3px;">請在商品設定中標記溫層，冷熱不可共用同一馬鞍袋</div>
       </div>
     </div>
     <div class="row row-1">
@@ -1927,7 +1929,7 @@ function renderMenuPanel(ctx) {
     const vName = (getAllVendorZones().flatMap(z=>z.vendors).find(v=>v.id===vid)||{}).name || vid;
 
     // 深層複製，確保每個品項的 closure 捕捉到完全獨立的資料（iOS Safari closure 問題）
-    const itemData = JSON.parse(JSON.stringify({vendorId:vid, vendorName:vName, catName:cat.name, name:item.name, price:item.price}));
+    const itemData = JSON.parse(JSON.stringify({vendorId:vid, vendorName:vName, catName:cat.name, name:item.name, price:item.price, tempType:item.tempType||'normal'}));
     const catData  = JSON.parse(JSON.stringify({isDrink:cat.isDrink||false, sweetness:cat.sweetness||[], ice:cat.ice||[], fixedSweetness:cat.fixedSweetness||null, fixedIce:cat.fixedIce||null, toppings:cat.toppings||[]}));
 
     const qtyElId = `${menuAreaId}-qty-${vid}-${catIdx}-${ii}`;
@@ -2032,14 +2034,14 @@ function directChangeQty(e, ctx, qtyElId, rowElId, itemData, catData, delta) {
         cartNow.push({
           vendorId: itemData.vendorId, vendorName: itemData.vendorName,
           catName: itemData.catName, name: itemData.name,
-          price: itemData.price, qty: 1, opts: null
+          price: itemData.price, qty: 1, opts: null, tempType: itemData.tempType||'normal'
         });
       }
     } else if (delta > 0) {
       cartNow.push({
         vendorId: itemData.vendorId, vendorName: itemData.vendorName,
         catName: itemData.catName, name: itemData.name,
-        price: itemData.price, qty: 1, opts: null
+        price: itemData.price, qty: 1, opts: null, tempType: itemData.tempType||'normal'
       });
     } else {
       var idxArr = cartNow.map(function(c,i){ return (c.vendorId===itemData.vendorId && c.name===itemData.name) ? i : -1; }).filter(function(i){ return i>=0; });
@@ -2173,7 +2175,8 @@ function confirmItemModal() {
     name: item.name,
     price: (item.price||0) + (extra||0),
     qty: 1,
-    opts: opts.length ? opts.join(' / ') : null
+    opts: opts.length ? opts.join(' / ') : null,
+    tempType: item.tempType || itemData?.tempType || 'normal'
   });
 
   // 更新 badge
@@ -2203,7 +2206,7 @@ function changeQty(e, ctx, vid, catIdx, itemIdx, delta) {
     const menuAreaId = ctx==='main' ? 'menu-area' : 'p-menu-area';
     const qtyElId = `${menuAreaId}-qty-${vid}-${catIdx}-${itemIdx}`;
     const rowElId = `${menuAreaId}-item-${vid}-${catIdx}-${itemIdx}`;
-    const itemData = {vendorId:vid,vendorName:vDef.name||vid,catName:cat.name,name:item.name,price:item.price};
+    const itemData = {vendorId:vid,vendorName:vDef.name||vid,catName:cat.name,name:item.name,price:item.price,tempType:item.tempType||'normal'};
     const catData  = {isDrink:cat.isDrink,sweetness:cat.sweetness||[],ice:cat.ice||[],fixedSweetness:cat.fixedSweetness||null,fixedIce:cat.fixedIce||null,toppings:cat.toppings||[]};
     directChangeQty(e, ctx, qtyElId, rowElId, itemData, catData, delta);
   } catch(err) { console.error('changeQty fallback error:', err); }
@@ -2275,7 +2278,7 @@ function renderCart() {
   const card = document.getElementById('cart-card');
   const list = document.getElementById('cart-list');
   if (!card || !list) return;
-  if (!cart.length) { card.classList.add('hidden'); return; }
+  if (!cart.length) { card.classList.add('hidden'); updateOrderFormAutoFields(); return; }
   card.classList.remove('hidden');
   let total = 0; list.innerHTML = '';
   cart.forEach((c, i) => {
@@ -2290,6 +2293,7 @@ function renderCart() {
     list.appendChild(d);
   });
   document.getElementById('cart-total').textContent = '$' + total.toLocaleString();
+  updateOrderFormAutoFields();
 }
 function removeCartItem(i) { cart.splice(i, 1); renderCart(); renderMenuPanel('main'); }
 
@@ -2371,8 +2375,8 @@ function getFormData(prefix) {
     driver: document.getElementById(prefix + 'driver') ? document.getElementById(prefix + 'driver').value : '',
     // 階段1 派單資訊欄位
     timeNote: (function(){ var e = document.getElementById(prefix + 'timeNote'); return e ? e.value.trim() : ''; })(),
-    baggageUnits: (function(){ var e = document.getElementById(prefix + 'baggageUnits'); var n = e ? parseInt(e.value, 10) : 1; return (isNaN(n) || n < 1) ? 1 : Math.min(n, 9); })(),
-    tempType: (function(){ var r = document.querySelector('input[name="' + prefix + 'tempType"]:checked'); return r ? r.value : 'normal'; })(),
+    baggageUnits: (function(){ var c = prefix === 'f-' ? cart : pCart; var u = calcCartBags(c); return u > 0 ? u : 0.5; })(),
+    tempType: (function(){ var c = prefix === 'f-' ? cart : pCart; return getCartTempType(c); })(),
     paymentStatus: (function(){ var r = document.querySelector('input[name="' + prefix + 'paymentStatus"]:checked'); return r ? r.value : 'unpaid'; })(),
     deliveryNote: (function(){ var e = document.getElementById(prefix + 'deliveryNote'); return e ? e.value.trim() : ''; })(),
     isVIP: (function(){ var e = document.getElementById(prefix + 'isVIP'); return e ? !!e.checked : false; })(),
@@ -2411,9 +2415,8 @@ function clearOrderForm() {
   const ma = document.getElementById('menu-area'); if (ma) ma.innerHTML = '<div class="no-msg">請先選擇商家</div>';
   // 階段1 派單資訊欄位重置
   ['f-timeNote','f-deliveryNote'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
-  const bu = document.getElementById('f-baggageUnits'); if (bu) bu.value = '1';
-  const tnormal = document.querySelector('input[name="f-tempType"][value="normal"]'); if (tnormal) tnormal.checked = true;
   const punpaid = document.querySelector('input[name="f-paymentStatus"][value="unpaid"]'); if (punpaid) punpaid.checked = true;
+  updateOrderFormAutoFields();
   const vip = document.getElementById('f-isVIP'); if (vip) vip.checked = false;
 }
 
@@ -3192,16 +3195,20 @@ function renderEdItems(items) {
     n2.addEventListener('input',(function(idx){return function(){edData.categories[edCatIdx].items[idx].price=Number(this.value);};})(i));
     const n3=document.createElement('input');n3.type='text';n3.value=item.desc||'';n3.style.flex='2';n3.placeholder='說明（選填）';
     n3.addEventListener('input',(function(idx){return function(){edData.categories[edCatIdx].items[idx].desc=this.value;};})(i));
+    const n4=document.createElement('select');n4.style.cssText='flex:1;min-width:72px;font-size:12px';
+    n4.innerHTML='<option value="normal">📦常溫</option><option value="cold">🧊冷藏</option><option value="hot">🔥熱食</option>';
+    n4.value=item.tempType||'normal';
+    n4.addEventListener('change',(function(idx){return function(){edData.categories[edCatIdx].items[idx].tempType=this.value;};})(i));
     const rb=document.createElement('button');rb.className='rm-btn';rb.textContent='×';
     rb.addEventListener('click',(function(idx){return function(){edRmItem(idx);};})(i));
-    d.appendChild(n1);d.appendChild(n2);d.appendChild(n3);d.appendChild(rb);el.appendChild(d); });
+    d.appendChild(n1);d.appendChild(n2);d.appendChild(n3);d.appendChild(n4);d.appendChild(rb);el.appendChild(d); });
 }
 function edToggleDrink() { const cat = edData.categories[edCatIdx]; cat.isDrink = !cat.isDrink; if (cat.isDrink && !cat.sweetness?.length) { cat.sweetness = ['0%無糖','10%一分糖','30%三分糖','50%半糖','70%七分糖','100%全糖']; cat.ice = ['熱','去冰','10%少冰','30%','50%','正常冰']; cat.toppings = []; } renderEdPanel(); }
 function edAddOpt(type, inputId) { const v = document.getElementById(inputId)?.value.trim(); if (!v) return; if (!edData.categories[edCatIdx][type]) edData.categories[edCatIdx][type] = []; edData.categories[edCatIdx][type].push(v); document.getElementById(inputId).value = ''; if (type === 'sweetness') renderEdOptChips('sweetness','ed-sweet',edData.categories[edCatIdx].sweetness); else renderEdOptChips('ice','ed-ice',edData.categories[edCatIdx].ice); }
 function edRmOpt(type, idx) { edData.categories[edCatIdx][type].splice(idx, 1); if (type === 'sweetness') renderEdOptChips('sweetness','ed-sweet',edData.categories[edCatIdx].sweetness); else renderEdOptChips('ice','ed-ice',edData.categories[edCatIdx].ice); }
 function edAddTop() { const n = document.getElementById('new-top-name')?.value.trim(), p = parseInt(document.getElementById('new-top-price')?.value)||0; if (!n) return; if (!edData.categories[edCatIdx].toppings) edData.categories[edCatIdx].toppings=[]; edData.categories[edCatIdx].toppings.push({name:n,price:p}); document.getElementById('new-top-name').value=''; document.getElementById('new-top-price').value=''; renderEdTops(edData.categories[edCatIdx].toppings); }
 function edRmTop(i) { edData.categories[edCatIdx].toppings.splice(i,1); renderEdTops(edData.categories[edCatIdx].toppings); }
-function edAddItem() { edData.categories[edCatIdx].items.push({name:'',price:0,desc:''}); renderEdItems(edData.categories[edCatIdx].items); updateEdMeta(); }
+function edAddItem() { edData.categories[edCatIdx].items.push({name:'',price:0,desc:'',tempType:'normal'}); renderEdItems(edData.categories[edCatIdx].items); updateEdMeta(); }
 function edRmItem(i) { if (!confirm('確定刪除？')) return; edData.categories[edCatIdx].items.splice(i,1); renderEdItems(edData.categories[edCatIdx].items); updateEdMeta(); }
 function edAddCat() { const n = prompt('新分類名稱：'); if (!n) return; edData.categories.push({name:n,isDrink:false,sweetness:[],ice:[],fixedSweetness:null,fixedIce:null,toppings:[],items:[]}); edCatIdx=edData.categories.length-1; renderEdCatBar(); renderEdPanel(); updateEdMeta(); }
 function edDelCat(e,i) { e.stopPropagation(); if (!confirm(`確定刪除分類「${edData.categories[i].name}」？`)) return; edData.categories.splice(i,1); if(edCatIdx>=edData.categories.length)edCatIdx=Math.max(0,edData.categories.length-1); renderEdCatBar(); renderEdPanel(); updateEdMeta(); }
@@ -3355,6 +3362,47 @@ function calcOrderBags(order) {
   });
   return Math.round(total*10)/10;
 }
+function calcCartBags(cartItems) {
+  const vendorSettings = JSON.parse(localStorage.getItem('goood_vendor_bag_settings') || '{}');
+  let total = 0;
+  (cartItems || []).forEach(item => {
+    const vid = item.vendorId;
+    const bagPerItem = vid && vendorSettings[vid] ? vendorSettings[vid].bagPerItem : 0.5;
+    total += bagPerItem * (item.qty || 1);
+  });
+  return Math.round(total * 10) / 10;
+}
+function getCartTempType(cartItems) {
+  if (!cartItems || !cartItems.length) return 'normal';
+  const types = cartItems.map(i => i.tempType || 'normal');
+  if (types.includes('cold')) return 'cold';
+  if (types.includes('hot')) return 'hot';
+  return 'normal';
+}
+function updateOrderFormAutoFields() {
+  const units = calcCartBags(cart);
+  const temp = getCartTempType(cart);
+  const unitsEl = document.getElementById('f-bag-units-text');
+  if (unitsEl) {
+    unitsEl.textContent = units.toFixed(1) + ' / 2.5 單位';
+    unitsEl.style.color = units > 2.5 ? 'var(--red)' : units > 0 ? 'var(--green)' : 'var(--text-hint)';
+  }
+  const slotsEl = document.getElementById('f-bag-slots');
+  if (slotsEl) {
+    const slotNames = ['左上','右上','左下','右下','肩背'];
+    slotsEl.innerHTML = slotNames.map((nm, idx) => {
+      const threshold = (idx + 1) * 0.5;
+      const prev = idx * 0.5;
+      const fill = units >= threshold ? 1 : units > prev ? (units - prev) / 0.5 : 0;
+      const bg = fill >= 1 ? (units > 2.5 ? '#ef4444' : '#16a34a') : fill > 0 ? '#fbbf24' : '#e5e7eb';
+      return `<div title="${nm}" style="width:20px;height:20px;border-radius:3px;background:${bg};position:relative;overflow:hidden;border:1px solid #d1d5db;"><div style="position:absolute;bottom:0;left:0;right:0;height:${Math.round(fill*100)}%;background:${fill>=1?(units>2.5?'#dc2626':'#15803d'):'#f59e0b'};opacity:0.6"></div><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:8px;color:#374151;font-weight:600">${nm[0]}</span></div>`;
+    }).join('');
+  }
+  const TEMP_MAP = {cold:{badge:'🧊',label:'冷藏',color:'#1d4ed8'},hot:{badge:'🔥',label:'熱食',color:'#c2410c'},normal:{badge:'📦',label:'常溫',color:'var(--text-sub)'}};
+  const t = TEMP_MAP[temp] || TEMP_MAP.normal;
+  const badgeEl = document.getElementById('f-temp-badge'); if (badgeEl) badgeEl.textContent = t.badge;
+  const labelEl = document.getElementById('f-temp-label'); if (labelEl) { labelEl.textContent = t.label; labelEl.style.color = t.color; }
+}
 function calcVendorBags(order) {
   const menuDB=DB.getMenus();
   const vendorSettings=JSON.parse(localStorage.getItem('goood_vendor_bag_settings')||'{}');
@@ -3402,11 +3450,11 @@ function renderDispatchContent() {
 function buildTimeslotGroup(slot,orders){
   const wrap=document.createElement('div');wrap.className='timeslot-group';
   const totalBags=orders.reduce((s,o)=>s+(calcOrderBags(o)||0),0);
-  const MAX=4.5;
+  const MAX=2.5;
   const hintClass=totalBags<=MAX?'hint-ok':totalBags<=MAX*2?'hint-warn':'hint-over';
   const hintText=totalBags<=MAX?'可合併一趟':totalBags<=MAX*2?'建議分兩趟':'需分多趟';
   const depart=calcDepartTime(slot);
-  wrap.innerHTML=`<div class="timeslot-header"><div><div class="ts-time">🕐 ${esc(slot)}</div><div class="ts-depart">出門時間：${depart}</div></div><div class="ts-summary"><div class="ts-bags">${totalBags.toFixed(1)} 袋</div><span class="ts-merge-hint ${hintClass}">${hintText}</span></div></div>`;
+  wrap.innerHTML=`<div class="timeslot-header"><div><div class="ts-time">🕐 ${esc(slot)}</div><div class="ts-depart">出門時間：${depart}</div></div><div class="ts-summary"><div class="ts-bags">${totalBags.toFixed(1)} 單位</div><span class="ts-merge-hint ${hintClass}">${hintText}</span></div></div>`;
   orders.forEach(o=>wrap.appendChild(buildOrderDispatchCard(o)));
   wrap.appendChild(buildTripBuilderCard(slot,orders,depart));
   return wrap;
@@ -3422,7 +3470,9 @@ function buildOrderDispatchCard(order){
   const mapsUrl=order.address?`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.address)}&travelmode=two-wheeler`:'';
 
   // 用 innerHTML 建靜態結構，再補 addEventListener
-  card.innerHTML=`<div class="odc-head"><div class="odc-left"><div class="odc-customer">${esc(order.customer||'')} ${payBadge}</div><div class="odc-addr">📍 ${esc(order.address||'')} ${mapsUrl?`<a href="${mapsUrl}" target="_blank" class="odc-dist">導航</a>`:''}</div></div><div class="odc-right"><div class="odc-total">$${(order.total||0).toLocaleString()}</div><div class="odc-pay">${bags} 袋</div></div></div><div class="odc-body hidden" id="odc-body-${order.id}"><div class="odc-bags-row">${bagsHtml||'<span class="bag-tag">無袋數資料</span>'}</div><div class="odc-items">${itemsText}</div>${order.note?`<div class="odc-note">備：${esc(order.note)}</div>`:''}<div class="confirm-msg-box">${esc(order.confirmMsg||'（無確認訊息）')}</div><button class="copy-confirm-btn" style="display:flex;align-items:center;gap:5px;padding:7px 12px;background:#2563eb;color:white;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit">📋 複製確認訊息</button></div>`;
+  const TEMP_ICONS={cold:'🧊',hot:'🔥',normal:'📦'};
+  const tempIcon=TEMP_ICONS[order.tempType||'normal']||'📦';
+  card.innerHTML=`<div class="odc-head"><div class="odc-left"><div class="odc-customer">${esc(order.customer||'')} ${payBadge}</div><div class="odc-addr">📍 ${esc(order.address||'')} ${mapsUrl?`<a href="${mapsUrl}" target="_blank" class="odc-dist">導航</a>`:''}</div></div><div class="odc-right"><div class="odc-total">$${(order.total||0).toLocaleString()}</div><div class="odc-pay">${tempIcon} ${bags} 單位</div></div></div><div class="odc-body hidden" id="odc-body-${order.id}"><div class="odc-bags-row">${bagsHtml||'<span class="bag-tag">無袋數資料</span>'}</div><div class="odc-items">${itemsText}</div>${order.note?`<div class="odc-note">備：${esc(order.note)}</div>`:''}<div class="confirm-msg-box">${esc(order.confirmMsg||'（無確認訊息）')}</div><button class="copy-confirm-btn" style="display:flex;align-items:center;gap:5px;padding:7px 12px;background:#2563eb;color:white;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit">📋 複製確認訊息</button></div>`;
 
   // 用 addEventListener 綁定
   card.querySelector('.odc-head').addEventListener('click', function(){ toggleOdc(order.id); });
@@ -3438,7 +3488,7 @@ function buildTripBuilderCard(slot, orders, defaultDepart) {
   div.className = 'trip-builder'; div.id = builderId;
 
   // 狀態：groups 是二維陣列，每組是一趟
-  const groups = autoGroupOrders(orders, 4.5);
+  const groups = autoGroupOrders(orders, 2.5);
   // 允許手動調整
   let manualGroups = groups.map(g => [...g]);
 
@@ -3452,9 +3502,9 @@ function buildTripBuilderCard(slot, orders, defaultDepart) {
     manualGroups.forEach((group, gi) => {
       const gid = `${builderId}_g${gi}`;
       const gBags = group.reduce((s,o) => s+(calcOrderBags(o)||0), 0);
-      const fillPct = Math.min(120, (gBags/4.5)*100);
+      const fillPct = Math.min(120, (gBags/2.5)*100);
       const fillClass = fillPct <= 100 ? 'bg-ok' : fillPct <= 110 ? 'bg-warn' : 'bg-over';
-      const overloaded = gBags > 4.5;
+      const overloaded = gBags > 2.5;
 
       const gDiv = document.createElement('div');
       gDiv.className = 'tb-group';
@@ -3481,7 +3531,8 @@ function buildTripBuilderCard(slot, orders, defaultDepart) {
       group.forEach((o, oi) => {
         const oRow = document.createElement('div');
         oRow.className = 'tb-order-item';
-        oRow.innerHTML = `<span style="flex:1;font-size:13px;font-weight:500">${esc(o.customer||'')}</span><span style="font-size:11px;color:var(--text-sub);margin-right:8px">${esc((o.address||'').slice(0,12))}…</span><span style="font-size:12px;color:var(--text-sub)">${calcOrderBags(o)}袋</span>`;
+        const oBags=calcOrderBags(o);const oTemp=o.tempType||'normal';const oTIcon={cold:'🧊',hot:'🔥',normal:'📦'}[oTemp]||'📦';
+        oRow.innerHTML = `<span style="flex:1;font-size:13px;font-weight:500">${esc(o.customer||'')}</span><span style="font-size:11px;color:var(--text-sub);margin-right:8px">${esc((o.address||'').slice(0,12))}…</span><span style="font-size:12px;color:var(--text-sub)">${oTIcon} ${oBags} 單位</span>`;
         // 移到下一趟按鈕（超過1個訂單才能移）
         if (group.length > 1) {
           const moveBtn = document.createElement('button');
@@ -3506,12 +3557,28 @@ function buildTripBuilderCard(slot, orders, defaultDepart) {
       // 馬鞍袋進度條
       const bagTotal = document.createElement('div');
       bagTotal.className = 'tb-bag-total';
-      bagTotal.innerHTML = `<span>馬鞍袋：${gBags.toFixed(1)} / 4.5</span><span style="font-size:11px;color:${overloaded?'var(--red)':'var(--green)'};">${overloaded?'⚠ 超載':'✓ 可承載'}</span>`;
+      bagTotal.innerHTML = `<span>馬鞍袋：${gBags.toFixed(1)} / 2.5 單位</span><span style="font-size:11px;color:${overloaded?'var(--red)':'var(--green)'};">${overloaded?'⚠ 超載':'✓ 可承載'}</span>`;
       gDiv.appendChild(bagTotal);
       const bar = document.createElement('div'); bar.className = 'tb-bag-bar';
       const fill = document.createElement('div'); fill.className = `tb-bag-fill ${fillClass}`;
       fill.style.width = Math.min(fillPct, 100) + '%';
       bar.appendChild(fill); gDiv.appendChild(bar);
+      // 5 格位視覺化
+      const slotNames=['左上','右上','左下','右下','肩背'];
+      const slotWrap=document.createElement('div');
+      slotWrap.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:6px 0 2px';
+      slotNames.forEach((nm,idx)=>{
+        const threshold=(idx+1)*0.5;const prev=idx*0.5;
+        const ratio=gBags>=threshold?1:gBags>prev?(gBags-prev)/0.5:0;
+        const bg=ratio>=1?(overloaded?'#fee2e2':'#dcfce7'):ratio>0?'#fef9c3':'#f3f4f6';
+        const border=ratio>=1?(overloaded?'#ef4444':'#16a34a'):ratio>0?'#fbbf24':'#d1d5db';
+        const sl=document.createElement('div');
+        sl.style.cssText=`background:${bg};border:1px solid ${border};border-radius:5px;padding:3px 6px;font-size:11px;text-align:center;font-weight:500;color:#374151;`;
+        sl.textContent=(ratio>=1?'🟩':ratio>0?'🟨':'⬜')+' '+nm;
+        if(idx===4)sl.style.gridColumn='span 2';
+        slotWrap.appendChild(sl);
+      });
+      gDiv.appendChild(slotWrap);
 
       // 指派外送員
       const driverRow = document.createElement('div'); driverRow.className = 'driver-assign-row';
@@ -5554,8 +5621,8 @@ async function computeDriverHistory() {
       var assignedDriver = dv2State.assignments[gi] || '';
       g.orders.forEach(function(o, oi){
         var slot = o.timeslot || g.timeConstraint || '';
-        // 跨時段合併時用組的建議出發時間，否則用訂單自己的
-        var depart = g.suggestedDepart || ((typeof calcDepartTime === 'function') ? calcDepartTime(slot) : '');
+        // 優先用手動調整的出門時間，其次用跨時段建議，最後用自動計算
+        var depart = g.customDepart || g.suggestedDepart || ((typeof calcDepartTime === 'function') ? calcDepartTime(slot) : '');
         rows.push({
           gi: gi, oi: oi,
           order: o,
@@ -5641,11 +5708,12 @@ async function computeDriverHistory() {
 
     // ── 表格 ──
     html += '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">';
-    html += '<table class="dv2-dispatch-tbl" style="width:100%;border-collapse:collapse;font-size:13px;min-width:700px;">';
+    html += '<table class="dv2-dispatch-tbl" style="width:100%;border-collapse:collapse;font-size:13px;min-width:800px;">';
     html += '<thead><tr style="background:#f8fafc;position:sticky;top:0;z-index:2;">';
     html += '<th style="padding:6px 4px;text-align:left;border-bottom:2px solid #e2e8f0;white-space:nowrap;">預約時段</th>';
     html += '<th style="padding:6px 4px;text-align:center;border-bottom:2px solid #e2e8f0;color:#dc2626;white-space:nowrap;">出門時間</th>';
     html += '<th style="padding:6px 4px;text-align:left;border-bottom:2px solid #e2e8f0;">外送地點</th>';
+    html += '<th style="padding:6px 4px;text-align:center;border-bottom:2px solid #e2e8f0;white-space:nowrap;">距離</th>';
     html += '<th style="padding:6px 4px;text-align:left;border-bottom:2px solid #e2e8f0;">備註</th>';
     html += '<th style="padding:6px 4px;text-align:center;border-bottom:2px solid #e2e8f0;white-space:nowrap;">品牌</th>';
     html += '<th style="padding:6px 4px;text-align:center;border-bottom:2px solid #e2e8f0;white-space:nowrap;">馬鞍袋</th>';
@@ -5659,31 +5727,80 @@ async function computeDriverHistory() {
     var lastGi = -1;
     var groupColorIdx = -1;
 
+    // 預先算每組內的目的地順序
+    var groupDestOrder = {};
+    dv2State.groups.forEach(function(g, gi){
+      if (g.orders.length <= 1) return;
+      // 按時段排序決定送貨順序
+      var sorted = g.orders.slice().sort(function(a, b){
+        var tA = parseTimeslotMinutes(a.timeslot) || 9999;
+        var tB = parseTimeslotMinutes(b.timeslot) || 9999;
+        return tA - tB;
+      });
+      sorted.forEach(function(o, idx){
+        groupDestOrder[String(o.id)] = idx + 1;
+      });
+    });
+
     rows.forEach(function(r, ri){
-      // 組別交替底色 — 每組用不同淡色
+      // 組別交替底色
       var isNewGroup = (r.gi !== lastGi);
       if (isNewGroup) { groupColorIdx++; lastGi = r.gi; }
       var bg = GROUP_BG_COLORS[groupColorIdx % GROUP_BG_COLORS.length];
       var vipStyle = r.order.isVIP ? 'border-left:3px solid #f59e0b;' : '';
       var drvColor = driverColor(r.driver);
-      // 組間加粗分隔線
       var topBorder = (isNewGroup && ri > 0) ? 'border-top:2.5px solid #94a3b8;' : '';
+      var groupSize = dv2State.groups[r.gi].orders.length;
+      var isMerged = groupSize > 1;
+      // 合併訂單左邊色條
+      var mergeBar = isMerged ? 'border-left:4px solid #6366f1;' : '';
 
-      html += '<tr style="background:' + bg + ';' + vipStyle + topBorder + '">';
+      html += '<tr style="background:' + bg + ';' + vipStyle + mergeBar + topBorder + '">';
 
-      // 預約時段
-      html += '<td style="padding:5px 4px;border-bottom:1px solid #f1f5f9;white-space:nowrap;">' + escHtml(r.timeslot) + '</td>';
+      // 預約時段 + 合併標籤
+      html += '<td style="padding:5px 4px;border-bottom:1px solid #f1f5f9;white-space:nowrap;">';
+      html += escHtml(r.timeslot);
+      if (isMerged && isNewGroup) {
+        html += ' <span style="display:inline-block;background:#6366f1;color:#fff;font-size:10px;padding:1px 5px;border-radius:3px;font-weight:700;">合併' + groupSize + '單</span>';
+      }
+      html += '</td>';
 
-      // 出門時間（紅色醒目）
-      html += '<td style="padding:5px 4px;border-bottom:1px solid #f1f5f9;text-align:center;font-weight:700;color:#dc2626;">' + escHtml(r.departTime) + '</td>';
+      // 出門時間（可編輯）— 同組第一行顯示 input
+      var isFirstInGroup = (ri === 0 || rows[ri-1].gi !== r.gi);
+      if (isFirstInGroup) {
+        html += '<td style="padding:3px 2px;border-bottom:1px solid #f1f5f9;text-align:center;" rowspan="' + groupSize + '">';
+        html += '<input type="time" class="dv2-depart-input" data-gi="' + r.gi + '" value="' + escHtml(r.departTime) + '" style="width:70px;padding:3px 4px;border:1.5px solid #fca5a5;border-radius:6px;font-size:13px;font-weight:700;color:#dc2626;text-align:center;background:#fff;">';
+        if (r.isCrossSlot) {
+          html += '<div style="font-size:9px;color:#6366f1;margin-top:2px;">跨時段建議</div>';
+        }
+        html += '</td>';
+      }
 
-      // 外送地點
+      // 外送地點 + 目的地順序
       var addr = r.order.address || '';
       var customer = r.order.customer || '未命名';
+      var destNum = groupDestOrder[String(r.order.id)];
       html += '<td style="padding:5px 4px;border-bottom:1px solid #f1f5f9;">';
-      html += '<div style="font-weight:600;font-size:12px;">' + escHtml(customer) + '</div>';
-      html += '<div style="font-size:11px;color:#6b7280;">' + escHtml(addr) + '</div>';
+      if (destNum) {
+        var circleColors = ['#3b82f6','#f59e0b','#10b981'];
+        var cClr = circleColors[(destNum-1) % circleColors.length];
+        html += '<span style="display:inline-block;width:18px;height:18px;line-height:18px;text-align:center;border-radius:50%;background:' + cClr + ';color:#fff;font-size:10px;font-weight:700;margin-right:4px;vertical-align:middle;">' + destNum + '</span>';
+      }
+      html += '<span style="font-weight:600;font-size:12px;">' + escHtml(customer) + '</span>';
+      html += '<div style="font-size:11px;color:#6b7280;margin-top:1px;">' + escHtml(addr) + '</div>';
       html += '</td>';
+
+      // 距離
+      var distText = '—';
+      var distZone = guessDeliveryZone(addr);
+      // 簡易距離估算（無 Google Maps 時）
+      var ZONE_DIST = {
+        '新竹東南商圈': 1.5, '新竹科學園區': 5.5, '新竹湳雅商圈': 3.0,
+        '竹北福興商圈': 8.0, '竹東': 12.0, '其他': 6.0
+      };
+      var estKm = ZONE_DIST[distZone] || 5;
+      distText = estKm.toFixed(1) + 'km';
+      html += '<td style="padding:5px 4px;border-bottom:1px solid #f1f5f9;text-align:center;font-size:12px;color:#6b7280;">' + distText + '</td>';
 
       // 備註
       var note = r.order.note || r.order.deliveryNote || r.order.timeNote || '';
@@ -5817,6 +5934,15 @@ async function computeDriverHistory() {
         var gi = parseInt(btn.getAttribute('data-gi'), 10);
         var oi = parseInt(btn.getAttribute('data-oi'), 10);
         splitOrderFromGroup(gi, oi);
+      });
+    });
+
+    // ── 綁定出門時間編輯 ──
+    body.querySelectorAll('.dv2-depart-input').forEach(function(inp){
+      inp.addEventListener('change', function(){
+        var gi = parseInt(inp.getAttribute('data-gi'), 10);
+        // 儲存自訂出門時間到 group
+        dv2State.groups[gi].customDepart = inp.value;
       });
     });
   }
@@ -6080,7 +6206,7 @@ async function computeDriverHistory() {
       var drv = dv2State.assignments[gi];
       if (!drv) { fail++; continue; }
       var slot = g.timeConstraint || (g.orders[0] && g.orders[0].timeslot) || '';
-      var depart = (typeof calcDepartTime === 'function') ? calcDepartTime(slot) : '';
+      var depart = g.customDepart || g.suggestedDepart || ((typeof calcDepartTime === 'function') ? calcDepartTime(slot) : '');
       var tripData = {
         date: dv2State.dateStr,
         timeslot: slot,
