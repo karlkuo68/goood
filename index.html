@@ -1103,7 +1103,17 @@ textarea { resize: vertical; min-height: 60px; }
       </div>
     </div>
     <!-- 派單設定 -->
-    <div id="ed-dispatch-settings" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+    <div id="ed-dispatch-settings" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+      <div>
+        <label style="font-size:12px;color:var(--text-sub);display:block;margin-bottom:4px">🌡️ 商品溫度模式</label>
+        <select id="ed-temp-mode" style="font-size:12px;padding:5px 6px;border:1px solid var(--border);border-radius:5px;width:100%">
+          <option value="normal">📦 固定 — 大多常溫</option>
+          <option value="cold">🧊 固定 — 大多冷藏</option>
+          <option value="hot">🔥 固定 — 大多熱食</option>
+          <option value="dynamic">🔄 不固定 — 依消費者選擇</option>
+        </select>
+        <div style="font-size:10px;color:var(--text-hint);margin-top:3px" id="ed-temp-hint">選擇後會套用到所有品項</div>
+      </div>
       <div>
         <label style="font-size:12px;color:var(--text-sub);display:block;margin-bottom:4px">🧳 馬鞍袋容量</label>
         <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
@@ -1683,6 +1693,24 @@ const DB = {
   saveAddrs(d) { localStorage.setItem('goood_addrs', JSON.stringify(d)); },
 };
 
+// ═══ 初始化預設商家溫度模式（只設定一次）═══
+(function initVendorTempModes() {
+  var modes = {};
+  try { modes = JSON.parse(localStorage.getItem('goood_vendor_temp_mode') || '{}'); } catch(e){}
+  var defaults = {
+    v_qe: 'hot', v_qb: 'hot', v_qt: 'hot',   // 小鵲幸：全部熱食
+    v_yl: 'dynamic',                            // 玉蘭：依消費者冰塊選擇
+    v_te: 'cold', v_tb: 'cold',                 // 鐵三角：大多冷藏（烤吐司等個別設熱）
+    v_mm: 'hot',                                 // 米米香：大多熱食（飲料個別設冷）
+    v_vn: 'hot'                                  // 越南麵包：大多熱食（茶飲個別設冷）
+  };
+  var changed = false;
+  Object.keys(defaults).forEach(function(vid) {
+    if (!modes[vid]) { modes[vid] = defaults[vid]; changed = true; }
+  });
+  if (changed) localStorage.setItem('goood_vendor_temp_mode', JSON.stringify(modes));
+})();
+
 // ════════════════════════════════════════════════
 // 全域狀態（簡單明確）
 // ════════════════════════════════════════════════
@@ -2204,9 +2232,13 @@ function confirmItemModal() {
     qty: 1,
     opts: opts.length ? opts.join(' / ') : null,
     tempType: (function(){
-      // 玉蘭：根據冰塊選項動態判定冷熱 — 選「熱」=hot，其他冰量=cold
       var vid = item.vendorId || itemData?.vendorId || '';
-      if (vid === 'v_yl') {
+      // 檢查商家溫度模式
+      var tempModes = {};
+      try { tempModes = JSON.parse(localStorage.getItem('goood_vendor_temp_mode') || '{}'); } catch(e){}
+      var mode = tempModes[vid];
+      if (mode === 'dynamic') {
+        // 不固定模式：根據冰塊選項判定 — 選「熱」=hot，其他=cold
         var iceVal = ice || cat.fixedIce || '';
         return (iceVal === '熱') ? 'hot' : 'cold';
       }
@@ -3131,6 +3163,32 @@ function openEditor(vid) {
   if (bagInp) { bagInp.value = itemsPerHalfBag; bagInp.onchange = function(){ saveBagSetting(vid, Number(bagInp.value)); if(bagHint) bagHint.textContent = '1個 = ' + (0.5/Number(bagInp.value)).toFixed(2) + '袋'; }; }
   if (addrInp) { addrInp.value = addr; addrInp.onchange = function(){ saveVendorAddrSetting(vid, addrInp.value); }; }
   if (bagHint) bagHint.textContent = '1個 = ' + (0.5/itemsPerHalfBag).toFixed(2) + '袋';
+  // 溫度模式
+  var tempModes = JSON.parse(localStorage.getItem('goood_vendor_temp_mode') || '{}');
+  var tempSel = document.getElementById('ed-temp-mode');
+  var tempHint = document.getElementById('ed-temp-hint');
+  if (tempSel) {
+    tempSel.value = tempModes[vid] || 'normal';
+    tempSel.onchange = function() {
+      var mode = tempSel.value;
+      var modes = JSON.parse(localStorage.getItem('goood_vendor_temp_mode') || '{}');
+      modes[vid] = mode;
+      localStorage.setItem('goood_vendor_temp_mode', JSON.stringify(modes));
+      // 固定模式：批量套用 tempType 到所有品項
+      if (mode !== 'dynamic' && edData) {
+        edData.categories.forEach(function(cat) {
+          (cat.items || []).forEach(function(item) { item.tempType = mode; });
+        });
+        renderEdPanel();
+        showToast('已套用「' + {normal:'常溫',cold:'冷藏',hot:'熱食'}[mode] + '」到所有品項');
+      } else {
+        showToast('已設為「依消費者選擇」，點單時由冰塊選項決定冷熱');
+      }
+      if (tempHint) tempHint.textContent = mode === 'dynamic' ? '點單時依冰塊選項自動判定' : '已套用到所有品項，可在品項中個別調整';
+    };
+    var curMode = tempModes[vid] || 'normal';
+    if (tempHint) tempHint.textContent = curMode === 'dynamic' ? '點單時依冰塊選項自動判定' : '切換模式會套用到所有品項';
+  }
   updateEdMeta(); document.getElementById('editor-card').classList.remove('hidden');
   renderEdCatBar(); renderEdPanel();
   document.getElementById('editor-card').scrollIntoView({ behavior: 'smooth' });
