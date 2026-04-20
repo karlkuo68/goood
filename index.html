@@ -3476,7 +3476,14 @@ function openOrderDetail(id) {
   }
   var itemsHtml = (o.items||[]).map(function(it){
     var tempLabel = it.tempType === 'hot' ? '🔥' : it.tempType === 'cold' ? '🧊' : '📦';
-    return '<div class="od-item-row"><span>' + tempLabel + ' ' + esc(it.name) + (it.ice ? ' (' + esc(it.ice) + ')' : '') + (it.sugar ? ' ' + esc(it.sugar) : '') + '</span><span>×' + (it.qty||1) + ' $' + ((it.price||0)*(it.qty||1)) + '</span></div>';
+    var qty = it.qty || 1;
+    var price = it.price || 0;
+    var subtotal = price * qty;
+    return '<div class="od-item-row" style="display:flex;align-items:center;gap:4px;">' +
+      '<span style="flex:1;">' + tempLabel + ' ' + esc(it.name) + (it.ice ? ' (' + esc(it.ice) + ')' : '') + (it.sugar ? ' ' + esc(it.sugar) : '') + '</span>' +
+      '<span style="white-space:nowrap;color:#6b7280;font-size:12px;">$' + price + ' × ' + qty + '</span>' +
+      '<span style="white-space:nowrap;font-weight:600;min-width:56px;text-align:right;margin-left:12px;">$' + subtotal + '</span>' +
+      '</div>';
   }).join('');
   overlay.innerHTML = '<div class="order-detail-sheet">' +
     '<div class="od-header"><span class="od-title">訂單詳情</span><button class="od-close" data-act="close">✕</button></div>' +
