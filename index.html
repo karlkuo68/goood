@@ -3466,6 +3466,14 @@ function openOrderDetail(id) {
   if (!o) return;
   var overlay = document.createElement('div');
   overlay.className = 'order-detail-overlay'; overlay.id = 'order-detail-overlay';
+  // 計算店家→目的地距離
+  var shopAddr = (typeof getOrderShopAddr === 'function') ? getOrderShopAddr(o) : '';
+  var distInfo = (shopAddr && o.address && typeof calcDistBetween === 'function') ? calcDistBetween(shopAddr, o.address) : null;
+  var distHtml = '';
+  if (distInfo && distInfo.km > 0) {
+    var dClr = distInfo.km <= 3 ? '#16a34a' : distInfo.km <= 7 ? '#d97706' : '#dc2626';
+    distHtml = '<span style="display:inline-block;margin-left:6px;font-size:11px;color:' + dClr + ';background:' + dClr + '14;padding:1px 6px;border-radius:4px;font-weight:600;">🏪 ' + distInfo.km.toFixed(1) + 'km</span>';
+  }
   var itemsHtml = (o.items||[]).map(function(it){
     var tempLabel = it.tempType === 'hot' ? '🔥' : it.tempType === 'cold' ? '🧊' : '📦';
     return '<div class="od-item-row"><span>' + tempLabel + ' ' + esc(it.name) + (it.ice ? ' (' + esc(it.ice) + ')' : '') + (it.sugar ? ' ' + esc(it.sugar) : '') + '</span><span>×' + (it.qty||1) + ' $' + ((it.price||0)*(it.qty||1)) + '</span></div>';
@@ -3474,7 +3482,7 @@ function openOrderDetail(id) {
     '<div class="od-header"><span class="od-title">訂單詳情</span><button class="od-close" data-act="close">✕</button></div>' +
     '<div class="od-field"><span class="od-label">訂購人</span><span class="od-val">' + esc(o.customer||'') + '</span></div>' +
     '<div class="od-field"><span class="od-label">電話</span><span class="od-val">' + esc(o.phone||'') + (o.phone2 ? ' / ' + esc(o.phone2) : '') + '</span></div>' +
-    '<div class="od-field"><span class="od-label">地址</span><span class="od-val">' + esc(o.address||'') + '</span></div>' +
+    '<div class="od-field"><span class="od-label">地址</span><span class="od-val">' + esc(o.address||'') + distHtml + '</span></div>' +
     '<div class="od-field"><span class="od-label">日期</span><span class="od-val">' + esc(o.date||'') + ' ' + esc(o.timeslot||'') + '</span></div>' +
     '<div class="od-field"><span class="od-label">付款</span><span class="od-val">' + (o.payType==='transfer'?'轉帳':'現金') + (o.taxid ? '　統編: '+esc(o.taxid) : '') + '</span></div>' +
     '<div class="od-field"><span class="od-label">金額</span><span class="od-val" style="font-weight:700;color:var(--green)">$' + (o.total||0).toLocaleString() + '</span></div>' +
@@ -6564,14 +6572,14 @@ async function computeDriverHistory() {
 
       if (isFirstInGroup) {
         html += '<td style="padding:5px 4px;border-bottom:1px solid #f1f5f9;text-align:center;" rowspan="' + groupSize + '">';
-        html += '<select class="dv2-drv-sel" data-gi="' + r.gi + '" style="padding:4px 6px;border-radius:6px;border:2px solid ' + drvColor + ';font-size:13px;font-weight:700;color:' + drvColor + ';background:#fff;min-width:70px;cursor:pointer;">';
+        html += '<select class="dv2-drv-sel" data-gi="' + r.gi + '" style="padding:4px 4px;border-radius:6px;border:2px solid ' + drvColor + ';font-size:13px;font-weight:700;color:' + drvColor + ';background:#fff;min-width:56px;cursor:pointer;">';
         var ranked = r.ranked;
         if (!ranked.scored.length) {
           html += '<option value="">無可用</option>';
         } else {
           ranked.scored.forEach(function(d){
             var sel = (d.driverId === r.driver) ? ' selected' : '';
-            html += '<option value="' + escHtml(d.driverId) + '"' + sel + '>' + escHtml(d.driverId) + ' ' + Math.round(d.score) + '分</option>';
+            html += '<option value="' + escHtml(d.driverId) + '"' + sel + '>' + escHtml(d.driverId) + '</option>';
           });
         }
         html += '</select>';
