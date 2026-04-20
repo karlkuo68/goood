@@ -5490,71 +5490,127 @@ async function computeDriverHistory() {
     return '其他';
   }
 
-  // 精細距離估算（從東南街商圈出發）
-  // 用關鍵字匹配已知地標/公司/路名，給出較準確的距離
-  function estimateDistance(addr) {
-    if (!addr) return { km: 0, note: '無地址' };
-    var a = addr;
-    // === 科學園區內的公司（各有不同距離）===
-    // 園區一路/力行路方向（較近）
-    if (/台積電.*五廠|台積[五5]廠|力行[一1二2]路/.test(a)) return { km: 4.5, note: '園區力行路段' };
-    if (/台積電.*[七7]廠|台積[七7]廠|台積七/.test(a)) return { km: 5.2, note: '園區七廠' };
-    if (/台積電.*十二廠|台積十二|台積12/.test(a)) return { km: 6.0, note: '園區十二廠' };
-    if (/台積|tsmc/i.test(a)) return { km: 5.5, note: '台積電（園區）' };
-    if (/聯發科|mediatek/i.test(a)) return { km: 5.0, note: '聯發科' };
-    if (/瑞昱|realtek/i.test(a)) return { km: 4.8, note: '瑞昱半導體' };
-    if (/智邦|alpha/i.test(a)) return { km: 5.3, note: '智邦科技' };
-    if (/力積電|力晶|powerchip/i.test(a)) return { km: 6.5, note: '力積電（園區三路）' };
-    if (/聯詠|novatek/i.test(a)) return { km: 5.0, note: '聯詠科技' };
-    if (/群聯|phison/i.test(a)) return { km: 5.8, note: '群聯電子' };
-    if (/旺宏|macronix/i.test(a)) return { km: 5.5, note: '旺宏電子' };
-    if (/矽品|spil/i.test(a)) return { km: 6.0, note: '矽品精密' };
-    if (/欣銓|ardentec/i.test(a)) return { km: 5.5, note: '欣銓科技' };
-    if (/創意電子|global ?unichip/i.test(a)) return { km: 5.2, note: '創意電子' };
-    if (/世界先進|vanguard/i.test(a)) return { km: 5.8, note: '世界先進' };
-    if (/南亞科|nanya/i.test(a)) return { km: 6.0, note: '南亞科技' };
-    // 園區路名
-    if (/園區[一1]路/.test(a)) return { km: 4.5, note: '園區一路' };
-    if (/園區[二2]路/.test(a)) return { km: 5.0, note: '園區二路' };
-    if (/園區[三3]路/.test(a)) return { km: 5.8, note: '園區三路' };
-    if (/研新[一1二2三3]路/.test(a)) return { km: 5.5, note: '研新路' };
-    if (/篤行路/.test(a)) return { km: 5.0, note: '篤行路' };
-    if (/工業東/.test(a)) return { km: 4.8, note: '工業東路' };
-    if (/創新[一1二2]路/.test(a)) return { km: 5.5, note: '創新路' };
-    if (/科學園區|園區/.test(a)) return { km: 5.5, note: '科學園區（一般）' };
-    // === 工研院 ===
-    if (/工研院|中興路四段|光復院區/.test(a)) return { km: 7.5, note: '工研院' };
-    // === 東區/東南商圈 ===
-    if (/東南街|食品路/.test(a)) return { km: 0.5, note: '東南街附近' };
-    if (/光復路[一1]段/.test(a)) return { km: 1.5, note: '光復路一段' };
-    if (/光復路[二2]段/.test(a)) return { km: 3.0, note: '光復路二段' };
-    if (/建功路|建功[一1二2]路/.test(a)) return { km: 2.0, note: '建功路' };
-    if (/學府路/.test(a)) return { km: 1.8, note: '學府路' };
-    if (/清華|交大|陽明交通|清大/.test(a)) return { km: 2.5, note: '大學區' };
-    if (/中央路/.test(a)) return { km: 2.0, note: '中央路' };
-    if (/東區/.test(a)) return { km: 2.0, note: '東區' };
-    // === 北區/湳雅 ===
-    if (/經國路/.test(a)) return { km: 3.5, note: '經國路' };
-    if (/中華路/.test(a)) return { km: 3.0, note: '中華路' };
-    if (/西大路/.test(a)) return { km: 2.8, note: '西大路' };
-    if (/湳雅|北區/.test(a)) return { km: 3.0, note: '湳雅商圈' };
-    // === 竹北 ===
-    if (/高鐵|六家/.test(a)) return { km: 10.0, note: '竹北高鐵' };
-    if (/竹北.*光明/.test(a)) return { km: 8.5, note: '竹北光明商圈' };
-    if (/竹北/.test(a)) return { km: 8.0, note: '竹北' };
-    if (/新豐/.test(a)) return { km: 15.0, note: '新豐' };
-    if (/湖口/.test(a)) return { km: 18.0, note: '湖口' };
-    // === 竹東 ===
-    if (/竹東/.test(a)) return { km: 12.0, note: '竹東' };
-    // === 香山 ===
-    if (/香山/.test(a)) return { km: 5.0, note: '香山' };
-    // 兜底：用 zone
-    var zone = guessDeliveryZone(a);
-    var ZONE_DIST = {
-      '新竹東南商圈': 1.5, '新竹科學園區': 5.5, '新竹湳雅商圈': 3.0,
-      '竹北福興商圈': 8.0, '竹東': 12.0, '其他': 5.0
-    };
-    return { km: ZONE_DIST[zone] || 5.0, note: zone || '估算' };
+  // ── 座標資料庫（WGS84 經緯度）──
+  // 用途：Haversine 計算直線距離 × 1.35 路線修正係數
+  var GEO_DB = [
+    // 店家
+    { pattern: /東南街.*118|小鵲幸.*東南/, lat: 24.7935, lng: 120.9825, name: '小鵲幸東南店' },
+    { pattern: /東南街.*128|鐵三角.*東南/, lat: 24.7933, lng: 120.9823, name: '鐵三角東南店' },
+    { pattern: /東南街.*104|米米香/, lat: 24.7937, lng: 120.9827, name: '米米香' },
+    { pattern: /食品路.*125|越南麵包/, lat: 24.7928, lng: 120.9818, name: '越南麵包' },
+    { pattern: /東南街|玉蘭/, lat: 24.7936, lng: 120.9826, name: '玉蘭' },
+    { pattern: /嘉興路.*255/, lat: 24.8310, lng: 121.0120, name: '竹北嘉興店' },
+    // 科學園區 — 公司
+    { pattern: /力行路\s*8|力行路8|台積.*[七7]/, lat: 24.7770, lng: 120.9960, name: '台積七廠' },
+    { pattern: /力行[一1二2]路|台積.*[五5]/, lat: 24.7780, lng: 120.9950, name: '台積五廠/力行路' },
+    { pattern: /力行六路|力積電|力晶/, lat: 24.7730, lng: 121.0020, name: '力積電' },
+    { pattern: /篤行[一1]路\s*1|篤行一路1|聯發科/, lat: 24.7820, lng: 120.9930, name: '聯發科' },
+    { pattern: /創新[二2]路\s*2|創新二路2|瑞昱/, lat: 24.7790, lng: 120.9980, name: '瑞昱' },
+    { pattern: /園區[二2]路\s*51|園區二路51|宜特/, lat: 24.7810, lng: 120.9970, name: '宜特' },
+    { pattern: /研新[一1]路\s*1|研新一路1|智邦/, lat: 24.7785, lng: 120.9955, name: '智邦' },
+    { pattern: /工業東[三3]路|瓦雷/, lat: 24.7850, lng: 120.9900, name: '工業東三路' },
+    { pattern: /園區[一1]路/, lat: 24.7830, lng: 120.9920, name: '園區一路' },
+    { pattern: /園區[三3]路/, lat: 24.7750, lng: 121.0010, name: '園區三路' },
+    { pattern: /研新/, lat: 24.7790, lng: 120.9960, name: '研新路' },
+    { pattern: /篤行/, lat: 24.7810, lng: 120.9940, name: '篤行路' },
+    { pattern: /創新/, lat: 24.7795, lng: 120.9985, name: '創新路' },
+    { pattern: /聯詠|novatek/i, lat: 24.7815, lng: 120.9935, name: '聯詠' },
+    { pattern: /群聯|phison/i, lat: 24.7760, lng: 121.0000, name: '群聯' },
+    { pattern: /旺宏|macronix/i, lat: 24.7800, lng: 120.9945, name: '旺宏' },
+    { pattern: /世界先進|vanguard/i, lat: 24.7755, lng: 121.0005, name: '世界先進' },
+    { pattern: /台積|tsmc/i, lat: 24.7775, lng: 120.9955, name: '台積電' },
+    { pattern: /科學園區|園區/, lat: 24.7800, lng: 120.9950, name: '科學園區' },
+    // 工研院/竹東
+    { pattern: /工研院|中興路四段/, lat: 24.7740, lng: 121.0420, name: '工研院' },
+    { pattern: /竹東/, lat: 24.7330, lng: 121.0930, name: '竹東' },
+    // 東區
+    { pattern: /中央路/, lat: 24.7950, lng: 120.9770, name: '中央路' },
+    { pattern: /光復路[一1]/, lat: 24.7960, lng: 120.9880, name: '光復路一段' },
+    { pattern: /光復路[二2]/, lat: 24.7900, lng: 120.9960, name: '光復路二段' },
+    { pattern: /建功/, lat: 24.7920, lng: 120.9900, name: '建功路' },
+    { pattern: /學府/, lat: 24.7940, lng: 120.9860, name: '學府路' },
+    { pattern: /清華|清大/, lat: 24.7960, lng: 120.9950, name: '清華大學' },
+    { pattern: /交大|陽明交通/, lat: 24.7870, lng: 120.9990, name: '陽明交大' },
+    // 北區
+    { pattern: /西大路/, lat: 24.8050, lng: 120.9670, name: '西大路' },
+    { pattern: /經國路/, lat: 24.8100, lng: 120.9680, name: '經國路' },
+    { pattern: /中華路/, lat: 24.8020, lng: 120.9690, name: '中華路' },
+    // 竹北
+    { pattern: /高鐵|六家/, lat: 24.8080, lng: 121.0400, name: '竹北高鐵' },
+    { pattern: /竹北.*光明/, lat: 24.8360, lng: 121.0080, name: '竹北光明' },
+    { pattern: /竹北/, lat: 24.8390, lng: 121.0040, name: '竹北' },
+    { pattern: /新豐/, lat: 24.8800, lng: 120.9870, name: '新豐' },
+    { pattern: /湖口/, lat: 24.9000, lng: 121.0400, name: '湖口' },
+    { pattern: /香山/, lat: 24.7600, lng: 120.9300, name: '香山' },
+  ];
+
+  // Haversine 距離（公里）
+  function haversineKm(lat1, lng1, lat2, lng2) {
+    var R = 6371;
+    var dLat = (lat2 - lat1) * Math.PI / 180;
+    var dLng = (lng2 - lng1) * Math.PI / 180;
+    var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLng/2) * Math.sin(dLng/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  // 地址→座標
+  function addrToCoord(addr) {
+    if (!addr) return null;
+    for (var i = 0; i < GEO_DB.length; i++) {
+      if (GEO_DB[i].pattern.test(addr)) {
+        return { lat: GEO_DB[i].lat, lng: GEO_DB[i].lng, name: GEO_DB[i].name };
+      }
+    }
+    return null;
+  }
+
+  // 路線修正係數（直線距離 × 係數 ≈ 實際行車距離）
+  var ROAD_FACTOR = 1.35;
+
+  // 兩地址間的距離
+  function calcDistBetween(addrA, addrB) {
+    var cA = addrToCoord(addrA);
+    var cB = addrToCoord(addrB);
+    if (!cA || !cB) return { km: 0, note: '無法定位' };
+    var km = haversineKm(cA.lat, cA.lng, cB.lat, cB.lng) * ROAD_FACTOR;
+    return { km: Math.round(km * 10) / 10, note: cA.name + ' → ' + cB.name };
+  }
+
+  // 訂單的店家地址（取第一個 vendorId 的地址）
+  function getOrderShopAddr(order) {
+    var vids = getOrderVendors(order);
+    if (vids.length && typeof getVendorAddr === 'function') return getVendorAddr(vids[0]);
+    return '新竹市東區東南街118號'; // fallback
+  }
+
+  // 計算一組訂單的路線距離（店家→第1站→第2站→...）
+  function calcRouteDistances(orders) {
+    if (!orders || !orders.length) return { legs: [], total: 0 };
+    var shopAddr = getOrderShopAddr(orders[0]);
+    var legs = [];
+    var prev = shopAddr;
+    var total = 0;
+    orders.forEach(function(o, i) {
+      var dest = o.address || '';
+      var d = calcDistBetween(prev, dest);
+      legs.push({
+        from: i === 0 ? '店家' : orders[i-1].customer || ('站' + i),
+        to: o.customer || ('站' + (i+1)),
+        km: d.km,
+        note: d.note
+      });
+      total += d.km;
+      prev = dest;
+    });
+    return { legs: legs, total: Math.round(total * 10) / 10 };
+  }
+
+  // 舊版相容（單一地址距離，從店家出發）
+  function estimateDistance(addr, shopAddr) {
+    if (!shopAddr) shopAddr = '新竹市東區東南街118號';
+    return calcDistBetween(shopAddr, addr);
   }
 
   // 計算訂單馬鞍袋單位數
@@ -6226,7 +6282,7 @@ async function computeDriverHistory() {
 
   // 商家簡稱 & 顏色對照
   var VENDOR_SHORT = {
-    'v_qe':'鶴東南','v_qb':'鶴竹北','v_qt':'鶴台中',
+    'v_qe':'鵲東南','v_qb':'鵲竹北','v_qt':'鵲台中',
     'v_yl':'玉','v_te':'鐵東南','v_tb':'鐵竹北',
     'v_mm':'米米','v_vn':'越南','v_ah':'阿惠','v_yf':'一口丹','v_ot':'其他'
   };
@@ -6374,7 +6430,7 @@ async function computeDriverHistory() {
     html += '<th style="padding:6px 4px;text-align:left;border-bottom:2px solid #e2e8f0;white-space:nowrap;">預約時段</th>';
     html += '<th style="padding:6px 4px;text-align:center;border-bottom:2px solid #e2e8f0;color:#dc2626;white-space:nowrap;min-width:72px;">出門</th>';
     html += '<th style="padding:6px 4px;text-align:left;border-bottom:2px solid #e2e8f0;">外送地點</th>';
-    html += '<th style="padding:6px 4px;text-align:center;border-bottom:2px solid #e2e8f0;white-space:nowrap;">距離</th>';
+    html += '<th style="padding:6px 4px;text-align:center;border-bottom:2px solid #e2e8f0;white-space:nowrap;">路程</th>';
     html += '<th style="padding:6px 4px;text-align:left;border-bottom:2px solid #e2e8f0;">備註</th>';
     html += '<th style="padding:6px 4px;text-align:center;border-bottom:2px solid #e2e8f0;white-space:nowrap;">品牌</th>';
     html += '<th style="padding:6px 4px;text-align:center;border-bottom:2px solid #e2e8f0;white-space:nowrap;">馬鞍袋</th>';
@@ -6388,19 +6444,16 @@ async function computeDriverHistory() {
     var lastGi = -1;
     var groupColorIdx = -1;
 
-    // 預先算每組內的目的地順序
+    // 預先算每組內的目的地順序（用 group 內的 orders 陣列順序）
     var groupDestOrder = {};
+    var groupRoutes = {}; // gi → { legs, total, orderIds }
     dv2State.groups.forEach(function(g, gi){
-      if (g.orders.length <= 1) return;
-      // 按時段排序決定送貨順序
-      var sorted = g.orders.slice().sort(function(a, b){
-        var tA = parseTimeslotMinutes(a.timeslot) || 9999;
-        var tB = parseTimeslotMinutes(b.timeslot) || 9999;
-        return tA - tB;
+      // 順序由 g.orders 決定（可被重排）
+      g.orders.forEach(function(o, idx){
+        groupDestOrder[String(o.id)] = (g.orders.length > 1) ? (idx + 1) : 0;
       });
-      sorted.forEach(function(o, idx){
-        groupDestOrder[String(o.id)] = idx + 1;
-      });
+      // 計算路線距離
+      groupRoutes[gi] = calcRouteDistances(g.orders);
     });
 
     rows.forEach(function(r, ri){
@@ -6451,11 +6504,22 @@ async function computeDriverHistory() {
       html += '<div style="font-size:11px;color:#6b7280;margin-top:1px;">' + escHtml(addr) + '</div>';
       html += '</td>';
 
-      // 距離（從東南街出發的精細估算）
-      var distResult = estimateDistance(addr);
-      var distText = distResult.km.toFixed(1) + 'km';
-      var distColor = distResult.km <= 3 ? '#16a34a' : distResult.km <= 7 ? '#d97706' : '#dc2626';
-      html += '<td style="padding:5px 4px;border-bottom:1px solid #f1f5f9;text-align:center;font-size:12px;color:' + distColor + ';font-weight:500;" title="' + escHtml(distResult.note) + '">' + distText + '</td>';
+      // 距離（店家→目的地，逐段顯示）
+      var route = groupRoutes[r.gi];
+      var legIdx = r.oi; // 在 group 內的順序
+      var leg = route && route.legs && route.legs[legIdx];
+      var legKm = leg ? leg.km : 0;
+      var legFrom = leg ? leg.from : '';
+      var distColor = legKm <= 3 ? '#16a34a' : legKm <= 7 ? '#d97706' : '#dc2626';
+      html += '<td style="padding:4px 3px;border-bottom:1px solid #f1f5f9;text-align:center;font-size:11px;line-height:1.3;">';
+      html += '<div style="color:' + distColor + ';font-weight:700;">' + legKm.toFixed(1) + 'km</div>';
+      html += '<div style="font-size:9px;color:#9ca3af;">' + escHtml(legFrom) + '→</div>';
+      // 同組最後一行顯示總距離
+      var isLastInGroup = (ri === rows.length - 1 || rows[ri+1].gi !== r.gi);
+      if (isLastInGroup && route && route.legs.length > 1) {
+        html += '<div style="font-size:9px;color:#6366f1;font-weight:600;border-top:1px solid #e5e7eb;margin-top:2px;padding-top:2px;">總 ' + route.total.toFixed(1) + 'km</div>';
+      }
+      html += '</td>';
 
       // 備註
       var note = r.order.note || r.order.deliveryNote || r.order.timeNote || '';
@@ -6491,15 +6555,21 @@ async function computeDriverHistory() {
       }
       // else skip td due to rowspan
 
-      // 拆單按鈕
+      // 操作按鈕：重排順序（▲▼）+ 拆單
       var groupLen = dv2State.groups[r.gi].orders.length;
+      html += '<td style="padding:2px 1px;border-bottom:1px solid #f1f5f9;text-align:center;white-space:nowrap;">';
       if (groupLen > 1) {
-        html += '<td style="padding:3px 2px;border-bottom:1px solid #f1f5f9;text-align:center;">';
-        html += '<button class="dv2-split-btn" data-gi="' + r.gi + '" data-oi="' + r.oi + '" title="拆出此單" style="border:1px solid #e5e7eb;background:#fff;border-radius:4px;cursor:pointer;font-size:11px;padding:2px 6px;color:#6b7280;">✂️拆</button>';
-        html += '</td>';
-      } else {
-        html += '<td style="padding:3px 2px;border-bottom:1px solid #f1f5f9;"></td>';
+        // 上移按鈕（第一個不能上移）
+        if (r.oi > 0) {
+          html += '<button class="dv2-reorder-btn" data-gi="' + r.gi + '" data-oi="' + r.oi + '" data-dir="up" title="上移" style="border:1px solid #bfdbfe;background:#eff6ff;border-radius:3px;cursor:pointer;font-size:10px;padding:1px 4px;color:#2563eb;margin:0 1px;">▲</button>';
+        }
+        // 下移按鈕（最後一個不能下移）
+        if (r.oi < groupLen - 1) {
+          html += '<button class="dv2-reorder-btn" data-gi="' + r.gi + '" data-oi="' + r.oi + '" data-dir="down" title="下移" style="border:1px solid #bfdbfe;background:#eff6ff;border-radius:3px;cursor:pointer;font-size:10px;padding:1px 4px;color:#2563eb;margin:0 1px;">▼</button>';
+        }
+        html += '<button class="dv2-split-btn" data-gi="' + r.gi + '" data-oi="' + r.oi + '" title="拆出此單" style="border:1px solid #e5e7eb;background:#fff;border-radius:3px;cursor:pointer;font-size:10px;padding:1px 4px;color:#6b7280;margin:0 1px;">✂️</button>';
       }
+      html += '</td>';
 
       html += '</tr>';
     });
@@ -6589,6 +6659,27 @@ async function computeDriverHistory() {
         var gi = parseInt(btn.getAttribute('data-gi'), 10);
         var oi = parseInt(btn.getAttribute('data-oi'), 10);
         splitOrderFromGroup(gi, oi);
+      });
+    });
+
+    // ── 綁定重排順序按鈕 ──
+    body.querySelectorAll('.dv2-reorder-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var gi = parseInt(btn.getAttribute('data-gi'), 10);
+        var oi = parseInt(btn.getAttribute('data-oi'), 10);
+        var dir = btn.getAttribute('data-dir');
+        var g = dv2State.groups[gi];
+        if (!g || !g.orders) return;
+        if (dir === 'up' && oi > 0) {
+          var tmp = g.orders[oi];
+          g.orders[oi] = g.orders[oi - 1];
+          g.orders[oi - 1] = tmp;
+        } else if (dir === 'down' && oi < g.orders.length - 1) {
+          var tmp = g.orders[oi];
+          g.orders[oi] = g.orders[oi + 1];
+          g.orders[oi + 1] = tmp;
+        }
+        renderDv2Summary(); // 即時重算距離並重繪
       });
     });
 
