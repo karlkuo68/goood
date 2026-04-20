@@ -262,6 +262,30 @@ textarea { resize: vertical; min-height: 60px; }
 .note-pill { display: inline-block; background: #fef9c3; color: #78350f; font-size: 11px; padding: 2px 8px; border-radius: 4px; margin-top: 4px; }
 .empty-orders { text-align: center; padding: 40px 20px; color: var(--text-hint); font-size: 13px; }
 
+/* ── 操作歷史面板 ── */
+.op-history-fab { position: fixed; bottom: 80px; right: 16px; width: 44px; height: 44px; border-radius: 50%; background: #6366f1; color: white; border: none; font-size: 20px; box-shadow: 0 2px 12px rgba(99,102,241,.4); z-index: 9990; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform .15s; }
+.op-history-fab:active { transform: scale(.92); }
+.op-history-fab .fab-badge { position: absolute; top: -2px; right: -2px; min-width: 18px; height: 18px; line-height: 18px; text-align: center; background: #ef4444; color: white; border-radius: 9px; font-size: 10px; font-weight: 700; padding: 0 4px; }
+.op-history-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.45); z-index: 9998; display: flex; align-items: flex-end; justify-content: center; }
+.op-history-sheet { background: white; border-radius: 16px 16px 0 0; width: 100%; max-width: 500px; max-height: 80vh; display: flex; flex-direction: column; animation: slideUp .25s ease; }
+.op-history-sheet .oph-header { display: flex; justify-content: space-between; align-items: center; padding: 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.op-history-sheet .oph-title { font-size: 15px; font-weight: 700; }
+.op-history-sheet .oph-close { width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--gray-100); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.op-history-sheet .oph-body { flex: 1; overflow-y: auto; padding: 8px 0; }
+.op-history-sheet .oph-empty { text-align: center; padding: 40px 20px; color: var(--text-hint); font-size: 13px; }
+.oph-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--gray-50); }
+.oph-item .oph-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.oph-item .oph-info { flex: 1; min-width: 0; }
+.oph-item .oph-desc { font-size: 13px; font-weight: 500; color: var(--text-main); }
+.oph-item .oph-time { font-size: 11px; color: var(--text-hint); margin-top: 2px; }
+.oph-item .oph-undo { padding: 4px 10px; border: 1px solid #fca5a5; border-radius: 6px; background: #fef2f2; color: #dc2626; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 0; font-family: inherit; }
+.oph-item .oph-undo:active { background: #fee2e2; }
+.oph-item.undone { opacity: 0.5; }
+.oph-item.undone .oph-desc { text-decoration: line-through; }
+.oph-footer { padding: 10px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-shrink: 0; }
+.oph-footer button { flex: 1; padding: 8px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; border: none; }
+.oph-clear-btn { background: #fef2f2; color: #dc2626; }
+
 /* ── VENDOR MGMT ── */
 .upload-zone { border: 2px dashed var(--border); border-radius: 10px; padding: 22px; text-align: center; cursor: pointer; background: var(--gray-50); transition: all .15s; }
 .upload-zone:hover { border-color: var(--purple); }
@@ -272,7 +296,7 @@ textarea { resize: vertical; min-height: 60px; }
 .no-badge { font-size: 10px; background: #fef3c7; color: #92400e; border: 1px solid #fde68a; border-radius: 3px; padding: 1px 6px; margin-left: 5px; }
 
 /* ── EDITOR ── */
-.ed-layout { display: grid; grid-template-columns: 100px 1fr; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; min-height: 360px; }
+.ed-layout { display: grid; grid-template-columns: 96px 1fr; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; min-height: 320px; }
 .ed-cat { background: var(--gray-50); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
 .ed-cat-items { flex: 1; overflow-y: auto; }
 .ed-cat-tab { padding: 10px 8px; font-size: 11px; cursor: pointer; border-left: 3px solid transparent; transition: all .15s; color: var(--text-sub); display: flex; justify-content: space-between; align-items: center; }
@@ -282,15 +306,30 @@ textarea { resize: vertical; min-height: 60px; }
 .ed-cat-tab:hover .del-cat { color: var(--red); }
 .ed-cat-add { padding: 8px; text-align: center; font-size: 11px; color: var(--text-hint); cursor: pointer; border-top: 1px solid var(--border); background: none; border-left: none; border-right: none; border-bottom: none; font-family: inherit; transition: all .15s; width: 100%; }
 .ed-cat-add:hover { background: white; color: var(--green); }
-.ed-panel { padding: 12px; overflow-y: auto; max-height: 480px; }
+.ed-panel { padding: 10px; overflow-y: auto; max-height: min(480px, calc(100dvh - 200px)); overflow-x: hidden; }
 .ed-sec { margin-bottom: 14px; }
 .ed-sec-title { font-size: 11px; font-weight: 700; color: var(--text-sub); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
 .toggle { font-size: 10px; padding: 2px 8px; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; color: var(--text-sub); background: white; font-family: inherit; transition: all .15s; }
 .toggle.on { background: #dbeafe; border-color: #93c5fd; color: #1e40af; }
-.item-edit-row { display: flex; align-items: center; gap: 6px; padding: 5px 0; border-bottom: 1px solid var(--border); }
+/* 品項列 — 兩排式排版，手機友善 */
+/* item-edit-row 維持 flex 讓加料行（renderEdTops）直接子元素仍可橫排 */
+.item-edit-row { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; padding: 7px 0; border-bottom: 1px solid var(--border); }
 .item-edit-row:last-child { border-bottom: none; }
-.rm-btn { width: 22px; height: 22px; border: 1px solid var(--border); border-radius: 5px; background: white; color: var(--text-hint); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; transition: all .15s; }
+/* ier-top / ier-btm 各佔 100% 寬度，在 wrap 父層內自然換行堆疊 */
+.ier-top { flex: 0 0 100%; display: flex; align-items: center; gap: 5px; }
+.ier-top input { flex: 1; min-width: 0; }
+.ier-btm { flex: 0 0 100%; display: flex; align-items: center; gap: 5px; }
+.ier-price { flex: 0 0 64px; min-width: 0; }
+.ier-desc  { flex: 1; min-width: 0; }
+.ier-temp  { flex: 0 0 78px; min-width: 0; font-size: 12px; }
+.rm-btn { width: 24px; height: 24px; border: 1px solid var(--border); border-radius: 5px; background: white; color: var(--text-hint); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; transition: all .15s; }
 .rm-btn:hover { background: #fef2f2; color: var(--red); border-color: #fca5a5; }
+@media (max-width: 480px) {
+  .ed-layout { grid-template-columns: 72px 1fr; }
+  .ed-panel { padding: 8px; }
+  .ier-temp { flex: 0 0 70px; font-size: 11px; }
+  .ier-price { flex: 0 0 58px; }
+}
 .opt-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
 .opt-chip { display: flex; align-items: center; gap: 3px; padding: 3px 8px; border: 1px solid var(--border); border-radius: 12px; font-size: 11px; background: var(--gray-50); }
 .opt-chip button { background: none; border: none; color: var(--text-hint); cursor: pointer; font-size: 12px; padding: 0; transition: color .15s; }
@@ -744,7 +783,7 @@ textarea { resize: vertical; min-height: 60px; }
           <span id="f-bag-units-text" style="font-size:14px;font-weight:600;color:var(--green)">0 / 2.5 單位</span>
           <div id="f-bag-slots" style="display:flex;gap:3px;margin-left:4px;"></div>
         </div>
-        <div style="font-size:11px;color:var(--text-hint);margin-top:3px;">5 格位共 2.5 單位：左上・左下・右上・右下各 0.5 + 肩背保溫袋 0.5</div>
+        <div style="font-size:11px;color:var(--text-hint);margin-top:3px;">5 格位共 2.5 單位：左下・右下・左上・右上各 0.5 + 肩背保溫袋 0.5</div>
       </div>
       <div>
         <label>溫層（由商品自動決定）</label>
@@ -2497,6 +2536,7 @@ function saveOrder() {
   const total = cart.reduce((s, c) => s + c.price * (c.qty||1), 0);
   const order = { id: Date.now(), ...f, items: cart.map(c=>({...c})), total, confirmMsg: document.getElementById('confirm-text').textContent, createdAt: new Date().toISOString() };
   const orders = DB.getOrders(); orders.push(order); DB.saveOrders(orders);
+  OpHistory.record('order_create', (order.customer||'未命名') + ' $' + total, { action: 'remove_order', orderId: String(order.id) });
   showToast('訂單已儲存！'); clearOrderForm(); switchPage('orders');
 }
 function clearOrderForm() {
@@ -2969,6 +3009,7 @@ function saveParseOrder() {
   const total = pCart.reduce((s, c) => s + c.price * (c.qty||1), 0);
   const order = { id: Date.now(), ...f, items: pCart.map(c=>({...c})), total, confirmMsg: document.getElementById('p-confirm-text').textContent, createdAt: new Date().toISOString() };
   const orders = DB.getOrders(); orders.push(order); DB.saveOrders(orders);
+  OpHistory.record('order_create', (order.customer||'未命名') + ' $' + total, { action: 'remove_order', orderId: String(order.id) });
   showToast('訂單已儲存！'); switchPage('orders');
 }
 function parseToManual() {
@@ -3287,26 +3328,34 @@ function renderEdTops(tops) {
 function renderEdItems(items) {
   const el = document.getElementById('ed-items'); if (!el) return; el.innerHTML = '';
   if (!items.length) { el.innerHTML = '<div style="font-size:12px;color:var(--text-hint);padding:8px 0">尚無品項</div>'; return; }
-  items.forEach((item, i) => { const d = document.createElement('div'); d.className = 'item-edit-row';
-    const n1=document.createElement('input');n1.type='text';n1.value=item.name;n1.style.flex='2';n1.placeholder='品項名稱';
+  // 判斷是否顯示溫層選單（「動態選擇」模式不顯示）
+  var vendorTempMode = 'normal';
+  try { var vtm = JSON.parse(localStorage.getItem('goood_vendor_temp_mode') || '{}'); vendorTempMode = vtm[edVid] || 'normal'; } catch(e){}
+  items.forEach((item, i) => {
+    const d = document.createElement('div'); d.className = 'item-edit-row';
+    // ── 上排：品項名稱 ＋ 刪除鈕 ──
+    const rowA = document.createElement('div'); rowA.className = 'ier-top';
+    const n1 = document.createElement('input'); n1.type='text'; n1.value=item.name; n1.placeholder='品項名稱';
     n1.addEventListener('input',(function(idx){return function(){edData.categories[edCatIdx].items[idx].name=this.value;};})(i));
-    const n2=document.createElement('input');n2.type='number';n2.value=item.price;n2.style.cssText='flex:1;min-width:58px';
-    n2.addEventListener('input',(function(idx){return function(){edData.categories[edCatIdx].items[idx].price=Number(this.value);};})(i));
-    const n3=document.createElement('input');n3.type='text';n3.value=item.desc||'';n3.style.flex='2';n3.placeholder='說明（選填）';
-    n3.addEventListener('input',(function(idx){return function(){edData.categories[edCatIdx].items[idx].desc=this.value;};})(i));
-    // 「依消費者選擇」模式的商家不顯示品項溫度選單
-    var vendorTempMode = 'normal';
-    try { var vtm = JSON.parse(localStorage.getItem('goood_vendor_temp_mode') || '{}'); vendorTempMode = vtm[edVid] || 'normal'; } catch(e){}
-    if (vendorTempMode !== 'dynamic') {
-      const n4=document.createElement('select');n4.style.cssText='flex:1;min-width:72px;font-size:12px';
-      n4.innerHTML='<option value="normal">📦常溫</option><option value="cold">🧊冷藏</option><option value="hot">🔥熱食</option>';
-      n4.value=item.tempType||'normal';
-      n4.addEventListener('change',(function(idx){return function(){edData.categories[edCatIdx].items[idx].tempType=this.value;};})(i));
-      d.appendChild(n4);
-    }
-    const rb=document.createElement('button');rb.className='rm-btn';rb.textContent='×';
+    const rb = document.createElement('button'); rb.className='rm-btn'; rb.textContent='×';
     rb.addEventListener('click',(function(idx){return function(){edRmItem(idx);};})(i));
-    d.appendChild(n1);d.appendChild(n2);d.appendChild(n3);d.appendChild(rb);el.appendChild(d); });
+    rowA.appendChild(n1); rowA.appendChild(rb);
+    // ── 下排：單價 ＋ 說明 ＋ 溫層 ──
+    const rowB = document.createElement('div'); rowB.className = 'ier-btm';
+    const n2 = document.createElement('input'); n2.type='number'; n2.value=item.price; n2.className='ier-price'; n2.placeholder='$';
+    n2.addEventListener('input',(function(idx){return function(){edData.categories[edCatIdx].items[idx].price=Number(this.value);};})(i));
+    const n3 = document.createElement('input'); n3.type='text'; n3.value=item.desc||''; n3.className='ier-desc'; n3.placeholder='說明（選填）';
+    n3.addEventListener('input',(function(idx){return function(){edData.categories[edCatIdx].items[idx].desc=this.value;};})(i));
+    rowB.appendChild(n2); rowB.appendChild(n3);
+    if (vendorTempMode !== 'dynamic') {
+      const n4 = document.createElement('select'); n4.className='ier-temp';
+      n4.innerHTML='<option value="normal">📦常溫</option><option value="cold">🧊冷藏</option><option value="hot">🔥熱食</option>';
+      n4.value = item.tempType||'normal';
+      n4.addEventListener('change',(function(idx){return function(){edData.categories[edCatIdx].items[idx].tempType=this.value;};})(i));
+      rowB.appendChild(n4);
+    }
+    d.appendChild(rowA); d.appendChild(rowB); el.appendChild(d);
+  });
 }
 function edToggleDrink() { const cat = edData.categories[edCatIdx]; cat.isDrink = !cat.isDrink; if (cat.isDrink && !cat.sweetness?.length) { cat.sweetness = ['0%無糖','10%一分糖','30%三分糖','50%半糖','70%七分糖','100%全糖']; cat.ice = ['熱','去冰','10%少冰','30%','50%','正常冰']; cat.toppings = []; } renderEdPanel(); }
 function edAddOpt(type, inputId) { const v = document.getElementById(inputId)?.value.trim(); if (!v) return; if (!edData.categories[edCatIdx][type]) edData.categories[edCatIdx][type] = []; edData.categories[edCatIdx][type].push(v); document.getElementById(inputId).value = ''; if (type === 'sweetness') renderEdOptChips('sweetness','ed-sweet',edData.categories[edCatIdx].sweetness); else renderEdOptChips('ice','ed-ice',edData.categories[edCatIdx].ice); }
@@ -3389,8 +3438,11 @@ function toggleSelectOrder(id) {
 
 function deleteOrder(id) {
   if (!confirm('確定要刪除這筆訂單嗎？')) return;
-  var orders = DB.getOrders().filter(function(o){ return String(o.id) !== id; });
+  var allOrders = DB.getOrders();
+  var deleted = allOrders.find(function(o){ return String(o.id) === id; });
+  var orders = allOrders.filter(function(o){ return String(o.id) !== id; });
   DB.saveOrders(orders);
+  if (deleted) OpHistory.record('order_delete', (deleted.customer||'未命名') + ' $' + (deleted.total||0), { action: 'restore_order', order: deleted });
   selectedOrderIds.delete(id);
   closeOrderDetail();
   renderOrdersList();
@@ -3399,7 +3451,10 @@ function deleteOrder(id) {
 
 function batchDeleteOrders() {
   if (!confirm('確定要刪除已選的 ' + selectedOrderIds.size + ' 筆訂單嗎？')) return;
-  var orders = DB.getOrders().filter(function(o){ return !selectedOrderIds.has(String(o.id)); });
+  var allOrders = DB.getOrders();
+  var count = selectedOrderIds.size;
+  OpHistory.record('order_batch_delete', count + ' 筆訂單', { action: 'restore_orders', orders: JSON.parse(JSON.stringify(allOrders)) });
+  var orders = allOrders.filter(function(o){ return !selectedOrderIds.has(String(o.id)); });
   DB.saveOrders(orders);
   selectedOrderIds.clear();
   renderOrdersList();
@@ -3471,6 +3526,7 @@ function editOrder(id) {
   overlay.querySelector('[data-act="close"]').addEventListener('click', function(){ overlay.remove(); });
   overlay.querySelector('[data-act="cancel"]').addEventListener('click', function(){ overlay.remove(); });
   overlay.querySelector('[data-act="save"]').addEventListener('click', function(){
+    var oldSnapshot = JSON.parse(JSON.stringify(orders[idx]));
     orders[idx].customer = document.getElementById('oe-customer').value.trim();
     orders[idx].phone = document.getElementById('oe-phone').value.trim();
     orders[idx].address = document.getElementById('oe-address').value.trim();
@@ -3480,6 +3536,7 @@ function editOrder(id) {
     orders[idx].total = parseInt(document.getElementById('oe-total').value) || 0;
     orders[idx].note = document.getElementById('oe-note').value.trim();
     DB.saveOrders(orders);
+    OpHistory.record('order_edit', (orders[idx].customer||'未命名') + ' $' + (orders[idx].total||0), { action: 'revert_order', order: oldSnapshot });
     overlay.remove();
     renderOrdersList();
     showToast('訂單已更新');
@@ -3495,6 +3552,171 @@ function updateStats(orders) {
   if (sd) sd.textContent = orders.filter(o => o.date === today).length;
 }
 function filterOrders(t, btn) { curFilter = t; document.querySelectorAll('.f-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); renderOrdersList(); }
+
+// ════════════════════════════════════════════════
+// 操作歷史（含復原功能）
+// ════════════════════════════════════════════════
+var OpHistory = (function(){
+  var STORAGE_KEY = 'goood_op_history';
+  var MAX_ITEMS = 50;
+
+  function getAll() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch(e) { return []; }
+  }
+  function saveAll(list) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list.slice(0, MAX_ITEMS)));
+    updateBadge();
+  }
+
+  // type: 'order_create' | 'order_edit' | 'order_delete' | 'order_batch_delete' | 'dispatch_create' | 'dispatch_delete' | 'order_clear'
+  function record(type, desc, undoData) {
+    var list = getAll();
+    list.unshift({
+      id: Date.now() + '_' + Math.random().toString(36).slice(2,6),
+      type: type,
+      desc: desc,
+      undoData: undoData, // snapshot to restore
+      time: new Date().toISOString(),
+      undone: false
+    });
+    saveAll(list);
+  }
+
+  function undo(opId) {
+    var list = getAll();
+    var op = list.find(function(o){ return o.id === opId; });
+    if (!op || op.undone) return false;
+
+    var ud = op.undoData;
+    if (!ud) return false;
+
+    if (ud.action === 'restore_orders') {
+      // 完整覆蓋訂單列表
+      DB.saveOrders(ud.orders);
+    } else if (ud.action === 'restore_order') {
+      // 恢復單筆訂單（被刪除的）
+      var orders = DB.getOrders();
+      // 避免重複
+      orders = orders.filter(function(o){ return String(o.id) !== String(ud.order.id); });
+      orders.push(ud.order);
+      DB.saveOrders(orders);
+    } else if (ud.action === 'revert_order') {
+      // 恢復單筆訂單的舊值（編輯前的狀態）
+      var orders = DB.getOrders();
+      var idx = orders.findIndex(function(o){ return String(o.id) === String(ud.order.id); });
+      if (idx >= 0) orders[idx] = ud.order;
+      else orders.push(ud.order);
+      DB.saveOrders(orders);
+    } else if (ud.action === 'remove_order') {
+      // 復原「新增」→ 刪除該筆
+      var orders = DB.getOrders().filter(function(o){ return String(o.id) !== String(ud.orderId); });
+      DB.saveOrders(orders);
+    }
+
+    op.undone = true;
+    saveAll(list);
+    // 刷新畫面
+    if (typeof renderOrdersList === 'function') renderOrdersList();
+    if (typeof showToast === 'function') showToast('已復原操作');
+    return true;
+  }
+
+  function clearAll() {
+    saveAll([]);
+  }
+
+  function updateBadge() {
+    var badge = document.getElementById('op-history-badge');
+    if (!badge) return;
+    var list = getAll();
+    var undoable = list.filter(function(o){ return !o.undone; }).length;
+    if (undoable > 0) {
+      badge.textContent = undoable > 99 ? '99+' : undoable;
+      badge.style.display = '';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  return { getAll: getAll, record: record, undo: undo, clearAll: clearAll, updateBadge: updateBadge };
+})();
+
+function openOpHistoryPanel() {
+  var existing = document.getElementById('op-history-overlay');
+  if (existing) existing.remove();
+
+  var list = OpHistory.getAll();
+  var overlay = document.createElement('div');
+  overlay.className = 'op-history-overlay'; overlay.id = 'op-history-overlay';
+
+  var TYPE_ICONS = {
+    order_create: { icon: '➕', bg: '#dcfce7', label: '新增訂單' },
+    order_edit: { icon: '✏️', bg: '#fffbeb', label: '編輯訂單' },
+    order_delete: { icon: '🗑️', bg: '#fef2f2', label: '刪除訂單' },
+    order_batch_delete: { icon: '🗑️', bg: '#fef2f2', label: '批次刪除' },
+    order_clear: { icon: '⚠️', bg: '#fef2f2', label: '清除全部' },
+    dispatch_create: { icon: '🚀', bg: '#eff6ff', label: '建立派單' },
+    dispatch_delete: { icon: '❌', bg: '#fef2f2', label: '刪除派單' }
+  };
+
+  var itemsHtml = '';
+  if (!list.length) {
+    itemsHtml = '<div class="oph-empty">尚無操作記錄</div>';
+  } else {
+    list.forEach(function(op){
+      var ti = TYPE_ICONS[op.type] || { icon: '📝', bg: '#f3f4f6', label: op.type };
+      var timeStr = '';
+      try {
+        var d = new Date(op.time);
+        timeStr = d.toLocaleDateString('zh-TW') + ' ' + d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+      } catch(e) { timeStr = op.time || ''; }
+      var undoneClass = op.undone ? ' undone' : '';
+      var undoBtn = (!op.undone && op.undoData) ? '<button class="oph-undo" data-opid="' + op.id + '">↩ 復原</button>' : (op.undone ? '<span style="font-size:11px;color:#6b7280">已復原</span>' : '');
+      itemsHtml += '<div class="oph-item' + undoneClass + '">' +
+        '<div class="oph-icon" style="background:' + ti.bg + '">' + ti.icon + '</div>' +
+        '<div class="oph-info"><div class="oph-desc">' + ti.label + '：' + escHtml(op.desc) + '</div><div class="oph-time">' + timeStr + '</div></div>' +
+        undoBtn +
+        '</div>';
+    });
+  }
+
+  overlay.innerHTML = '<div class="op-history-sheet">' +
+    '<div class="oph-header"><span class="oph-title">🕓 操作歷史</span><button class="oph-close" data-act="close">✕</button></div>' +
+    '<div class="oph-body">' + itemsHtml + '</div>' +
+    '<div class="oph-footer"><button class="oph-clear-btn" data-act="clear">🗑️ 清除歷史</button></div>' +
+    '</div>';
+
+  // 綁定事件
+  overlay.querySelector('[data-act="close"]').addEventListener('click', function(){ overlay.remove(); });
+  overlay.querySelector('[data-act="clear"]').addEventListener('click', function(){
+    if (!confirm('確定要清除所有操作歷史？')) return;
+    OpHistory.clearAll();
+    overlay.remove();
+    showToast('已清除操作歷史');
+  });
+  overlay.querySelectorAll('.oph-undo').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var opId = btn.getAttribute('data-opid');
+      OpHistory.undo(opId);
+      overlay.remove();
+      openOpHistoryPanel(); // 重新開啟以刷新列表
+    });
+  });
+  overlay.addEventListener('click', function(e){ if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+// escHtml for history panel (if not defined)
+if (typeof escHtml === 'undefined') {
+  var escHtml = function(s) { return typeof esc === 'function' ? esc(s) : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+}
+
+// 初始化 FAB 按鈕
+document.addEventListener('DOMContentLoaded', function(){
+  var fab = document.getElementById('op-history-fab');
+  if (fab) fab.addEventListener('click', openOpHistoryPanel);
+  OpHistory.updateBadge();
+});
 
 // ════════════════════════════════════════════════
 // 匯出
@@ -3516,7 +3738,7 @@ function exportCSV() {
   const csv = '\uFEFF' + [h.join(','), ...rows].join('\r\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})); a.download = `好糰訂單_${document.getElementById('ex-month').value}.csv`; a.click(); showToast('CSV 已下載');
 }
-function clearAllOrders() { if (!confirm('確定清除全部訂單？此動作無法復原，請先匯出備份。')) return; DB.saveOrders([]); renderOrdersList(); showToast('已清除全部訂單'); }
+function clearAllOrders() { if (!confirm('確定清除全部訂單？')) return; var allOrders = DB.getOrders(); OpHistory.record('order_clear', allOrders.length + ' 筆訂單', { action: 'restore_orders', orders: JSON.parse(JSON.stringify(allOrders)) }); DB.saveOrders([]); renderOrdersList(); showToast('已清除全部訂單（可從操作歷史復原）'); }
 
 // ════════════════════════════════════════════════
 // Firebase 派單系統
@@ -3641,7 +3863,7 @@ function updateOrderFormAutoFields() {
   }
   const slotsEl = document.getElementById('f-bag-slots');
   if (slotsEl) {
-    const slotNames = ['左上','右上','左下','右下','肩背'];
+    const slotNames = ['左下','右下','左上','右上','肩背'];
     slotsEl.innerHTML = slotNames.map((nm, idx) => {
       const threshold = (idx + 1) * 0.5;
       const prev = idx * 0.5;
@@ -3724,11 +3946,12 @@ function buildOrderDispatchCard(order){
   // 用 innerHTML 建靜態結構，再補 addEventListener
   const TEMP_ICONS={cold:'🧊',hot:'🔥',normal:'📦'};
   const tempIcon=TEMP_ICONS[order.tempType||'normal']||'📦';
-  card.innerHTML=`<div class="odc-head"><div class="odc-left"><div class="odc-customer">${esc(order.customer||'')} ${payBadge}</div><div class="odc-addr">📍 ${esc(order.address||'')} ${mapsUrl?`<a href="${mapsUrl}" target="_blank" class="odc-dist">導航</a>`:''}</div></div><div class="odc-right"><div class="odc-total">$${(order.total||0).toLocaleString()}</div><div class="odc-pay">${tempIcon} ${bags} 單位</div></div></div><div class="odc-body hidden" id="odc-body-${order.id}"><div class="odc-bags-row">${bagsHtml||'<span class="bag-tag">無袋數資料</span>'}</div><div class="odc-items">${itemsText}</div>${order.note?`<div class="odc-note">備：${esc(order.note)}</div>`:''}<div class="confirm-msg-box">${esc(order.confirmMsg||'（無確認訊息）')}</div><button class="copy-confirm-btn" style="display:flex;align-items:center;gap:5px;padding:7px 12px;background:#2563eb;color:white;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit">📋 複製確認訊息</button></div>`;
+  card.innerHTML=`<div class="odc-head"><div class="odc-left"><div class="odc-customer">${esc(order.customer||'')} ${payBadge}</div><div class="odc-addr">📍 ${esc(order.address||'')} ${mapsUrl?`<a href="${mapsUrl}" target="_blank" class="odc-dist">導航</a>`:''}</div></div><div class="odc-right"><div class="odc-total">$${(order.total||0).toLocaleString()}</div><div class="odc-pay">${tempIcon} ${bags} 單位</div></div></div><div class="odc-body hidden" id="odc-body-${order.id}"><div class="odc-bags-row">${bagsHtml||'<span class="bag-tag">無袋數資料</span>'}</div><div class="odc-items">${itemsText}</div>${order.note?`<div class="odc-note">備：${esc(order.note)}</div>`:''}<div class="confirm-msg-box">${esc(order.confirmMsg||'（無確認訊息）')}</div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="copy-confirm-btn" style="display:flex;align-items:center;gap:5px;padding:7px 12px;background:#2563eb;color:white;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit">📋 複製確認訊息</button><button class="odc-detail-btn" style="display:flex;align-items:center;gap:5px;padding:7px 12px;background:#eff6ff;color:#2563eb;border:1px solid #93c5fd;border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit">📋 訂單詳情</button></div></div>`;
 
   // 用 addEventListener 綁定
   card.querySelector('.odc-head').addEventListener('click', function(){ toggleOdc(order.id); });
   card.querySelector('.copy-confirm-btn').addEventListener('click', function(e){ e.stopPropagation(); copyOrderConfirm(order.id); });
+  card.querySelector('.odc-detail-btn').addEventListener('click', function(e){ e.stopPropagation(); openOrderDetail(String(order.id)); });
   return card;
 }
 function toggleOdc(id){const b=document.getElementById(`odc-body-${id}`);if(b)b.classList.toggle('hidden');}
@@ -3816,7 +4039,7 @@ function buildTripBuilderCard(slot, orders, defaultDepart) {
       fill.style.width = Math.min(fillPct, 100) + '%';
       bar.appendChild(fill); gDiv.appendChild(bar);
       // 5 格位視覺化
-      const slotNames=['左上','右上','左下','右下','肩背'];
+      const slotNames=['左下','右下','左上','右上','肩背'];
       const slotWrap=document.createElement('div');
       slotWrap.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:6px 0 2px';
       slotNames.forEach((nm,idx)=>{
@@ -5964,7 +6187,7 @@ async function computeDriverHistory() {
     html += '<table class="dv2-dispatch-tbl" style="width:100%;border-collapse:collapse;font-size:13px;min-width:800px;">';
     html += '<thead><tr style="background:#f8fafc;position:sticky;top:0;z-index:2;">';
     html += '<th style="padding:6px 4px;text-align:left;border-bottom:2px solid #e2e8f0;white-space:nowrap;">預約時段</th>';
-    html += '<th style="padding:6px 4px;text-align:center;border-bottom:2px solid #e2e8f0;color:#dc2626;white-space:nowrap;">出門時間</th>';
+    html += '<th style="padding:6px 4px;text-align:center;border-bottom:2px solid #e2e8f0;color:#dc2626;white-space:nowrap;min-width:95px;">出門時間</th>';
     html += '<th style="padding:6px 4px;text-align:left;border-bottom:2px solid #e2e8f0;">外送地點</th>';
     html += '<th style="padding:6px 4px;text-align:center;border-bottom:2px solid #e2e8f0;white-space:nowrap;">距離</th>';
     html += '<th style="padding:6px 4px;text-align:left;border-bottom:2px solid #e2e8f0;">備註</th>';
@@ -6022,7 +6245,7 @@ async function computeDriverHistory() {
       var isFirstInGroup = (ri === 0 || rows[ri-1].gi !== r.gi);
       if (isFirstInGroup) {
         html += '<td style="padding:3px 2px;border-bottom:1px solid #f1f5f9;text-align:center;" rowspan="' + groupSize + '">';
-        html += '<input type="time" class="dv2-depart-input" data-gi="' + r.gi + '" value="' + escHtml(r.departTime) + '" style="width:70px;padding:3px 4px;border:1.5px solid #fca5a5;border-radius:6px;font-size:13px;font-weight:700;color:#dc2626;text-align:center;background:#fff;">';
+        html += '<input type="time" class="dv2-depart-input" data-gi="' + r.gi + '" value="' + escHtml(r.departTime) + '" style="width:90px;padding:4px 2px;border:1.5px solid #fca5a5;border-radius:6px;font-size:13px;font-weight:700;color:#dc2626;text-align:center;background:#fff;box-sizing:border-box;">';
         if (r.isCrossSlot) {
           html += '<div style="font-size:9px;color:#6366f1;margin-top:2px;">跨時段建議</div>';
         }
@@ -6033,13 +6256,13 @@ async function computeDriverHistory() {
       var addr = r.order.address || '';
       var customer = r.order.customer || '未命名';
       var destNum = groupDestOrder[String(r.order.id)];
-      html += '<td style="padding:5px 4px;border-bottom:1px solid #f1f5f9;">';
+      html += '<td class="dv2-order-cell" data-oid="' + String(r.order.id) + '" style="padding:5px 4px;border-bottom:1px solid #f1f5f9;cursor:pointer;" title="點擊查看訂單詳情">';
       if (destNum) {
         var circleColors = ['#3b82f6','#f59e0b','#10b981'];
         var cClr = circleColors[(destNum-1) % circleColors.length];
         html += '<span style="display:inline-block;width:18px;height:18px;line-height:18px;text-align:center;border-radius:50%;background:' + cClr + ';color:#fff;font-size:10px;font-weight:700;margin-right:4px;vertical-align:middle;">' + destNum + '</span>';
       }
-      html += '<span style="font-weight:600;font-size:12px;">' + escHtml(customer) + '</span>';
+      html += '<span style="font-weight:600;font-size:12px;color:#2563eb;text-decoration:underline;">' + escHtml(customer) + '</span>';
       html += '<div style="font-size:11px;color:#6b7280;margin-top:1px;">' + escHtml(addr) + '</div>';
       html += '</td>';
 
@@ -6196,6 +6419,14 @@ async function computeDriverHistory() {
         var gi = parseInt(inp.getAttribute('data-gi'), 10);
         // 儲存自訂出門時間到 group
         dv2State.groups[gi].customDepart = inp.value;
+      });
+    });
+
+    // ── 綁定訂單點擊查看詳情 ──
+    body.querySelectorAll('.dv2-order-cell').forEach(function(cell){
+      cell.addEventListener('click', function(){
+        var oid = cell.getAttribute('data-oid');
+        if (oid && typeof openOrderDetail === 'function') openOrderDetail(oid);
       });
     });
   }
@@ -6496,6 +6727,7 @@ async function computeDriverHistory() {
     }
     try { if (typeof fbTrips !== 'undefined') { fbTrips = await fbGet('/trips') || {}; } } catch(e) {}
     if (typeof showToast === 'function') showToast('✅ 完成 ' + ok + ' 組派單' + (fail ? ' (失敗 ' + fail + ')' : ''));
+    if (typeof OpHistory !== 'undefined') OpHistory.record('dispatch_create', dv2State.dateStr + ' ' + ok + ' 組派單', null);
     closeDv2Modal();
     if (typeof renderDispatchContent === 'function') renderDispatchContent();
   }
@@ -6739,5 +6971,9 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 })();
 </script>
+
+<!-- 操作歷史浮動按鈕 -->
+<button class="op-history-fab" id="op-history-fab" title="操作歷史">🕓<span class="fab-badge" id="op-history-badge" style="display:none">0</span></button>
+
 </body>
 </html>
