@@ -3863,14 +3863,30 @@ function updateOrderFormAutoFields() {
   }
   const slotsEl = document.getElementById('f-bag-slots');
   if (slotsEl) {
-    const slotNames = ['左下','右下','左上','右上','肩背'];
-    slotsEl.innerHTML = slotNames.map((nm, idx) => {
-      const threshold = (idx + 1) * 0.5;
-      const prev = idx * 0.5;
-      const fill = units >= threshold ? 1 : units > prev ? (units - prev) / 0.5 : 0;
-      const bg = fill >= 1 ? (units > 2.5 ? '#ef4444' : '#16a34a') : fill > 0 ? '#fbbf24' : '#e5e7eb';
-      return `<div title="${nm}" style="width:20px;height:20px;border-radius:3px;background:${bg};position:relative;overflow:hidden;border:1px solid #d1d5db;"><div style="position:absolute;bottom:0;left:0;right:0;height:${Math.round(fill*100)}%;background:${fill>=1?(units>2.5?'#dc2626':'#15803d'):'#f59e0b'};opacity:0.6"></div><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:8px;color:#374151;font-weight:600">${nm[0]}</span></div>`;
+    // 填充順序：左下(0)→右下(1)→左上(2)→右上(3)→肩背(4)
+    const fillNames = ['左下','右下','左上','右上','肩背'];
+    const slotFill = {};
+    fillNames.forEach((nm, idx) => {
+      const threshold = (idx + 1) * 0.5; const prev = idx * 0.5;
+      slotFill[nm] = units >= threshold ? 1 : units > prev ? (units - prev) / 0.5 : 0;
+    });
+    // 顯示順序：上排=左上+右上, 下排=左下+右下, 底=肩背
+    const displayOrder = ['左上','右上','左下','右下','肩背'];
+    const tempIcon = temp === 'hot' ? '🔥' : temp === 'cold' ? '🧊' : '';
+    slotsEl.innerHTML = displayOrder.map((nm, di) => {
+      const fill = slotFill[nm] || 0;
+      const filled = fill >= 1; const partial = fill > 0 && fill < 1;
+      let bg, border, icon;
+      if (filled) {
+        if (temp === 'hot') { bg = '#fee2e2'; border = '#ef4444'; icon = '🔥'; }
+        else if (temp === 'cold') { bg = '#dbeafe'; border = '#3b82f6'; icon = '🧊'; }
+        else { bg = units > 2.5 ? '#fee2e2' : '#dcfce7'; border = units > 2.5 ? '#ef4444' : '#16a34a'; icon = '✓'; }
+      } else if (partial) { bg = '#fef9c3'; border = '#fbbf24'; icon = '◐'; }
+      else { bg = '#f3f4f6'; border = '#d1d5db'; icon = ''; }
+      const span2 = di === 4 ? 'grid-column:span 2;' : '';
+      return `<div title="${nm}" style="background:${bg};border:1.5px solid ${border};border-radius:4px;padding:2px 4px;font-size:9px;text-align:center;font-weight:600;color:#374151;${span2}">${icon} ${nm[0]}${nm[1]}</div>`;
     }).join('');
+    slotsEl.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-top:4px';
   }
   const TEMP_MAP = {cold:{badge:'🧊',label:'冷藏',color:'#1d4ed8'},hot:{badge:'🔥',label:'熱食',color:'#c2410c'},normal:{badge:'📦',label:'常溫',color:'var(--text-sub)'}};
   const t = TEMP_MAP[temp] || TEMP_MAP.normal;
@@ -3946,12 +3962,16 @@ function buildOrderDispatchCard(order){
   // 用 innerHTML 建靜態結構，再補 addEventListener
   const TEMP_ICONS={cold:'🧊',hot:'🔥',normal:'📦'};
   const tempIcon=TEMP_ICONS[order.tempType||'normal']||'📦';
-  card.innerHTML=`<div class="odc-head"><div class="odc-left"><div class="odc-customer">${esc(order.customer||'')} ${payBadge}</div><div class="odc-addr">📍 ${esc(order.address||'')} ${mapsUrl?`<a href="${mapsUrl}" target="_blank" class="odc-dist">導航</a>`:''}</div></div><div class="odc-right"><div class="odc-total">$${(order.total||0).toLocaleString()}</div><div class="odc-pay">${tempIcon} ${bags} 單位</div></div></div><div class="odc-body hidden" id="odc-body-${order.id}"><div class="odc-bags-row">${bagsHtml||'<span class="bag-tag">無袋數資料</span>'}</div><div class="odc-items">${itemsText}</div>${order.note?`<div class="odc-note">備：${esc(order.note)}</div>`:''}<div class="confirm-msg-box">${esc(order.confirmMsg||'（無確認訊息）')}</div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="copy-confirm-btn" style="display:flex;align-items:center;gap:5px;padding:7px 12px;background:#2563eb;color:white;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit">📋 複製確認訊息</button><button class="odc-detail-btn" style="display:flex;align-items:center;gap:5px;padding:7px 12px;background:#eff6ff;color:#2563eb;border:1px solid #93c5fd;border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit">📋 訂單詳情</button></div></div>`;
+  card.innerHTML=`<div class="odc-head"><div class="odc-left"><div class="odc-customer">${esc(order.customer||'')} ${payBadge}</div><div class="odc-addr">📍 ${esc(order.address||'')} ${mapsUrl?`<a href="${mapsUrl}" target="_blank" class="odc-dist">導航</a>`:''}</div></div><div class="odc-right"><div class="odc-total">$${(order.total||0).toLocaleString()}</div><div class="odc-pay">${tempIcon} ${bags} 單位</div></div><button class="odc-expand-btn" style="padding:2px 6px;border:1px solid var(--border);border-radius:4px;background:white;font-size:10px;cursor:pointer;color:var(--text-hint);font-family:inherit;margin-left:4px;flex-shrink:0">▾展開</button></div><div class="odc-body hidden" id="odc-body-${order.id}"><div class="odc-bags-row">${bagsHtml||'<span class="bag-tag">無袋數資料</span>'}</div><div class="odc-items">${itemsText}</div>${order.note?`<div class="odc-note">備：${esc(order.note)}</div>`:''}<div class="confirm-msg-box">${esc(order.confirmMsg||'（無確認訊息）')}</div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="copy-confirm-btn" style="display:flex;align-items:center;gap:5px;padding:7px 12px;background:#2563eb;color:white;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit">📋 複製確認訊息</button></div></div>`;
 
-  // 用 addEventListener 綁定
-  card.querySelector('.odc-head').addEventListener('click', function(){ toggleOdc(order.id); });
+  // 點擊標題區→開訂單詳情；展開按鈕→展開內容
+  card.querySelector('.odc-head').addEventListener('click', function(e){
+    // 如果點的是展開按鈕或導航連結，不開詳情
+    if (e.target.closest('.odc-expand-btn') || e.target.closest('a')) return;
+    openOrderDetail(String(order.id));
+  });
+  card.querySelector('.odc-expand-btn').addEventListener('click', function(e){ e.stopPropagation(); toggleOdc(order.id); });
   card.querySelector('.copy-confirm-btn').addEventListener('click', function(e){ e.stopPropagation(); copyOrderConfirm(order.id); });
-  card.querySelector('.odc-detail-btn').addEventListener('click', function(e){ e.stopPropagation(); openOrderDetail(String(order.id)); });
   return card;
 }
 function toggleOdc(id){const b=document.getElementById(`odc-body-${id}`);if(b)b.classList.toggle('hidden');}
@@ -4038,19 +4058,41 @@ function buildTripBuilderCard(slot, orders, defaultDepart) {
       const fill = document.createElement('div'); fill.className = `tb-bag-fill ${fillClass}`;
       fill.style.width = Math.min(fillPct, 100) + '%';
       bar.appendChild(fill); gDiv.appendChild(bar);
-      // 5 格位視覺化
-      const slotNames=['左下','右下','左上','右上','肩背'];
+      // 5 格位視覺化（填充順序：左下→右下→左上→右上→肩背）
+      // 顯示順序：上排=左上+右上, 下排=左下+右下, 底=肩背
+      var fillSlots=['左下','右下','左上','右上','肩背'];
+      var slotFill={};
+      fillSlots.forEach(function(nm,idx){
+        var threshold=(idx+1)*0.5;var prev=idx*0.5;
+        slotFill[nm]=gBags>=threshold?1:gBags>prev?(gBags-prev)/0.5:0;
+      });
+      // 判斷整趟冷熱
+      var groupTemps=group.map(function(o){return o.tempType||'normal';});
+      var hasHot=groupTemps.indexOf('hot')>=0||group.some(function(o){return(o.items||[]).some(function(it){return it.tempType==='hot';});});
+      var hasCold=groupTemps.indexOf('cold')>=0||group.some(function(o){return(o.items||[]).some(function(it){return it.tempType==='cold';});});
+      var tempColor=hasHot&&hasCold?'mixed':hasHot?'hot':hasCold?'cold':'normal';
+      function slotStyle(nm){
+        var r=slotFill[nm]||0;
+        var filled=r>=1;var partial=r>0&&r<1;
+        if(filled){
+          if(tempColor==='hot')return{bg:'#fee2e2',border:'#ef4444',icon:'🔥',text:'#dc2626'};
+          if(tempColor==='cold')return{bg:'#dbeafe',border:'#3b82f6',icon:'🧊',text:'#2563eb'};
+          if(tempColor==='mixed')return{bg:'#fef3c7',border:'#f59e0b',icon:'🔥🧊',text:'#92400e'};
+          return{bg:'#dcfce7',border:'#16a34a',icon:'🟩',text:'#374151'};
+        }
+        if(partial)return{bg:'#fef9c3',border:'#fbbf24',icon:'🟨',text:'#374151'};
+        return{bg:'#f3f4f6',border:'#d1d5db',icon:'⬜',text:'#9ca3af'};
+      }
+      // 顯示順序：左上→右上→左下→右下→肩背
+      var displayOrder=['左上','右上','左下','右下','肩背'];
       const slotWrap=document.createElement('div');
       slotWrap.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:6px 0 2px';
-      slotNames.forEach((nm,idx)=>{
-        const threshold=(idx+1)*0.5;const prev=idx*0.5;
-        const ratio=gBags>=threshold?1:gBags>prev?(gBags-prev)/0.5:0;
-        const bg=ratio>=1?(overloaded?'#fee2e2':'#dcfce7'):ratio>0?'#fef9c3':'#f3f4f6';
-        const border=ratio>=1?(overloaded?'#ef4444':'#16a34a'):ratio>0?'#fbbf24':'#d1d5db';
-        const sl=document.createElement('div');
-        sl.style.cssText=`background:${bg};border:1px solid ${border};border-radius:5px;padding:3px 6px;font-size:11px;text-align:center;font-weight:500;color:#374151;`;
-        sl.textContent=(ratio>=1?'🟩':ratio>0?'🟨':'⬜')+' '+nm;
-        if(idx===4)sl.style.gridColumn='span 2';
+      displayOrder.forEach(function(nm,di){
+        var s=slotStyle(nm);
+        var sl=document.createElement('div');
+        sl.style.cssText='background:'+s.bg+';border:1.5px solid '+s.border+';border-radius:5px;padding:4px 6px;font-size:11px;text-align:center;font-weight:600;color:'+s.text+';';
+        sl.textContent=s.icon+' '+nm;
+        if(di===4)sl.style.gridColumn='span 2';
         slotWrap.appendChild(sl);
       });
       gDiv.appendChild(slotWrap);
@@ -5372,6 +5414,73 @@ async function computeDriverHistory() {
     return '其他';
   }
 
+  // 精細距離估算（從東南街商圈出發）
+  // 用關鍵字匹配已知地標/公司/路名，給出較準確的距離
+  function estimateDistance(addr) {
+    if (!addr) return { km: 0, note: '無地址' };
+    var a = addr;
+    // === 科學園區內的公司（各有不同距離）===
+    // 園區一路/力行路方向（較近）
+    if (/台積電.*五廠|台積[五5]廠|力行[一1二2]路/.test(a)) return { km: 4.5, note: '園區力行路段' };
+    if (/台積電.*[七7]廠|台積[七7]廠|台積七/.test(a)) return { km: 5.2, note: '園區七廠' };
+    if (/台積電.*十二廠|台積十二|台積12/.test(a)) return { km: 6.0, note: '園區十二廠' };
+    if (/台積|tsmc/i.test(a)) return { km: 5.5, note: '台積電（園區）' };
+    if (/聯發科|mediatek/i.test(a)) return { km: 5.0, note: '聯發科' };
+    if (/瑞昱|realtek/i.test(a)) return { km: 4.8, note: '瑞昱半導體' };
+    if (/智邦|alpha/i.test(a)) return { km: 5.3, note: '智邦科技' };
+    if (/力積電|力晶|powerchip/i.test(a)) return { km: 6.5, note: '力積電（園區三路）' };
+    if (/聯詠|novatek/i.test(a)) return { km: 5.0, note: '聯詠科技' };
+    if (/群聯|phison/i.test(a)) return { km: 5.8, note: '群聯電子' };
+    if (/旺宏|macronix/i.test(a)) return { km: 5.5, note: '旺宏電子' };
+    if (/矽品|spil/i.test(a)) return { km: 6.0, note: '矽品精密' };
+    if (/欣銓|ardentec/i.test(a)) return { km: 5.5, note: '欣銓科技' };
+    if (/創意電子|global ?unichip/i.test(a)) return { km: 5.2, note: '創意電子' };
+    if (/世界先進|vanguard/i.test(a)) return { km: 5.8, note: '世界先進' };
+    if (/南亞科|nanya/i.test(a)) return { km: 6.0, note: '南亞科技' };
+    // 園區路名
+    if (/園區[一1]路/.test(a)) return { km: 4.5, note: '園區一路' };
+    if (/園區[二2]路/.test(a)) return { km: 5.0, note: '園區二路' };
+    if (/園區[三3]路/.test(a)) return { km: 5.8, note: '園區三路' };
+    if (/研新[一1二2三3]路/.test(a)) return { km: 5.5, note: '研新路' };
+    if (/篤行路/.test(a)) return { km: 5.0, note: '篤行路' };
+    if (/工業東/.test(a)) return { km: 4.8, note: '工業東路' };
+    if (/創新[一1二2]路/.test(a)) return { km: 5.5, note: '創新路' };
+    if (/科學園區|園區/.test(a)) return { km: 5.5, note: '科學園區（一般）' };
+    // === 工研院 ===
+    if (/工研院|中興路四段|光復院區/.test(a)) return { km: 7.5, note: '工研院' };
+    // === 東區/東南商圈 ===
+    if (/東南街|食品路/.test(a)) return { km: 0.5, note: '東南街附近' };
+    if (/光復路[一1]段/.test(a)) return { km: 1.5, note: '光復路一段' };
+    if (/光復路[二2]段/.test(a)) return { km: 3.0, note: '光復路二段' };
+    if (/建功路|建功[一1二2]路/.test(a)) return { km: 2.0, note: '建功路' };
+    if (/學府路/.test(a)) return { km: 1.8, note: '學府路' };
+    if (/清華|交大|陽明交通|清大/.test(a)) return { km: 2.5, note: '大學區' };
+    if (/中央路/.test(a)) return { km: 2.0, note: '中央路' };
+    if (/東區/.test(a)) return { km: 2.0, note: '東區' };
+    // === 北區/湳雅 ===
+    if (/經國路/.test(a)) return { km: 3.5, note: '經國路' };
+    if (/中華路/.test(a)) return { km: 3.0, note: '中華路' };
+    if (/西大路/.test(a)) return { km: 2.8, note: '西大路' };
+    if (/湳雅|北區/.test(a)) return { km: 3.0, note: '湳雅商圈' };
+    // === 竹北 ===
+    if (/高鐵|六家/.test(a)) return { km: 10.0, note: '竹北高鐵' };
+    if (/竹北.*光明/.test(a)) return { km: 8.5, note: '竹北光明商圈' };
+    if (/竹北/.test(a)) return { km: 8.0, note: '竹北' };
+    if (/新豐/.test(a)) return { km: 15.0, note: '新豐' };
+    if (/湖口/.test(a)) return { km: 18.0, note: '湖口' };
+    // === 竹東 ===
+    if (/竹東/.test(a)) return { km: 12.0, note: '竹東' };
+    // === 香山 ===
+    if (/香山/.test(a)) return { km: 5.0, note: '香山' };
+    // 兜底：用 zone
+    var zone = guessDeliveryZone(a);
+    var ZONE_DIST = {
+      '新竹東南商圈': 1.5, '新竹科學園區': 5.5, '新竹湳雅商圈': 3.0,
+      '竹北福興商圈': 8.0, '竹東': 12.0, '其他': 5.0
+    };
+    return { km: ZONE_DIST[zone] || 5.0, note: zone || '估算' };
+  }
+
   // 計算訂單馬鞍袋單位數
   // 馬鞍袋結構：左右各一袋，中間層架，每袋分 4 格（左上/左下/右上/右下）
   // 總共 8 格空間，每格容量依品類不同：
@@ -6187,7 +6296,7 @@ async function computeDriverHistory() {
     html += '<table class="dv2-dispatch-tbl" style="width:100%;border-collapse:collapse;font-size:13px;min-width:800px;">';
     html += '<thead><tr style="background:#f8fafc;position:sticky;top:0;z-index:2;">';
     html += '<th style="padding:6px 4px;text-align:left;border-bottom:2px solid #e2e8f0;white-space:nowrap;">預約時段</th>';
-    html += '<th style="padding:6px 4px;text-align:center;border-bottom:2px solid #e2e8f0;color:#dc2626;white-space:nowrap;min-width:95px;">出門時間</th>';
+    html += '<th style="padding:6px 4px;text-align:center;border-bottom:2px solid #e2e8f0;color:#dc2626;white-space:nowrap;min-width:72px;">出門</th>';
     html += '<th style="padding:6px 4px;text-align:left;border-bottom:2px solid #e2e8f0;">外送地點</th>';
     html += '<th style="padding:6px 4px;text-align:center;border-bottom:2px solid #e2e8f0;white-space:nowrap;">距離</th>';
     html += '<th style="padding:6px 4px;text-align:left;border-bottom:2px solid #e2e8f0;">備註</th>';
@@ -6245,7 +6354,7 @@ async function computeDriverHistory() {
       var isFirstInGroup = (ri === 0 || rows[ri-1].gi !== r.gi);
       if (isFirstInGroup) {
         html += '<td style="padding:3px 2px;border-bottom:1px solid #f1f5f9;text-align:center;" rowspan="' + groupSize + '">';
-        html += '<input type="time" class="dv2-depart-input" data-gi="' + r.gi + '" value="' + escHtml(r.departTime) + '" style="width:90px;padding:4px 2px;border:1.5px solid #fca5a5;border-radius:6px;font-size:13px;font-weight:700;color:#dc2626;text-align:center;background:#fff;box-sizing:border-box;">';
+        html += '<input type="text" inputmode="numeric" placeholder="HH:MM" class="dv2-depart-input" data-gi="' + r.gi + '" value="' + escHtml(r.departTime) + '" style="width:60px;padding:5px 4px;border:2px solid #fca5a5;border-radius:6px;font-size:14px;font-weight:700;color:#dc2626;text-align:center;background:#fff5f5;box-sizing:border-box;letter-spacing:1px;">';
         if (r.isCrossSlot) {
           html += '<div style="font-size:9px;color:#6366f1;margin-top:2px;">跨時段建議</div>';
         }
@@ -6266,17 +6375,11 @@ async function computeDriverHistory() {
       html += '<div style="font-size:11px;color:#6b7280;margin-top:1px;">' + escHtml(addr) + '</div>';
       html += '</td>';
 
-      // 距離
-      var distText = '—';
-      var distZone = guessDeliveryZone(addr);
-      // 簡易距離估算（無 Google Maps 時）
-      var ZONE_DIST = {
-        '新竹東南商圈': 1.5, '新竹科學園區': 5.5, '新竹湳雅商圈': 3.0,
-        '竹北福興商圈': 8.0, '竹東': 12.0, '其他': 6.0
-      };
-      var estKm = ZONE_DIST[distZone] || 5;
-      distText = estKm.toFixed(1) + 'km';
-      html += '<td style="padding:5px 4px;border-bottom:1px solid #f1f5f9;text-align:center;font-size:12px;color:#6b7280;">' + distText + '</td>';
+      // 距離（從東南街出發的精細估算）
+      var distResult = estimateDistance(addr);
+      var distText = distResult.km.toFixed(1) + 'km';
+      var distColor = distResult.km <= 3 ? '#16a34a' : distResult.km <= 7 ? '#d97706' : '#dc2626';
+      html += '<td style="padding:5px 4px;border-bottom:1px solid #f1f5f9;text-align:center;font-size:12px;color:' + distColor + ';font-weight:500;" title="' + escHtml(distResult.note) + '">' + distText + '</td>';
 
       // 備註
       var note = r.order.note || r.order.deliveryNote || r.order.timeNote || '';
