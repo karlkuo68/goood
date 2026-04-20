@@ -5595,11 +5595,14 @@ async function computeDriverHistory() {
     orders.forEach(function(o, i) {
       var dest = o.address || '';
       var d = calcDistBetween(prev, dest);
+      // 額外算店家→此目的地的直線距離
+      var shopDist = calcDistBetween(shopAddr, dest);
       legs.push({
         from: i === 0 ? '店家' : orders[i-1].customer || ('站' + i),
         to: o.customer || ('站' + (i+1)),
         km: d.km,
-        note: d.note
+        note: d.note,
+        shopKm: shopDist.km // 店家→此目的地
       });
       total += d.km;
       prev = dest;
@@ -6436,7 +6439,6 @@ async function computeDriverHistory() {
     html += '<th style="padding:6px 4px;text-align:center;border-bottom:2px solid #e2e8f0;white-space:nowrap;">馬鞍袋</th>';
     html += '<th style="padding:6px 4px;text-align:right;border-bottom:2px solid #e2e8f0;white-space:nowrap;">總金額</th>';
     html += '<th style="padding:6px 8px;text-align:center;border-bottom:2px solid #e2e8f0;white-space:nowrap;">外送員</th>';
-    html += '<th style="padding:6px 4px;text-align:center;border-bottom:2px solid #e2e8f0;white-space:nowrap;"></th>';
     html += '</tr></thead><tbody>';
 
     // 組別色帶：用外送員顏色淡化當底色，組間加粗分隔線
@@ -6490,30 +6492,52 @@ async function computeDriverHistory() {
         html += '</td>';
       }
 
-      // 外送地點 + 目的地順序
+      // 外送地點 + 目的地順序 + 調換順序按鈕 + 店家距離
       var addr = r.order.address || '';
       var customer = r.order.customer || '未命名';
       var destNum = groupDestOrder[String(r.order.id)];
+      var groupLen = dv2State.groups[r.gi].orders.length;
+      var route = groupRoutes[r.gi];
+      var leg = route && route.legs && route.legs[r.oi];
+      var shopKm = leg ? leg.shopKm : 0;
       html += '<td class="dv2-order-cell" data-oid="' + String(r.order.id) + '" style="padding:5px 4px;border-bottom:1px solid #f1f5f9;cursor:pointer;" title="點擊查看訂單詳情">';
+      // 第一行：順序圓圈 + 客戶名 + 調換按鈕
+      html += '<div style="display:flex;align-items:center;gap:3px;">';
       if (destNum) {
         var circleColors = ['#3b82f6','#f59e0b','#10b981'];
         var cClr = circleColors[(destNum-1) % circleColors.length];
-        html += '<span style="display:inline-block;width:18px;height:18px;line-height:18px;text-align:center;border-radius:50%;background:' + cClr + ';color:#fff;font-size:10px;font-weight:700;margin-right:4px;vertical-align:middle;">' + destNum + '</span>';
+        html += '<span style="display:inline-block;width:18px;height:18px;line-height:18px;text-align:center;border-radius:50%;background:' + cClr + ';color:#fff;font-size:10px;font-weight:700;flex-shrink:0;">' + destNum + '</span>';
       }
-      html += '<span style="font-weight:600;font-size:12px;color:#2563eb;text-decoration:underline;">' + escHtml(customer) + '</span>';
-      html += '<div style="font-size:11px;color:#6b7280;margin-top:1px;">' + escHtml(addr) + '</div>';
+      html += '<span style="font-weight:600;font-size:12px;color:#2563eb;text-decoration:underline;flex:1;">' + escHtml(customer) + '</span>';
+      // 合併訂單的調換順序按鈕
+      if (groupLen > 1) {
+        if (r.oi > 0) {
+          html += '<button class="dv2-reorder-btn" data-gi="' + r.gi + '" data-oi="' + r.oi + '" data-dir="up" title="上移" style="border:1px solid #bfdbfe;background:#eff6ff;border-radius:3px;cursor:pointer;font-size:10px;padding:1px 4px;color:#2563eb;flex-shrink:0;">▲</button>';
+        }
+        if (r.oi < groupLen - 1) {
+          html += '<button class="dv2-reorder-btn" data-gi="' + r.gi + '" data-oi="' + r.oi + '" data-dir="down" title="下移" style="border:1px solid #bfdbfe;background:#eff6ff;border-radius:3px;cursor:pointer;font-size:10px;padding:1px 4px;color:#2563eb;flex-shrink:0;">▼</button>';
+        }
+        html += '<button class="dv2-split-btn" data-gi="' + r.gi + '" data-oi="' + r.oi + '" title="拆出此單" style="border:1px solid #e5e7eb;background:#fff;border-radius:3px;cursor:pointer;font-size:10px;padding:1px 4px;color:#6b7280;flex-shrink:0;">✂️</button>';
+      }
+      html += '</div>';
+      // 第二行：地址 + 店家→目的地距離
+      html += '<div style="display:flex;align-items:center;gap:4px;margin-top:1px;">';
+      html += '<span style="font-size:11px;color:#6b7280;flex:1;">' + escHtml(addr) + '</span>';
+      if (shopKm > 0) {
+        var shopDistClr = shopKm <= 3 ? '#16a34a' : shopKm <= 7 ? '#d97706' : '#dc2626';
+        html += '<span style="font-size:10px;color:' + shopDistClr + ';white-space:nowrap;flex-shrink:0;background:' + shopDistClr + '12;padding:1px 4px;border-radius:3px;" title="店家→目的地距離">🏪' + shopKm.toFixed(1) + 'km</span>';
+      }
+      html += '</div>';
       html += '</td>';
 
-      // 距離（店家→目的地，逐段顯示）
-      var route = groupRoutes[r.gi];
-      var legIdx = r.oi; // 在 group 內的順序
-      var leg = route && route.legs && route.legs[legIdx];
+      // 距離（逐段顯示：前一站→此站）
       var legKm = leg ? leg.km : 0;
       var legFrom = leg ? leg.from : '';
+      var legTo = leg ? leg.to : '';
       var distColor = legKm <= 3 ? '#16a34a' : legKm <= 7 ? '#d97706' : '#dc2626';
       html += '<td style="padding:4px 3px;border-bottom:1px solid #f1f5f9;text-align:center;font-size:11px;line-height:1.3;">';
       html += '<div style="color:' + distColor + ';font-weight:700;">' + legKm.toFixed(1) + 'km</div>';
-      html += '<div style="font-size:9px;color:#9ca3af;">' + escHtml(legFrom) + '→</div>';
+      html += '<div style="font-size:9px;color:#9ca3af;">' + escHtml(legFrom) + '→' + escHtml(legTo) + '</div>';
       // 同組最後一行顯示總距離
       var isLastInGroup = (ri === rows.length - 1 || rows[ri+1].gi !== r.gi);
       if (isLastInGroup && route && route.legs.length > 1) {
@@ -6554,22 +6578,6 @@ async function computeDriverHistory() {
         html += '</td>';
       }
       // else skip td due to rowspan
-
-      // 操作按鈕：重排順序（▲▼）+ 拆單
-      var groupLen = dv2State.groups[r.gi].orders.length;
-      html += '<td style="padding:2px 1px;border-bottom:1px solid #f1f5f9;text-align:center;white-space:nowrap;">';
-      if (groupLen > 1) {
-        // 上移按鈕（第一個不能上移）
-        if (r.oi > 0) {
-          html += '<button class="dv2-reorder-btn" data-gi="' + r.gi + '" data-oi="' + r.oi + '" data-dir="up" title="上移" style="border:1px solid #bfdbfe;background:#eff6ff;border-radius:3px;cursor:pointer;font-size:10px;padding:1px 4px;color:#2563eb;margin:0 1px;">▲</button>';
-        }
-        // 下移按鈕（最後一個不能下移）
-        if (r.oi < groupLen - 1) {
-          html += '<button class="dv2-reorder-btn" data-gi="' + r.gi + '" data-oi="' + r.oi + '" data-dir="down" title="下移" style="border:1px solid #bfdbfe;background:#eff6ff;border-radius:3px;cursor:pointer;font-size:10px;padding:1px 4px;color:#2563eb;margin:0 1px;">▼</button>';
-        }
-        html += '<button class="dv2-split-btn" data-gi="' + r.gi + '" data-oi="' + r.oi + '" title="拆出此單" style="border:1px solid #e5e7eb;background:#fff;border-radius:3px;cursor:pointer;font-size:10px;padding:1px 4px;color:#6b7280;margin:0 1px;">✂️</button>';
-      }
-      html += '</td>';
 
       html += '</tr>';
     });
@@ -6692,9 +6700,11 @@ async function computeDriverHistory() {
       });
     });
 
-    // ── 綁定訂單點擊查看詳情 ──
+    // ── 綁定訂單點擊查看詳情（排除按鈕點擊） ──
     body.querySelectorAll('.dv2-order-cell').forEach(function(cell){
-      cell.addEventListener('click', function(){
+      cell.addEventListener('click', function(e){
+        // 如果點擊的是按鈕（▲▼✂️），不觸發詳情
+        if (e.target.tagName === 'BUTTON') return;
         var oid = cell.getAttribute('data-oid');
         if (oid && typeof openOrderDetail === 'function') openOrderDetail(oid);
       });
