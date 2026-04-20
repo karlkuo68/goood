@@ -3863,28 +3863,23 @@ function updateOrderFormAutoFields() {
   }
   const slotsEl = document.getElementById('f-bag-slots');
   if (slotsEl) {
-    // 填充順序：左下(0)→右下(1)→左上(2)→右上(3)→肩背(4)
-    const fillNames = ['左下','右下','左上','右上','肩背'];
-    const slotFill = {};
-    fillNames.forEach((nm, idx) => {
-      const threshold = (idx + 1) * 0.5; const prev = idx * 0.5;
-      slotFill[nm] = units >= threshold ? 1 : units > prev ? (units - prev) / 0.5 : 0;
-    });
-    // 顯示順序：上排=左上+右上, 下排=左下+右下, 底=肩背
-    const displayOrder = ['左上','右上','左下','右下','肩背'];
-    const tempIcon = temp === 'hot' ? '🔥' : temp === 'cold' ? '🧊' : '';
-    slotsEl.innerHTML = displayOrder.map((nm, di) => {
-      const fill = slotFill[nm] || 0;
-      const filled = fill >= 1; const partial = fill > 0 && fill < 1;
-      let bg, border, icon;
-      if (filled) {
-        if (temp === 'hot') { bg = '#fee2e2'; border = '#ef4444'; icon = '🔥'; }
-        else if (temp === 'cold') { bg = '#dbeafe'; border = '#3b82f6'; icon = '🧊'; }
-        else { bg = units > 2.5 ? '#fee2e2' : '#dcfce7'; border = units > 2.5 ? '#ef4444' : '#16a34a'; icon = '✓'; }
-      } else if (partial) { bg = '#fef9c3'; border = '#fbbf24'; icon = '◐'; }
-      else { bg = '#f3f4f6'; border = '#d1d5db'; icon = ''; }
-      const span2 = di === 4 ? 'grid-column:span 2;' : '';
-      return `<div title="${nm}" style="background:${bg};border:1.5px solid ${border};border-radius:4px;padding:2px 4px;font-size:9px;text-align:center;font-weight:600;color:#374151;${span2}">${icon} ${nm[0]}${nm[1]}</div>`;
+    // 用 allocateBagSlots 處理單筆訂單（如果購物車有資料）
+    var fakeOrder = { id: 'preview', customer: '', items: cart.map(function(c){ return Object.assign({}, c); }), tempType: temp };
+    var alloc = (typeof allocateBagSlots === 'function') ? allocateBagSlots([fakeOrder]) : null;
+    var displayOrder = ['左上','右上','左下','右下','肩背'];
+    slotsEl.innerHTML = displayOrder.map(function(nm, di) {
+      var info = alloc ? alloc[nm] : null;
+      var bg, border, icon, textColor;
+      if (info) {
+        bg = info.temp === 'hot' ? '#fee2e2' : info.temp === 'cold' ? '#dbeafe' : '#dcfce7';
+        border = info.temp === 'hot' ? '#ef4444' : info.temp === 'cold' ? '#3b82f6' : '#16a34a';
+        icon = info.temp === 'hot' ? '🔥' : info.temp === 'cold' ? '🧊' : '📦';
+        textColor = info.temp === 'hot' ? '#dc2626' : info.temp === 'cold' ? '#2563eb' : '#374151';
+      } else {
+        bg = '#f3f4f6'; border = '#d1d5db'; icon = ''; textColor = '#9ca3af';
+      }
+      var span2 = di === 4 ? 'grid-column:span 2;' : '';
+      return '<div title="' + nm + '" style="background:' + bg + ';border:1.5px solid ' + border + ';border-radius:4px;padding:2px 4px;font-size:9px;text-align:center;font-weight:600;color:' + textColor + ';' + span2 + '">' + icon + ' ' + nm[0] + nm[1] + '</div>';
     }).join('');
     slotsEl.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-top:4px';
   }
@@ -3977,6 +3972,100 @@ function buildOrderDispatchCard(order){
 function toggleOdc(id){const b=document.getElementById(`odc-body-${id}`);if(b)b.classList.toggle('hidden');}
 function copyOrderConfirm(id){const o=DB.getOrders().find(o=>String(o.id)===String(id));if(!o?.confirmMsg){showToast('無確認訊息');return;}navigator.clipboard.writeText(o.confirmMsg).then(()=>showToast('已複製確認訊息'));}
 
+// ════════════════════════════════════════════════
+// 馬鞍袋智慧格位分配
+// ════════════════════════════════════════════════
+// 規則：
+//   1. 熱品放左側（左下→左上），冷品放右側（右下→右上）
+//   2. 不同訂單分開放不同格位，方便交貨辨識
+//   3. 同一訂單有冷有熱，拆分到左右兩側
+//   4. 溢出或第三筆→肩背
+//   5. 每格都要標示溫度 ICON
+// 回傳: { '左上': {temp,label}, '右上': ..., '左下': ..., '右下': ..., '肩背': ... }
+function allocateBagSlots(orders) {
+  var result = { '左上': null, '右上': null, '左下': null, '右下': null, '肩背': null };
+  if (!orders || !orders.length) return result;
+
+  // 分析每筆訂單的冷熱品項
+  var parcels = []; // [{orderId, customer, temp:'hot'|'cold'|'normal', items:[...]}]
+  orders.forEach(function(o) {
+    var hotItems = [], coldItems = [], normalItems = [];
+    (o.items || []).forEach(function(it) {
+      var t = it.tempType || o.tempType || 'normal';
+      if (t === 'hot') hotItems.push(it);
+      else if (t === 'cold') coldItems.push(it);
+      else normalItems.push(it);
+    });
+    var customer = (o.customer || '').replace(/\s+/g, '').slice(0, 6);
+    // 如果同一訂單有冷有熱，拆成兩包
+    if (hotItems.length > 0 && coldItems.length > 0) {
+      parcels.push({ orderId: o.id, customer: customer, temp: 'hot', items: hotItems });
+      parcels.push({ orderId: o.id, customer: customer, temp: 'cold', items: coldItems });
+    } else if (hotItems.length > 0) {
+      parcels.push({ orderId: o.id, customer: customer, temp: 'hot', items: hotItems.concat(normalItems) });
+    } else if (coldItems.length > 0) {
+      parcels.push({ orderId: o.id, customer: customer, temp: 'cold', items: coldItems.concat(normalItems) });
+    } else {
+      parcels.push({ orderId: o.id, customer: customer, temp: 'normal', items: normalItems });
+    }
+  });
+
+  // 分成熱包和冷包
+  var hotParcels = parcels.filter(function(p) { return p.temp === 'hot'; });
+  var coldParcels = parcels.filter(function(p) { return p.temp === 'cold'; });
+  var normalParcels = parcels.filter(function(p) { return p.temp === 'normal'; });
+
+  // 左側放熱（左下優先→左上）
+  var leftSlots = ['左下', '左上'];
+  // 右側放冷（右下優先→右上）
+  var rightSlots = ['右下', '右上'];
+
+  // 分配策略：
+  // A) 有冷有熱 → 熱放左側，冷放右側，嚴格隔離
+  // B) 全同溫度(多訂單) → 交錯放左下、右下、左上、右上，方便辨識
+  // C) 單一訂單 → 從左下開始放
+
+  var hasBothTemps = hotParcels.length > 0 && coldParcels.length > 0;
+
+  if (hasBothTemps) {
+    // 策略A：冷熱隔離
+    var leftIdx = 0, rightIdx = 0;
+    hotParcels.forEach(function(p) {
+      if (leftIdx < leftSlots.length) {
+        result[leftSlots[leftIdx]] = { temp: 'hot', label: p.customer };
+        leftIdx++;
+      } else if (!result['肩背']) {
+        result['肩背'] = { temp: 'hot', label: p.customer };
+      }
+    });
+    coldParcels.forEach(function(p) {
+      if (rightIdx < rightSlots.length) {
+        result[rightSlots[rightIdx]] = { temp: 'cold', label: p.customer };
+        rightIdx++;
+      } else if (!result['肩背']) {
+        result['肩背'] = { temp: 'cold', label: p.customer };
+      }
+    });
+    normalParcels.forEach(function(p) {
+      if (!result['肩背']) result['肩背'] = { temp: 'normal', label: p.customer };
+    });
+  } else {
+    // 策略B：同溫度，交錯放左下→右下→左上→右上→肩背
+    // 這樣不同訂單分別在左右兩側，交貨好辨識
+    var interleaveSlots = ['左下', '右下', '左上', '右上', '肩背'];
+    var allParcels = hotParcels.concat(coldParcels).concat(normalParcels);
+    var slotIdx = 0;
+    allParcels.forEach(function(p) {
+      if (slotIdx < interleaveSlots.length) {
+        result[interleaveSlots[slotIdx]] = { temp: p.temp, label: p.customer };
+        slotIdx++;
+      }
+    });
+  }
+
+  return result;
+}
+
 function buildTripBuilderCard(slot, orders, defaultDepart) {
   const builderId = `builder_${slot.replace(/[^a-z0-9]/gi,'_')}`;
   const div = document.createElement('div');
@@ -4058,41 +4147,28 @@ function buildTripBuilderCard(slot, orders, defaultDepart) {
       const fill = document.createElement('div'); fill.className = `tb-bag-fill ${fillClass}`;
       fill.style.width = Math.min(fillPct, 100) + '%';
       bar.appendChild(fill); gDiv.appendChild(bar);
-      // 5 格位視覺化（填充順序：左下→右下→左上→右上→肩背）
-      // 顯示順序：上排=左上+右上, 下排=左下+右下, 底=肩背
-      var fillSlots=['左下','右下','左上','右上','肩背'];
-      var slotFill={};
-      fillSlots.forEach(function(nm,idx){
-        var threshold=(idx+1)*0.5;var prev=idx*0.5;
-        slotFill[nm]=gBags>=threshold?1:gBags>prev?(gBags-prev)/0.5:0;
-      });
-      // 判斷整趟冷熱
-      var groupTemps=group.map(function(o){return o.tempType||'normal';});
-      var hasHot=groupTemps.indexOf('hot')>=0||group.some(function(o){return(o.items||[]).some(function(it){return it.tempType==='hot';});});
-      var hasCold=groupTemps.indexOf('cold')>=0||group.some(function(o){return(o.items||[]).some(function(it){return it.tempType==='cold';});});
-      var tempColor=hasHot&&hasCold?'mixed':hasHot?'hot':hasCold?'cold':'normal';
-      function slotStyle(nm){
-        var r=slotFill[nm]||0;
-        var filled=r>=1;var partial=r>0&&r<1;
-        if(filled){
-          if(tempColor==='hot')return{bg:'#fee2e2',border:'#ef4444',icon:'🔥',text:'#dc2626'};
-          if(tempColor==='cold')return{bg:'#dbeafe',border:'#3b82f6',icon:'🧊',text:'#2563eb'};
-          if(tempColor==='mixed')return{bg:'#fef3c7',border:'#f59e0b',icon:'🔥🧊',text:'#92400e'};
-          return{bg:'#dcfce7',border:'#16a34a',icon:'🟩',text:'#374151'};
+
+      // ── 智慧格位分配 ──
+      var allocation = allocateBagSlots(group);
+      var displayOrder = ['左上','右上','左下','右下','肩背'];
+      const slotWrap = document.createElement('div');
+      slotWrap.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:6px 0 2px';
+      displayOrder.forEach(function(nm, di){
+        var info = allocation[nm];
+        var sl = document.createElement('div');
+        if (info) {
+          var bg = info.temp === 'hot' ? '#fee2e2' : info.temp === 'cold' ? '#dbeafe' : '#dcfce7';
+          var border = info.temp === 'hot' ? '#ef4444' : info.temp === 'cold' ? '#3b82f6' : '#16a34a';
+          var icon = info.temp === 'hot' ? '🔥' : info.temp === 'cold' ? '🧊' : '📦';
+          var textColor = info.temp === 'hot' ? '#dc2626' : info.temp === 'cold' ? '#2563eb' : '#374151';
+          var label = info.label ? info.label.slice(0, 4) : '';
+          sl.style.cssText = 'background:' + bg + ';border:1.5px solid ' + border + ';border-radius:5px;padding:4px 6px;font-size:10px;text-align:center;font-weight:600;color:' + textColor + ';line-height:1.4;';
+          sl.innerHTML = icon + ' ' + esc(nm) + (label ? '<div style="font-size:9px;opacity:0.8;margin-top:1px;">' + esc(label) + '</div>' : '');
+        } else {
+          sl.style.cssText = 'background:#f3f4f6;border:1.5px solid #d1d5db;border-radius:5px;padding:4px 6px;font-size:10px;text-align:center;font-weight:500;color:#9ca3af;line-height:1.4;';
+          sl.innerHTML = '⬜ ' + esc(nm) + '<div style="font-size:9px;margin-top:1px;">空</div>';
         }
-        if(partial)return{bg:'#fef9c3',border:'#fbbf24',icon:'🟨',text:'#374151'};
-        return{bg:'#f3f4f6',border:'#d1d5db',icon:'⬜',text:'#9ca3af'};
-      }
-      // 顯示順序：左上→右上→左下→右下→肩背
-      var displayOrder=['左上','右上','左下','右下','肩背'];
-      const slotWrap=document.createElement('div');
-      slotWrap.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:6px 0 2px';
-      displayOrder.forEach(function(nm,di){
-        var s=slotStyle(nm);
-        var sl=document.createElement('div');
-        sl.style.cssText='background:'+s.bg+';border:1.5px solid '+s.border+';border-radius:5px;padding:4px 6px;font-size:11px;text-align:center;font-weight:600;color:'+s.text+';';
-        sl.textContent=s.icon+' '+nm;
-        if(di===4)sl.style.gridColumn='span 2';
+        if (di === 4) sl.style.gridColumn = 'span 2';
         slotWrap.appendChild(sl);
       });
       gDiv.appendChild(slotWrap);
