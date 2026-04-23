@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ken's AI 開發儀表板</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f172a;
+    --surface: rgba(255,255,255,0.05);
+    --surface-hover: rgba(255,255,255,0.09);
+    --border: rgba(255,255,255,0.08);
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #6366f1;
+    --accent-glow: rgba(99,102,241,0.3);
+    --green: #10b981;
+    --yellow: #f59e0b;
+    --panel-h: 260px;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    padding-bottom: calc(var(--panel-h) + 24px);
+  }
+
+  /* ── Top Bar ── */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(15,23,42,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .topbar-title {
+    font-size: 17px;
+    font-weight: 700;
+    flex: 1 1 auto;
+    letter-spacing: -0.3px;
+  }
+
+  .snapshot-badge {
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 3px 10px;
+    white-space: nowrap;
+  }
+
+  .topbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* ── Buttons ── */
+  .btn {
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 7px 14px;
+    transition: all .18s;
+    white-space: nowrap;
+  }
+  .btn-ghost {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { background: var(--surface-hover); border-color: rgba(255,255,255,0.18); }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover { background: #4f46e5; box-shadow: 0 0 14px var(--accent-glow); }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+  /* ── Main Grid ── */
+  .main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 16px;
+  }
+
+  .section-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 14px;
+  }
+
+  /* ── Project Card ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all .2s;
+    display: flex;
+    flex-direction: column;
+  }
+  .card:hover {
+    background: var(--surface-hover);
+    border-color: rgba(255,255,255,0.14);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+
+  .card-accent { width: 100%; height: 4px; flex-shrink: 0; }
+
+  .card-body { padding: 14px 16px 16px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+
+  .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+
+  .card-name { font-size: 15px; font-weight: 700; line-height: 1.3; }
+
+  .card-date { font-size: 11px; color: var(--muted); white-space: nowrap; margin-top: 2px; }
+
+  .card-status {
+    font-size: 12.5px;
+    color: #cbd5e1;
+    line-height: 1.5;
+  }
+
+  .card-todo {
+    background: rgba(245,158,11,0.12);
+    border-left: 3px solid var(--yellow);
+    border-radius: 0 6px 6px 0;
+    padding: 7px 10px;
+    font-size: 12.5px;
+    color: #fde68a;
+    line-height: 1.4;
+  }
+  .card-todo.done {
+    background: rgba(16,185,129,0.1);
+    border-left-color: var(--green);
+    color: #6ee7b7;
+  }
+
+  .card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    margin-top: auto;
+    padding-top: 4px;
+  }
+
+  .tag {
+    font-size: 11px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 2px 8px;
+    color: var(--muted);
+  }
+
+  .card-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #818cf8;
+    text-decoration: none;
+    background: rgba(99,102,241,0.1);
+    border: 1px solid rgba(99,102,241,0.25);
+    border-radius: 6px;
+    padding: 3px 9px;
+    transition: all .15s;
+  }
+  .card-link:hover { background: rgba(99,102,241,0.2); color: #a5b4fc; }
+
+  .backup-tag {
+    font-size: 11px;
+    color: #64748b;
+  }
+
+  /* ── Bottom Command Panel ── */
+  .cmd-panel {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(10,17,34,0.96);
+    backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border);
+    max-height: var(--panel-h);
+    transition: max-height .3s ease;
+    display: flex;
+    flex-direction: column;
+  }
+  .cmd-panel.expanded { max-height: 70vh; }
+
+  .cmd-panel-top {
+    padding: 10px 14px;
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+
+  .cmd-panel-top select,
+  .cmd-panel-top textarea {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    font-size: 13px;
+    padding: 8px 10px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .cmd-panel-top select:focus,
+  .cmd-panel-top textarea:focus { border-color: var(--accent); }
+
+  .cmd-select { flex: 0 0 160px; height: 38px; cursor: pointer; }
+  .cmd-input { flex: 1 1 200px; height: 38px; resize: none; overflow: hidden; min-width: 120px; }
+  .cmd-actions { display: flex; gap: 6px; align-items: center; }
+
+  .toast {
+    font-size: 12px;
+    color: var(--green);
+    padding: 4px 0;
+    opacity: 0;
+    transition: opacity .3s;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
+
+  /* ── History ── */
+  .history-section {
+    border-top: 1px solid var(--border);
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 14px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    position: sticky;
+    top: 0;
+    background: rgba(10,17,34,0.97);
+  }
+  .history-header:hover { color: var(--text); }
+
+  .history-list { display: none; }
+  .history-list.open { display: block; }
+
+  .history-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    transition: background .15s;
+  }
+  .history-item:hover { background: var(--surface); }
+
+  .history-item-body { flex: 1; min-width: 0; }
+  .history-project { font-size: 11px; color: var(--accent); font-weight: 600; }
+  .history-cmd { font-size: 13px; color: var(--text); margin: 1px 0; white-space: pre-wrap; word-break: break-word; }
+  .history-time { font-size: 11px; color: #475569; }
+
+  .btn-copy-cmd {
+    cursor: pointer;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 11px;
+    transition: all .15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .btn-copy-cmd:hover { background: var(--surface-hover); color: var(--text); }
+
+  .history-empty { padding: 14px; font-size: 13px; color: #475569; text-align: center; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 500px) {
+    .grid { grid-template-columns: 1fr; }
+    .cmd-select { flex: 0 0 140px; }
+    .topbar-title { font-size: 15px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Top Bar ── -->
+<div class="topbar">
+  <div class="topbar-title">🤖 Ken's AI 開發儀表板</div>
+  <div class="snapshot-badge">📅 資料快照：2026-04-23 01:10（由 Claude 更新）</div>
+  <div class="topbar-actions">
+    <button class="btn btn-ghost" onclick="exportBackup()">💾 儲存當前狀態</button>
+    <label class="btn btn-ghost" style="cursor:pointer">
+      📂 匯入備份
+      <input type="file" accept=".json" style="display:none" onchange="importBackup(event)">
+    </label>
+  </div>
+</div>
+
+<!-- ── Main ── -->
+<div class="main">
+  <div class="section-title">專案總覽 — 9 個專案</div>
+  <div class="grid" id="projectGrid"></div>
+</div>
+
+<!-- ── Command Panel ── -->
+<div class="cmd-panel" id="cmdPanel">
+  <div class="cmd-panel-top">
+    <select class="cmd-select" id="cmdProject">
+      <option value="">選擇專案…</option>
+    </select>
+    <textarea class="cmd-input" id="cmdInput" placeholder="輸入指令內容…" rows="1"
+      oninput="autoResize(this)" onkeydown="handleCmdKey(event)"></textarea>
+    <div class="cmd-actions">
+      <span class="toast" id="cmdToast">✅ 已排入佇列</span>
+      <button class="btn btn-primary" onclick="submitCmd()">送出</button>
+    </div>
+  </div>
+  <div class="history-section">
+    <div class="history-header" onclick="toggleHistory()">
+      <span>📋 指令歷史 <span id="historyCount" style="font-weight:400;color:#64748b"></span></span>
+      <span id="historyArrow">▲</span>
+    </div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+</div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────
+const PROJECTS = [
+  {
+    name: '確信國際超級ERP',
+    path: '~/Desktop/確信國際超級ERP/',
+    url: null,
+    color: '#4F46E5',
+    lastModified: '2026-04-23',
+    status: 'Phase 1-10 完成，9 個微服務 + Dashboard + LIFF',
+    todo: '串真實 API（大麥 POS / 億看 ERP / 104）',
+    backup: 'v008',
+    techStack: 'NestJS + Express + Next.js + Docker',
+  },
+  {
+    name: '確信國際專案管理系統',
+    path: '~/firebase-deploy-quexin/',
+    url: 'https://quexin-pm.web.app',
+    color: '#059669',
+    lastModified: '2026-04-16',
+    status: '穩定運行，cache修復 + 儲存穩定度優化 + 使用者刪除功能',
+    todo: '等 Ken 新指令',
+    backup: 'v001 + .bak 檔',
+    techStack: 'HTML/JS + Firebase Firestore',
+  },
+  {
+    name: '確信國際任務管理系統',
+    path: '~/firebase-deploy-quexin-task/',
+    url: 'https://goood-tasks.web.app',
+    color: '#D97706',
+    lastModified: '2026-04-15',
+    status: '穩定運行，FCM推播修復 + 全平台相容 + SW合併',
+    todo: '等 Ken 新指令',
+    backup: 'v001',
+    techStack: 'HTML/JS + Firebase RTDB + Cloud Functions',
+  },
+  {
+    name: '好糰團購派單系統',
+    path: '~/Desktop/好糰團購派單系統/',
+    url: 'https://karlkuo68.github.io/goood/',
+    color: '#E27D60',
+    lastModified: '2026-04-22',
+    status: '溫層標記 + 馬鞍袋5格位 + 訂單管理 + 派單詳情',
+    todo: '等 Ken 確認派單邏輯',
+    backup: 'git + backups/',
+    techStack: 'HTML/JS + Firebase RTDB + GitHub Pages',
+  },
+  {
+    name: '麵包團購系統',
+    path: '~/Desktop/bread-group-buy/',
+    url: 'https://karlkuo68.github.io/bread-group-buy/',
+    color: '#8B5CF6',
+    lastModified: '2026-04-21',
+    status: '對帳+貼紙+archive 清理完成',
+    todo: '等 Ken 新指令',
+    backup: 'git + .bak',
+    techStack: 'HTML/JS + Firebase RTDB + GitHub Pages',
+  },
+  {
+    name: '商品照生成App',
+    path: '~/Desktop/商品照生成app專案/',
+    url: null,
+    color: '#EC4899',
+    lastModified: '2026-04-09',
+    status: '架構完成，卡 Fal.ai 儲值',
+    todo: 'Ken 儲值 Fal.ai $5-10 → 端對端測試',
+    backup: '.backups/',
+    techStack: 'FastAPI + Celery + Docker',
+  },
+  {
+    name: '確信春酒遊戲場',
+    path: '~/Desktop/確信春酒遊戲場/',
+    url: 'https://karlkuo68.github.io/spring-banquet-game/',
+    color: '#F59E0B',
+    lastModified: '2026-04-12',
+    status: '功能完整，活動已結束，可封存',
+    todo: '無',
+    backup: 'backups/',
+    techStack: 'HTML/JS + Firebase RTDB + GitHub Pages',
+  },
+  {
+    name: '發票辨識系統',
+    path: '~/Documents/Claude/Projects/發票辨識系統/',
+    url: 'https://invoice-scanner-33a68.web.app',
+    color: '#6366F1',
+    lastModified: '2026-03-23',
+    status: 'v9 Firebase 版長期穩定',
+    todo: '無',
+    backup: '—',
+    techStack: 'HTML/JS + Firebase Hosting',
+  },
+  {
+    name: '一人行銷公司軟體',
+    path: '~/Documents/Claude/Projects/一人行銷公司軟體/',
+    url: null,
+    color: '#14B8A6',
+    lastModified: '2026-04-23',
+    status: 'Webhook核心+Prompt模板完成，卡 Make.com 設定',
+    todo: '到 Make.com 建 3 個 scenario',
+    backup: '.backups/',
+    techStack: 'Next.js + Supabase + Prisma + Make.com',
+  },
+];
+
+// ── Render Projects ──────────────────────────────────────────
+function renderProjects() {
+  const grid = document.getElementById('projectGrid');
+  const sel = document.getElementById('cmdProject');
+
+  PROJECTS.forEach((p, i) => {
+    // Card
+    const card = document.createElement('div');
+    card.className = 'card';
+    const isDone = p.todo === '無';
+    card.innerHTML = `
+      <div class="card-accent" style="background:${p.color}"></div>
+      <div class="card-body">
+        <div class="card-header">
+          <div>
+            <div class="card-name">${p.name}</div>
+            <div class="card-date">最後更新：${p.lastModified}</div>
+          </div>
+          ${p.url ? `<a class="card-link" href="${p.url}" target="_blank" rel="noopener">🔗 開啟</a>` : ''}
+        </div>
+        <div class="card-status">${p.status}</div>
+        <div class="card-todo ${isDone ? 'done' : ''}">
+          ${isDone ? '✅' : '⚡'} <strong>下一步：</strong>${p.todo}
+        </div>
+        <div class="card-meta">
+          ${p.techStack.split('+').map(t => `<span class="tag">${t.trim()}</span>`).join('')}
+          <span class="backup-tag">💾 ${p.backup}</span>
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+
+    // Dropdown option
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = p.name;
+    sel.appendChild(opt);
+  });
+}
+
+// ── Command Queue (localStorage) ────────────────────────────
+const QUEUE_KEY = 'ai_cmd_queue';
+
+function getQueue() {
+  try { return JSON.parse(localStorage.getItem(QUEUE_KEY)) || []; }
+  catch { return []; }
+}
+function saveQueue(q) { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); }
+
+function submitCmd() {
+  const sel = document.getElementById('cmdProject');
+  const input = document.getElementById('cmdInput');
+  const idx = sel.value;
+  const cmd = input.value.trim();
+
+  if (idx === '' || !cmd) {
+    showToast('⚠️ 請選擇專案並輸入指令', '#f87171');
+    return;
+  }
+
+  const p = PROJECTS[+idx];
+  const now = new Date();
+  const ts = formatDateTime(now);
+
+  const entry = {
+    id: Date.now(),
+    project: p.name,
+    path: p.path,
+    cmd,
+    ts,
+  };
+
+  const q = getQueue();
+  q.unshift(entry);
+  saveQueue(q);
+
+  sel.value = '';
+  input.value = '';
+  autoResize(input);
+
+  showToast('✅ 已排入佇列');
+  renderHistory();
+  openHistory();
+}
+
+function handleCmdKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitCmd(); }
+}
+
+// ── History ──────────────────────────────────────────────────
+let historyOpen = false;
+
+function toggleHistory() {
+  historyOpen = !historyOpen;
+  document.getElementById('historyList').classList.toggle('open', historyOpen);
+  document.getElementById('historyArrow').textContent = historyOpen ? '▼' : '▲';
+  if (historyOpen) document.getElementById('cmdPanel').classList.add('expanded');
+  else document.getElementById('cmdPanel').classList.remove('expanded');
+}
+
+function openHistory() {
+  if (!historyOpen) toggleHistory();
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  const q = getQueue();
+
+  document.getElementById('historyCount').textContent = q.length ? `(${q.length})` : '';
+
+  if (!q.length) {
+    list.innerHTML = '<div class="history-empty">尚無指令記錄</div>';
+    return;
+  }
+
+  list.innerHTML = q.map(e => `
+    <div class="history-item">
+      <div class="history-item-body">
+        <div class="history-project">${e.project}</div>
+        <div class="history-cmd">${escHtml(e.cmd)}</div>
+        <div class="history-time">${e.ts}</div>
+      </div>
+      <button class="btn-copy-cmd" onclick='copyCmd(${JSON.stringify(e)})'>📋 複製</button>
+    </div>
+  `).join('');
+}
+
+function copyCmd(e) {
+  const text = `📋 指令請求\n專案：${e.project}\n路徑：${e.path}\n指令：${e.cmd}\n時間：${e.ts}`;
+  navigator.clipboard.writeText(text).then(() => showToast('📋 已複製！')).catch(() => {
+    prompt('複製以下內容：', text);
+  });
+}
+
+// ── Backup / Import ──────────────────────────────────────────
+function exportBackup() {
+  const now = new Date();
+  const stamp = now.getFullYear().toString()
+    + String(now.getMonth()+1).padStart(2,'0')
+    + String(now.getDate()).padStart(2,'0')
+    + '_'
+    + String(now.getHours()).padStart(2,'0')
+    + String(now.getMinutes()).padStart(2,'0');
+
+  const data = { queue: getQueue(), projects: PROJECTS, exportedAt: formatDateTime(now) };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `AI儀表板備份_${stamp}.json`;
+  a.click();
+  showToast('💾 備份已下載');
+}
+
+function importBackup(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (data.queue) { saveQueue(data.queue); renderHistory(); showToast('📂 備份已匯入'); }
+      else { showToast('⚠️ 檔案格式錯誤', '#f87171'); }
+    } catch { showToast('⚠️ 解析失敗', '#f87171'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+// ── Helpers ──────────────────────────────────────────────────
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 80) + 'px';
+}
+
+function formatDateTime(d) {
+  return d.getFullYear() + '-'
+    + String(d.getMonth()+1).padStart(2,'0') + '-'
+    + String(d.getDate()).padStart(2,'0') + ' '
+    + String(d.getHours()).padStart(2,'0') + ':'
+    + String(d.getMinutes()).padStart(2,'0');
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+let toastTimer;
+function showToast(msg, color) {
+  const t = document.getElementById('cmdToast');
+  t.textContent = msg;
+  t.style.color = color || 'var(--green)';
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ── Init ─────────────────────────────────────────────────────
+renderProjects();
+renderHistory();
+</script>
+</body>
+</html>

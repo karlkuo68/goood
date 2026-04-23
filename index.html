@@ -262,30 +262,6 @@ textarea { resize: vertical; min-height: 60px; }
 .note-pill { display: inline-block; background: #fef9c3; color: #78350f; font-size: 11px; padding: 2px 8px; border-radius: 4px; margin-top: 4px; }
 .empty-orders { text-align: center; padding: 40px 20px; color: var(--text-hint); font-size: 13px; }
 
-/* ── 操作歷史面板 ── */
-.op-history-fab { position: fixed; bottom: 80px; right: 16px; width: 44px; height: 44px; border-radius: 50%; background: #6366f1; color: white; border: none; font-size: 20px; box-shadow: 0 2px 12px rgba(99,102,241,.4); z-index: 9990; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform .15s; }
-.op-history-fab:active { transform: scale(.92); }
-.op-history-fab .fab-badge { position: absolute; top: -2px; right: -2px; min-width: 18px; height: 18px; line-height: 18px; text-align: center; background: #ef4444; color: white; border-radius: 9px; font-size: 10px; font-weight: 700; padding: 0 4px; }
-.op-history-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.45); z-index: 9998; display: flex; align-items: flex-end; justify-content: center; }
-.op-history-sheet { background: white; border-radius: 16px 16px 0 0; width: 100%; max-width: 500px; max-height: 80vh; display: flex; flex-direction: column; animation: slideUp .25s ease; }
-.op-history-sheet .oph-header { display: flex; justify-content: space-between; align-items: center; padding: 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-.op-history-sheet .oph-title { font-size: 15px; font-weight: 700; }
-.op-history-sheet .oph-close { width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--gray-100); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-.op-history-sheet .oph-body { flex: 1; overflow-y: auto; padding: 8px 0; }
-.op-history-sheet .oph-empty { text-align: center; padding: 40px 20px; color: var(--text-hint); font-size: 13px; }
-.oph-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--gray-50); }
-.oph-item .oph-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
-.oph-item .oph-info { flex: 1; min-width: 0; }
-.oph-item .oph-desc { font-size: 13px; font-weight: 500; color: var(--text-main); }
-.oph-item .oph-time { font-size: 11px; color: var(--text-hint); margin-top: 2px; }
-.oph-item .oph-undo { padding: 4px 10px; border: 1px solid #fca5a5; border-radius: 6px; background: #fef2f2; color: #dc2626; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 0; font-family: inherit; }
-.oph-item .oph-undo:active { background: #fee2e2; }
-.oph-item.undone { opacity: 0.5; }
-.oph-item.undone .oph-desc { text-decoration: line-through; }
-.oph-footer { padding: 10px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-shrink: 0; }
-.oph-footer button { flex: 1; padding: 8px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; border: none; }
-.oph-clear-btn { background: #fef2f2; color: #dc2626; }
-
 /* ── VENDOR MGMT ── */
 .upload-zone { border: 2px dashed var(--border); border-radius: 10px; padding: 22px; text-align: center; cursor: pointer; background: var(--gray-50); transition: all .15s; }
 .upload-zone:hover { border-color: var(--purple); }
@@ -783,7 +759,7 @@ textarea { resize: vertical; min-height: 60px; }
           <span id="f-bag-units-text" style="font-size:14px;font-weight:600;color:var(--green)">0 / 2.5 單位</span>
           <div id="f-bag-slots" style="display:flex;gap:3px;margin-left:4px;"></div>
         </div>
-        <div style="font-size:11px;color:var(--text-hint);margin-top:3px;">5 格位共 2.5 單位：左下・右下・左上・右上各 0.5 + 肩背保溫袋 0.5</div>
+        <div style="font-size:11px;color:var(--text-hint);margin-top:3px;">5 格位共 2.5 單位：左上・左下・右上・右下各 0.5 + 肩背保溫袋 0.5</div>
       </div>
       <div>
         <label>溫層（由商品自動決定）</label>
@@ -809,17 +785,11 @@ textarea { resize: vertical; min-height: 60px; }
         <textarea id="f-deliveryNote" placeholder="例：放警衛室 / 不按鈴 / 先打電話"></textarea>
       </div>
     </div>
-    <div class="row row-2">
+    <div class="row row-1">
       <div>
         <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
           <input type="checkbox" id="f-isVIP"/>
           <span>⭐ VIP 訂單（優先派送）</span>
-        </label>
-      </div>
-      <div>
-        <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
-          <input type="checkbox" id="f-isTagalong"/>
-          <span>🏷️ 此單為不滿門檻跟單</span>
         </label>
       </div>
     </div>
@@ -1203,15 +1173,6 @@ textarea { resize: vertical; min-height: 60px; }
         <input type="text" id="ed-addr-input"
           style="font-size:12px;padding:5px 6px;border:1px solid var(--border);border-radius:5px;width:100%"/>
       </div>
-    </div>
-    <!-- 外送門檻設定 -->
-    <div id="ed-threshold-settings" style="margin-bottom:14px;padding:10px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <label style="font-size:12px;font-weight:600;color:#92400e;">💰 外送門檻（距離區間 → 最低消費）</label>
-        <button id="ed-threshold-add" style="font-size:11px;padding:2px 8px;border:1px solid #fbbf24;background:#fef3c7;border-radius:4px;cursor:pointer;color:#92400e;">＋ 新增區間</button>
-      </div>
-      <div id="ed-threshold-list" style="display:grid;gap:6px;"></div>
-      <div style="font-size:10px;color:#a16207;margin-top:6px;">勾選「此單為不滿門檻跟單」的訂單不受門檻限制</div>
     </div>
     <div class="ed-layout">
       <div class="ed-cat">
@@ -2530,7 +2491,6 @@ function getFormData(prefix) {
     paymentStatus: (function(){ var r = document.querySelector('input[name="' + prefix + 'paymentStatus"]:checked'); return r ? r.value : 'unpaid'; })(),
     deliveryNote: (function(){ var e = document.getElementById(prefix + 'deliveryNote'); return e ? e.value.trim() : ''; })(),
     isVIP: (function(){ var e = document.getElementById(prefix + 'isVIP'); return e ? !!e.checked : false; })(),
-    isTagalong: (function(){ var e = document.getElementById(prefix + 'isTagalong'); return e ? !!e.checked : false; })(),
   };
 }
 
@@ -2552,7 +2512,6 @@ function saveOrder() {
   const total = cart.reduce((s, c) => s + c.price * (c.qty||1), 0);
   const order = { id: Date.now(), ...f, items: cart.map(c=>({...c})), total, confirmMsg: document.getElementById('confirm-text').textContent, createdAt: new Date().toISOString() };
   const orders = DB.getOrders(); orders.push(order); DB.saveOrders(orders);
-  OpHistory.record('order_create', (order.customer||'未命名') + ' $' + total, { action: 'remove_order', orderId: String(order.id) });
   showToast('訂單已儲存！'); clearOrderForm(); switchPage('orders');
 }
 function clearOrderForm() {
@@ -2570,7 +2529,6 @@ function clearOrderForm() {
   const punpaid = document.querySelector('input[name="f-paymentStatus"][value="unpaid"]'); if (punpaid) punpaid.checked = true;
   updateOrderFormAutoFields();
   const vip = document.getElementById('f-isVIP'); if (vip) vip.checked = false;
-  const tagalong = document.getElementById('f-isTagalong'); if (tagalong) tagalong.checked = false;
 }
 
 // ════════════════════════════════════════════════
@@ -3026,7 +2984,6 @@ function saveParseOrder() {
   const total = pCart.reduce((s, c) => s + c.price * (c.qty||1), 0);
   const order = { id: Date.now(), ...f, items: pCart.map(c=>({...c})), total, confirmMsg: document.getElementById('p-confirm-text').textContent, createdAt: new Date().toISOString() };
   const orders = DB.getOrders(); orders.push(order); DB.saveOrders(orders);
-  OpHistory.record('order_create', (order.customer||'未命名') + ' $' + total, { action: 'remove_order', orderId: String(order.id) });
   showToast('訂單已儲存！'); switchPage('orders');
 }
 function parseToManual() {
@@ -3232,92 +3189,6 @@ function saveVendorAddrSetting(vid, addr) {
   s[vid] = addr; localStorage.setItem('goood_vendor_addrs', JSON.stringify(s)); showToast('地址已儲存');
 }
 
-// 外送門檻設定
-var THRESHOLD_STORAGE_KEY = 'goood_vendor_thresholds';
-function getVendorThresholds(vid) {
-  var all = JSON.parse(localStorage.getItem(THRESHOLD_STORAGE_KEY) || '{}');
-  return (all[vid] || []).slice();
-}
-function saveVendorThresholds(vid, rules) {
-  var all = JSON.parse(localStorage.getItem(THRESHOLD_STORAGE_KEY) || '{}');
-  all[vid] = rules;
-  localStorage.setItem(THRESHOLD_STORAGE_KEY, JSON.stringify(all));
-}
-function renderThresholdList(vid) {
-  var list = document.getElementById('ed-threshold-list');
-  if (!list) return;
-  var rules = getVendorThresholds(vid);
-  list.innerHTML = '';
-  if (!rules.length) {
-    list.innerHTML = '<div style="font-size:11px;color:#a16207;padding:4px 0;">尚未設定門檻（所有距離免門檻）</div>';
-    return;
-  }
-  rules.forEach(function(rule, idx) {
-    var row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;gap:5px;flex-wrap:wrap;';
-    row.innerHTML =
-      '<input type="number" class="th-from" data-idx="' + idx + '" value="' + (rule.fromKm||0) + '" min="0" step="0.5" style="width:48px;font-size:12px;padding:4px;text-align:center;border:1px solid #d4d4d8;border-radius:4px;"/>' +
-      '<span style="font-size:11px;color:#78716c;">公里 到</span>' +
-      '<input type="number" class="th-to" data-idx="' + idx + '" value="' + (rule.toKm||0) + '" min="0" step="0.5" style="width:48px;font-size:12px;padding:4px;text-align:center;border:1px solid #d4d4d8;border-radius:4px;"/>' +
-      '<span style="font-size:11px;color:#78716c;">公里，需消費滿</span>' +
-      '<input type="number" class="th-min" data-idx="' + idx + '" value="' + (rule.minAmount||0) + '" min="0" step="10" style="width:64px;font-size:12px;padding:4px;text-align:center;border:1px solid #d4d4d8;border-radius:4px;"/>' +
-      '<span style="font-size:11px;color:#78716c;">元</span>' +
-      '<button class="th-del" data-idx="' + idx + '" style="font-size:10px;padding:2px 6px;border:1px solid #fca5a5;background:#fef2f2;border-radius:4px;cursor:pointer;color:#dc2626;">✕</button>';
-    list.appendChild(row);
-  });
-  // 綁定事件
-  list.querySelectorAll('.th-from,.th-to,.th-min').forEach(function(inp) {
-    inp.addEventListener('change', function() {
-      var i = parseInt(inp.getAttribute('data-idx'), 10);
-      var r = getVendorThresholds(vid);
-      if (!r[i]) return;
-      if (inp.classList.contains('th-from')) r[i].fromKm = parseFloat(inp.value) || 0;
-      if (inp.classList.contains('th-to')) r[i].toKm = parseFloat(inp.value) || 0;
-      if (inp.classList.contains('th-min')) r[i].minAmount = parseInt(inp.value) || 0;
-      saveVendorThresholds(vid, r);
-      showToast('門檻已更新');
-    });
-  });
-  list.querySelectorAll('.th-del').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var i = parseInt(btn.getAttribute('data-idx'), 10);
-      var r = getVendorThresholds(vid);
-      r.splice(i, 1);
-      saveVendorThresholds(vid, r);
-      renderThresholdList(vid);
-      showToast('已刪除');
-    });
-  });
-}
-
-// 檢查訂單是否符合外送門檻（回傳 { pass, message }）
-function checkDeliveryThreshold(order) {
-  // 跟單免檢查
-  if (order.isTagalong) return { pass: true, message: '跟單免門檻' };
-  // 取商家門檻
-  var vids = (typeof getOrderVendors === 'function') ? getOrderVendors(order) : [];
-  if (!vids.length) return { pass: true, message: '' };
-  // 取店家地址算距離
-  var shopAddr = (typeof getOrderShopAddr === 'function') ? getOrderShopAddr(order) : '';
-  var dist = (shopAddr && order.address && typeof calcDistBetween === 'function') ? calcDistBetween(shopAddr, order.address) : null;
-  if (!dist || dist.km <= 0) return { pass: true, message: '' };
-  var km = dist.km;
-  var total = order.total || 0;
-  // 檢查每個商家的門檻
-  for (var v = 0; v < vids.length; v++) {
-    var rules = getVendorThresholds(vids[v]);
-    for (var r = 0; r < rules.length; r++) {
-      var rule = rules[r];
-      if (km >= rule.fromKm && km < rule.toKm && total < rule.minAmount) {
-        var vDef = getAllVendorZones().flatMap(function(z){ return z.vendors; }).find(function(x){ return x.id === vids[v]; });
-        var vName = vDef ? vDef.name : vids[v];
-        return { pass: false, message: vName + '：' + rule.fromKm + '~' + rule.toKm + 'km 需滿 $' + rule.minAmount + '（目前 $' + total + '）' };
-      }
-    }
-  }
-  return { pass: true, message: '' };
-}
-
 // ════════════════════════════════════════════════
 // 菜單編輯器
 // ════════════════════════════════════════════════
@@ -3366,17 +3237,6 @@ function openEditor(vid) {
     };
     var curMode = tempModes[vid] || 'normal';
     if (tempHint) tempHint.textContent = curMode === 'dynamic' ? '點單時依冰塊選項自動判定' : '切換模式會套用到所有品項';
-  }
-  // 外送門檻
-  renderThresholdList(vid);
-  var thAddBtn = document.getElementById('ed-threshold-add');
-  if (thAddBtn) {
-    thAddBtn.onclick = function() {
-      var r = getVendorThresholds(vid);
-      r.push({ fromKm: 0, toKm: 5, minAmount: 300 });
-      saveVendorThresholds(vid, r);
-      renderThresholdList(vid);
-    };
   }
   updateEdMeta(); document.getElementById('editor-card').classList.remove('hidden');
   renderEdCatBar(); renderEdPanel();
@@ -3513,9 +3373,7 @@ function renderOrdersList() {
     const d = document.createElement('div'); d.className = 'order-card' + (selectedOrderIds.has(String(o.id)) ? ' selected' : '');
     d.setAttribute('data-oid', String(o.id));
     const num = '#' + String(fl.length - i).padStart(3, '0');
-    const tagBadge = o.isTagalong ? '<span class="badge" style="background:#ede9fe;color:#7c3aed;margin-left:4px">🏷️ 跟單</span>' : '';
-    const vipBadge = o.isVIP ? '<span class="badge" style="background:#fef3c7;color:#92400e;margin-left:4px">⭐ VIP</span>' : '';
-    d.innerHTML = `<div class="order-head"><span class="order-num">${num}</span><span class="order-amt">$${(o.total||0).toLocaleString()}</span></div><div><span class="order-name">${esc(o.customer||'')}</span>${badge}${tempBadge}${vipBadge}${tagBadge}${o.driver?`<span style="font-size:12px;color:var(--text-hint);margin-left:5px">· ${esc(o.driver)}</span>`:''}</div><div class="order-meta">${esc(o.date||'')} ${esc(o.timeslot||'')} &nbsp;|&nbsp; ${esc(o.address||'')}</div><div class="order-items">${esc(items)}</div>${o.note?`<span class="note-pill">備：${esc(o.note)}</span>`:''}` +
+    d.innerHTML = `<div class="order-head"><span class="order-num">${num}</span><span class="order-amt">$${(o.total||0).toLocaleString()}</span></div><div><span class="order-name">${esc(o.customer||'')}</span>${badge}${tempBadge}${o.driver?`<span style="font-size:12px;color:var(--text-hint);margin-left:5px">· ${esc(o.driver)}</span>`:''}</div><div class="order-meta">${esc(o.date||'')} ${esc(o.timeslot||'')} &nbsp;|&nbsp; ${esc(o.address||'')}</div><div class="order-items">${esc(items)}</div>${o.note?`<span class="note-pill">備：${esc(o.note)}</span>`:''}` +
       `<div class="order-actions"><button class="btn-view" data-act="view">📋 詳情</button><button class="btn-edit" data-act="edit">✏️ 編輯</button><button class="btn-del" data-act="del">🗑️ 刪除</button><button class="btn-view" data-act="select" style="flex:0.6">${selectedOrderIds.has(String(o.id))?'✅':'☐'}</button></div>`;
     // 綁定按鈕事件 (iOS safe)
     d.querySelectorAll('.order-actions button').forEach(function(btn){
@@ -3554,11 +3412,8 @@ function toggleSelectOrder(id) {
 
 function deleteOrder(id) {
   if (!confirm('確定要刪除這筆訂單嗎？')) return;
-  var allOrders = DB.getOrders();
-  var deleted = allOrders.find(function(o){ return String(o.id) === id; });
-  var orders = allOrders.filter(function(o){ return String(o.id) !== id; });
+  var orders = DB.getOrders().filter(function(o){ return String(o.id) !== id; });
   DB.saveOrders(orders);
-  if (deleted) OpHistory.record('order_delete', (deleted.customer||'未命名') + ' $' + (deleted.total||0), { action: 'restore_order', order: deleted });
   selectedOrderIds.delete(id);
   closeOrderDetail();
   renderOrdersList();
@@ -3567,10 +3422,7 @@ function deleteOrder(id) {
 
 function batchDeleteOrders() {
   if (!confirm('確定要刪除已選的 ' + selectedOrderIds.size + ' 筆訂單嗎？')) return;
-  var allOrders = DB.getOrders();
-  var count = selectedOrderIds.size;
-  OpHistory.record('order_batch_delete', count + ' 筆訂單', { action: 'restore_orders', orders: JSON.parse(JSON.stringify(allOrders)) });
-  var orders = allOrders.filter(function(o){ return !selectedOrderIds.has(String(o.id)); });
+  var orders = DB.getOrders().filter(function(o){ return !selectedOrderIds.has(String(o.id)); });
   DB.saveOrders(orders);
   selectedOrderIds.clear();
   renderOrdersList();
@@ -3582,38 +3434,15 @@ function openOrderDetail(id) {
   if (!o) return;
   var overlay = document.createElement('div');
   overlay.className = 'order-detail-overlay'; overlay.id = 'order-detail-overlay';
-  // 計算店家→目的地距離
-  var shopAddr = (typeof getOrderShopAddr === 'function') ? getOrderShopAddr(o) : '';
-  var distInfo = (shopAddr && o.address && typeof calcDistBetween === 'function') ? calcDistBetween(shopAddr, o.address) : null;
-  var distHtml = '';
-  if (distInfo && distInfo.km > 0) {
-    var dClr = distInfo.km <= 3 ? '#16a34a' : distInfo.km <= 7 ? '#d97706' : '#dc2626';
-    distHtml = '<span style="display:inline-block;margin-left:6px;font-size:11px;color:' + dClr + ';background:' + dClr + '14;padding:1px 6px;border-radius:4px;font-weight:600;">🏪 ' + distInfo.km.toFixed(1) + 'km</span>';
-  }
-  // 標記徽章
-  var badgesHtml = '';
-  if (o.isVIP) badgesHtml += '<span style="display:inline-block;font-size:11px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:4px;margin-right:4px;">⭐ VIP</span>';
-  if (o.isTagalong) badgesHtml += '<span style="display:inline-block;font-size:11px;background:#ede9fe;color:#7c3aed;padding:1px 6px;border-radius:4px;margin-right:4px;">🏷️ 跟單</span>';
-  var thCheck = (typeof checkDeliveryThreshold === 'function') ? checkDeliveryThreshold(o) : { pass: true };
-  if (!thCheck.pass) badgesHtml += '<span style="display:inline-block;font-size:11px;background:#fef2f2;color:#dc2626;padding:1px 6px;border-radius:4px;">⚠️ ' + esc(thCheck.message) + '</span>';
-
   var itemsHtml = (o.items||[]).map(function(it){
     var tempLabel = it.tempType === 'hot' ? '🔥' : it.tempType === 'cold' ? '🧊' : '📦';
-    var qty = it.qty || 1;
-    var price = it.price || 0;
-    var subtotal = price * qty;
-    return '<div class="od-item-row" style="display:flex;align-items:center;gap:4px;">' +
-      '<span style="flex:1;">' + tempLabel + ' ' + esc(it.name) + (it.ice ? ' (' + esc(it.ice) + ')' : '') + (it.sugar ? ' ' + esc(it.sugar) : '') + '</span>' +
-      '<span style="white-space:nowrap;color:#6b7280;font-size:12px;">$' + price + ' × ' + qty + '</span>' +
-      '<span style="white-space:nowrap;font-weight:600;min-width:56px;text-align:right;margin-left:12px;">$' + subtotal + '</span>' +
-      '</div>';
+    return '<div class="od-item-row"><span>' + tempLabel + ' ' + esc(it.name) + (it.ice ? ' (' + esc(it.ice) + ')' : '') + (it.sugar ? ' ' + esc(it.sugar) : '') + '</span><span>×' + (it.qty||1) + ' $' + ((it.price||0)*(it.qty||1)) + '</span></div>';
   }).join('');
   overlay.innerHTML = '<div class="order-detail-sheet">' +
     '<div class="od-header"><span class="od-title">訂單詳情</span><button class="od-close" data-act="close">✕</button></div>' +
-    (badgesHtml ? '<div style="padding:0 0 6px 0;">' + badgesHtml + '</div>' : '') +
     '<div class="od-field"><span class="od-label">訂購人</span><span class="od-val">' + esc(o.customer||'') + '</span></div>' +
     '<div class="od-field"><span class="od-label">電話</span><span class="od-val">' + esc(o.phone||'') + (o.phone2 ? ' / ' + esc(o.phone2) : '') + '</span></div>' +
-    '<div class="od-field"><span class="od-label">地址</span><span class="od-val">' + esc(o.address||'') + distHtml + '</span></div>' +
+    '<div class="od-field"><span class="od-label">地址</span><span class="od-val">' + esc(o.address||'') + '</span></div>' +
     '<div class="od-field"><span class="od-label">日期</span><span class="od-val">' + esc(o.date||'') + ' ' + esc(o.timeslot||'') + '</span></div>' +
     '<div class="od-field"><span class="od-label">付款</span><span class="od-val">' + (o.payType==='transfer'?'轉帳':'現金') + (o.taxid ? '　統編: '+esc(o.taxid) : '') + '</span></div>' +
     '<div class="od-field"><span class="od-label">金額</span><span class="od-val" style="font-weight:700;color:var(--green)">$' + (o.total||0).toLocaleString() + '</span></div>' +
@@ -3659,17 +3488,12 @@ function editOrder(id) {
     '<div><label style="font-size:12px;color:var(--text-hint)">金額</label><input id="oe-total" type="number" value="' + (o.total||0) + '" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:14px;box-sizing:border-box"></div>' +
     '</div>' +
     '<div><label style="font-size:12px;color:var(--text-hint)">備註</label><textarea id="oe-note" rows="2" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:14px;box-sizing:border-box;resize:vertical">' + esc(o.note||'') + '</textarea></div>' +
-    '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:4px;">' +
-    '<label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:13px;"><input type="checkbox" id="oe-isVIP"' + (o.isVIP ? ' checked' : '') + '/> ⭐ VIP</label>' +
-    '<label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:13px;"><input type="checkbox" id="oe-isTagalong"' + (o.isTagalong ? ' checked' : '') + '/> 🏷️ 跟單</label>' +
-    '</div>' +
     '</div>' +
     '<div style="display:flex;gap:8px;margin-top:16px"><button data-act="cancel" style="flex:1;padding:10px;border-radius:8px;font-size:14px;font-weight:600;border:1px solid var(--border);background:white;color:var(--text-sub);cursor:pointer;font-family:inherit">取消</button><button data-act="save" style="flex:1;padding:10px;border-radius:8px;font-size:14px;font-weight:600;border:none;background:var(--green);color:white;cursor:pointer;font-family:inherit">💾 儲存</button></div>' +
     '</div>';
   overlay.querySelector('[data-act="close"]').addEventListener('click', function(){ overlay.remove(); });
   overlay.querySelector('[data-act="cancel"]').addEventListener('click', function(){ overlay.remove(); });
   overlay.querySelector('[data-act="save"]').addEventListener('click', function(){
-    var oldSnapshot = JSON.parse(JSON.stringify(orders[idx]));
     orders[idx].customer = document.getElementById('oe-customer').value.trim();
     orders[idx].phone = document.getElementById('oe-phone').value.trim();
     orders[idx].address = document.getElementById('oe-address').value.trim();
@@ -3678,10 +3502,7 @@ function editOrder(id) {
     orders[idx].payType = document.getElementById('oe-paytype').value;
     orders[idx].total = parseInt(document.getElementById('oe-total').value) || 0;
     orders[idx].note = document.getElementById('oe-note').value.trim();
-    orders[idx].isVIP = document.getElementById('oe-isVIP').checked;
-    orders[idx].isTagalong = document.getElementById('oe-isTagalong').checked;
     DB.saveOrders(orders);
-    OpHistory.record('order_edit', (orders[idx].customer||'未命名') + ' $' + (orders[idx].total||0), { action: 'revert_order', order: oldSnapshot });
     overlay.remove();
     renderOrdersList();
     showToast('訂單已更新');
@@ -3697,171 +3518,6 @@ function updateStats(orders) {
   if (sd) sd.textContent = orders.filter(o => o.date === today).length;
 }
 function filterOrders(t, btn) { curFilter = t; document.querySelectorAll('.f-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); renderOrdersList(); }
-
-// ════════════════════════════════════════════════
-// 操作歷史（含復原功能）
-// ════════════════════════════════════════════════
-var OpHistory = (function(){
-  var STORAGE_KEY = 'goood_op_history';
-  var MAX_ITEMS = 50;
-
-  function getAll() {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch(e) { return []; }
-  }
-  function saveAll(list) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list.slice(0, MAX_ITEMS)));
-    updateBadge();
-  }
-
-  // type: 'order_create' | 'order_edit' | 'order_delete' | 'order_batch_delete' | 'dispatch_create' | 'dispatch_delete' | 'order_clear'
-  function record(type, desc, undoData) {
-    var list = getAll();
-    list.unshift({
-      id: Date.now() + '_' + Math.random().toString(36).slice(2,6),
-      type: type,
-      desc: desc,
-      undoData: undoData, // snapshot to restore
-      time: new Date().toISOString(),
-      undone: false
-    });
-    saveAll(list);
-  }
-
-  function undo(opId) {
-    var list = getAll();
-    var op = list.find(function(o){ return o.id === opId; });
-    if (!op || op.undone) return false;
-
-    var ud = op.undoData;
-    if (!ud) return false;
-
-    if (ud.action === 'restore_orders') {
-      // 完整覆蓋訂單列表
-      DB.saveOrders(ud.orders);
-    } else if (ud.action === 'restore_order') {
-      // 恢復單筆訂單（被刪除的）
-      var orders = DB.getOrders();
-      // 避免重複
-      orders = orders.filter(function(o){ return String(o.id) !== String(ud.order.id); });
-      orders.push(ud.order);
-      DB.saveOrders(orders);
-    } else if (ud.action === 'revert_order') {
-      // 恢復單筆訂單的舊值（編輯前的狀態）
-      var orders = DB.getOrders();
-      var idx = orders.findIndex(function(o){ return String(o.id) === String(ud.order.id); });
-      if (idx >= 0) orders[idx] = ud.order;
-      else orders.push(ud.order);
-      DB.saveOrders(orders);
-    } else if (ud.action === 'remove_order') {
-      // 復原「新增」→ 刪除該筆
-      var orders = DB.getOrders().filter(function(o){ return String(o.id) !== String(ud.orderId); });
-      DB.saveOrders(orders);
-    }
-
-    op.undone = true;
-    saveAll(list);
-    // 刷新畫面
-    if (typeof renderOrdersList === 'function') renderOrdersList();
-    if (typeof showToast === 'function') showToast('已復原操作');
-    return true;
-  }
-
-  function clearAll() {
-    saveAll([]);
-  }
-
-  function updateBadge() {
-    var badge = document.getElementById('op-history-badge');
-    if (!badge) return;
-    var list = getAll();
-    var undoable = list.filter(function(o){ return !o.undone; }).length;
-    if (undoable > 0) {
-      badge.textContent = undoable > 99 ? '99+' : undoable;
-      badge.style.display = '';
-    } else {
-      badge.style.display = 'none';
-    }
-  }
-
-  return { getAll: getAll, record: record, undo: undo, clearAll: clearAll, updateBadge: updateBadge };
-})();
-
-function openOpHistoryPanel() {
-  var existing = document.getElementById('op-history-overlay');
-  if (existing) existing.remove();
-
-  var list = OpHistory.getAll();
-  var overlay = document.createElement('div');
-  overlay.className = 'op-history-overlay'; overlay.id = 'op-history-overlay';
-
-  var TYPE_ICONS = {
-    order_create: { icon: '➕', bg: '#dcfce7', label: '新增訂單' },
-    order_edit: { icon: '✏️', bg: '#fffbeb', label: '編輯訂單' },
-    order_delete: { icon: '🗑️', bg: '#fef2f2', label: '刪除訂單' },
-    order_batch_delete: { icon: '🗑️', bg: '#fef2f2', label: '批次刪除' },
-    order_clear: { icon: '⚠️', bg: '#fef2f2', label: '清除全部' },
-    dispatch_create: { icon: '🚀', bg: '#eff6ff', label: '建立派單' },
-    dispatch_delete: { icon: '❌', bg: '#fef2f2', label: '刪除派單' }
-  };
-
-  var itemsHtml = '';
-  if (!list.length) {
-    itemsHtml = '<div class="oph-empty">尚無操作記錄</div>';
-  } else {
-    list.forEach(function(op){
-      var ti = TYPE_ICONS[op.type] || { icon: '📝', bg: '#f3f4f6', label: op.type };
-      var timeStr = '';
-      try {
-        var d = new Date(op.time);
-        timeStr = d.toLocaleDateString('zh-TW') + ' ' + d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
-      } catch(e) { timeStr = op.time || ''; }
-      var undoneClass = op.undone ? ' undone' : '';
-      var undoBtn = (!op.undone && op.undoData) ? '<button class="oph-undo" data-opid="' + op.id + '">↩ 復原</button>' : (op.undone ? '<span style="font-size:11px;color:#6b7280">已復原</span>' : '');
-      itemsHtml += '<div class="oph-item' + undoneClass + '">' +
-        '<div class="oph-icon" style="background:' + ti.bg + '">' + ti.icon + '</div>' +
-        '<div class="oph-info"><div class="oph-desc">' + ti.label + '：' + escHtml(op.desc) + '</div><div class="oph-time">' + timeStr + '</div></div>' +
-        undoBtn +
-        '</div>';
-    });
-  }
-
-  overlay.innerHTML = '<div class="op-history-sheet">' +
-    '<div class="oph-header"><span class="oph-title">🕓 操作歷史</span><button class="oph-close" data-act="close">✕</button></div>' +
-    '<div class="oph-body">' + itemsHtml + '</div>' +
-    '<div class="oph-footer"><button class="oph-clear-btn" data-act="clear">🗑️ 清除歷史</button></div>' +
-    '</div>';
-
-  // 綁定事件
-  overlay.querySelector('[data-act="close"]').addEventListener('click', function(){ overlay.remove(); });
-  overlay.querySelector('[data-act="clear"]').addEventListener('click', function(){
-    if (!confirm('確定要清除所有操作歷史？')) return;
-    OpHistory.clearAll();
-    overlay.remove();
-    showToast('已清除操作歷史');
-  });
-  overlay.querySelectorAll('.oph-undo').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      var opId = btn.getAttribute('data-opid');
-      OpHistory.undo(opId);
-      overlay.remove();
-      openOpHistoryPanel(); // 重新開啟以刷新列表
-    });
-  });
-  overlay.addEventListener('click', function(e){ if (e.target === overlay) overlay.remove(); });
-  document.body.appendChild(overlay);
-}
-
-// escHtml for history panel (if not defined)
-if (typeof escHtml === 'undefined') {
-  var escHtml = function(s) { return typeof esc === 'function' ? esc(s) : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
-}
-
-// 初始化 FAB 按鈕
-document.addEventListener('DOMContentLoaded', function(){
-  var fab = document.getElementById('op-history-fab');
-  if (fab) fab.addEventListener('click', openOpHistoryPanel);
-  OpHistory.updateBadge();
-});
 
 // ════════════════════════════════════════════════
 // 匯出
@@ -3883,7 +3539,7 @@ function exportCSV() {
   const csv = '\uFEFF' + [h.join(','), ...rows].join('\r\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})); a.download = `好糰訂單_${document.getElementById('ex-month').value}.csv`; a.click(); showToast('CSV 已下載');
 }
-function clearAllOrders() { if (!confirm('確定清除全部訂單？')) return; var allOrders = DB.getOrders(); OpHistory.record('order_clear', allOrders.length + ' 筆訂單', { action: 'restore_orders', orders: JSON.parse(JSON.stringify(allOrders)) }); DB.saveOrders([]); renderOrdersList(); showToast('已清除全部訂單（可從操作歷史復原）'); }
+function clearAllOrders() { if (!confirm('確定清除全部訂單？此動作無法復原，請先匯出備份。')) return; DB.saveOrders([]); renderOrdersList(); showToast('已清除全部訂單'); }
 
 // ════════════════════════════════════════════════
 // Firebase 派單系統
@@ -4008,25 +3664,14 @@ function updateOrderFormAutoFields() {
   }
   const slotsEl = document.getElementById('f-bag-slots');
   if (slotsEl) {
-    // 用 allocateBagSlots 處理單筆訂單（如果購物車有資料）
-    var fakeOrder = { id: 'preview', customer: '', items: cart.map(function(c){ return Object.assign({}, c); }), tempType: temp };
-    var alloc = (typeof allocateBagSlots === 'function') ? allocateBagSlots([fakeOrder]) : null;
-    var displayOrder = ['左上','右上','左下','右下','肩背'];
-    slotsEl.innerHTML = displayOrder.map(function(nm, di) {
-      var info = alloc ? alloc[nm] : null;
-      var bg, border, icon, textColor;
-      if (info) {
-        bg = info.temp === 'hot' ? '#fee2e2' : info.temp === 'cold' ? '#dbeafe' : '#dcfce7';
-        border = info.temp === 'hot' ? '#ef4444' : info.temp === 'cold' ? '#3b82f6' : '#16a34a';
-        icon = info.temp === 'hot' ? '🔥' : info.temp === 'cold' ? '🧊' : '📦';
-        textColor = info.temp === 'hot' ? '#dc2626' : info.temp === 'cold' ? '#2563eb' : '#374151';
-      } else {
-        bg = '#f3f4f6'; border = '#d1d5db'; icon = ''; textColor = '#9ca3af';
-      }
-      var span2 = di === 4 ? 'grid-column:span 2;' : '';
-      return '<div title="' + nm + '" style="background:' + bg + ';border:1.5px solid ' + border + ';border-radius:4px;padding:2px 4px;font-size:9px;text-align:center;font-weight:600;color:' + textColor + ';' + span2 + '">' + icon + ' ' + nm[0] + nm[1] + '</div>';
+    const slotNames = ['左上','右上','左下','右下','肩背'];
+    slotsEl.innerHTML = slotNames.map((nm, idx) => {
+      const threshold = (idx + 1) * 0.5;
+      const prev = idx * 0.5;
+      const fill = units >= threshold ? 1 : units > prev ? (units - prev) / 0.5 : 0;
+      const bg = fill >= 1 ? (units > 2.5 ? '#ef4444' : '#16a34a') : fill > 0 ? '#fbbf24' : '#e5e7eb';
+      return `<div title="${nm}" style="width:20px;height:20px;border-radius:3px;background:${bg};position:relative;overflow:hidden;border:1px solid #d1d5db;"><div style="position:absolute;bottom:0;left:0;right:0;height:${Math.round(fill*100)}%;background:${fill>=1?(units>2.5?'#dc2626':'#15803d'):'#f59e0b'};opacity:0.6"></div><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:8px;color:#374151;font-weight:600">${nm[0]}</span></div>`;
     }).join('');
-    slotsEl.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-top:4px';
   }
   const TEMP_MAP = {cold:{badge:'🧊',label:'冷藏',color:'#1d4ed8'},hot:{badge:'🔥',label:'熱食',color:'#c2410c'},normal:{badge:'📦',label:'常溫',color:'var(--text-sub)'}};
   const t = TEMP_MAP[temp] || TEMP_MAP.normal;
@@ -4102,114 +3747,15 @@ function buildOrderDispatchCard(order){
   // 用 innerHTML 建靜態結構，再補 addEventListener
   const TEMP_ICONS={cold:'🧊',hot:'🔥',normal:'📦'};
   const tempIcon=TEMP_ICONS[order.tempType||'normal']||'📦';
-  card.innerHTML=`<div class="odc-head"><div class="odc-left"><div class="odc-customer">${esc(order.customer||'')} ${payBadge}</div><div class="odc-addr">📍 ${esc(order.address||'')} ${mapsUrl?`<a href="${mapsUrl}" target="_blank" class="odc-dist">導航</a>`:''}</div></div><div class="odc-right"><div class="odc-total">$${(order.total||0).toLocaleString()}</div><div class="odc-pay">${tempIcon} ${bags} 單位</div></div><button class="odc-expand-btn" style="padding:2px 6px;border:1px solid var(--border);border-radius:4px;background:white;font-size:10px;cursor:pointer;color:var(--text-hint);font-family:inherit;margin-left:4px;flex-shrink:0">▾展開</button></div><div class="odc-body hidden" id="odc-body-${order.id}"><div class="odc-bags-row">${bagsHtml||'<span class="bag-tag">無袋數資料</span>'}</div><div class="odc-items">${itemsText}</div>${order.note?`<div class="odc-note">備：${esc(order.note)}</div>`:''}<div class="confirm-msg-box">${esc(order.confirmMsg||'（無確認訊息）')}</div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="copy-confirm-btn" style="display:flex;align-items:center;gap:5px;padding:7px 12px;background:#2563eb;color:white;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit">📋 複製確認訊息</button></div></div>`;
+  card.innerHTML=`<div class="odc-head"><div class="odc-left"><div class="odc-customer">${esc(order.customer||'')} ${payBadge}</div><div class="odc-addr">📍 ${esc(order.address||'')} ${mapsUrl?`<a href="${mapsUrl}" target="_blank" class="odc-dist">導航</a>`:''}</div></div><div class="odc-right"><div class="odc-total">$${(order.total||0).toLocaleString()}</div><div class="odc-pay">${tempIcon} ${bags} 單位</div></div></div><div class="odc-body hidden" id="odc-body-${order.id}"><div class="odc-bags-row">${bagsHtml||'<span class="bag-tag">無袋數資料</span>'}</div><div class="odc-items">${itemsText}</div>${order.note?`<div class="odc-note">備：${esc(order.note)}</div>`:''}<div class="confirm-msg-box">${esc(order.confirmMsg||'（無確認訊息）')}</div><button class="copy-confirm-btn" style="display:flex;align-items:center;gap:5px;padding:7px 12px;background:#2563eb;color:white;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit">📋 複製確認訊息</button></div>`;
 
-  // 點擊標題區→開訂單詳情；展開按鈕→展開內容
-  card.querySelector('.odc-head').addEventListener('click', function(e){
-    // 如果點的是展開按鈕或導航連結，不開詳情
-    if (e.target.closest('.odc-expand-btn') || e.target.closest('a')) return;
-    openOrderDetail(String(order.id));
-  });
-  card.querySelector('.odc-expand-btn').addEventListener('click', function(e){ e.stopPropagation(); toggleOdc(order.id); });
+  // 用 addEventListener 綁定
+  card.querySelector('.odc-head').addEventListener('click', function(){ toggleOdc(order.id); });
   card.querySelector('.copy-confirm-btn').addEventListener('click', function(e){ e.stopPropagation(); copyOrderConfirm(order.id); });
   return card;
 }
 function toggleOdc(id){const b=document.getElementById(`odc-body-${id}`);if(b)b.classList.toggle('hidden');}
 function copyOrderConfirm(id){const o=DB.getOrders().find(o=>String(o.id)===String(id));if(!o?.confirmMsg){showToast('無確認訊息');return;}navigator.clipboard.writeText(o.confirmMsg).then(()=>showToast('已複製確認訊息'));}
-
-// ════════════════════════════════════════════════
-// 馬鞍袋智慧格位分配
-// ════════════════════════════════════════════════
-// 規則：
-//   1. 熱品放左側（左下→左上），冷品放右側（右下→右上）
-//   2. 不同訂單分開放不同格位，方便交貨辨識
-//   3. 同一訂單有冷有熱，拆分到左右兩側
-//   4. 溢出或第三筆→肩背
-//   5. 每格都要標示溫度 ICON
-// 回傳: { '左上': {temp,label}, '右上': ..., '左下': ..., '右下': ..., '肩背': ... }
-function allocateBagSlots(orders) {
-  var result = { '左上': null, '右上': null, '左下': null, '右下': null, '肩背': null };
-  if (!orders || !orders.length) return result;
-
-  // 分析每筆訂單的冷熱品項
-  var parcels = []; // [{orderId, customer, temp:'hot'|'cold'|'normal', items:[...]}]
-  orders.forEach(function(o) {
-    var hotItems = [], coldItems = [], normalItems = [];
-    (o.items || []).forEach(function(it) {
-      var t = it.tempType || o.tempType || 'normal';
-      if (t === 'hot') hotItems.push(it);
-      else if (t === 'cold') coldItems.push(it);
-      else normalItems.push(it);
-    });
-    var customer = (o.customer || '').replace(/\s+/g, '').slice(0, 6);
-    // 如果同一訂單有冷有熱，拆成兩包
-    if (hotItems.length > 0 && coldItems.length > 0) {
-      parcels.push({ orderId: o.id, customer: customer, temp: 'hot', items: hotItems });
-      parcels.push({ orderId: o.id, customer: customer, temp: 'cold', items: coldItems });
-    } else if (hotItems.length > 0) {
-      parcels.push({ orderId: o.id, customer: customer, temp: 'hot', items: hotItems.concat(normalItems) });
-    } else if (coldItems.length > 0) {
-      parcels.push({ orderId: o.id, customer: customer, temp: 'cold', items: coldItems.concat(normalItems) });
-    } else {
-      parcels.push({ orderId: o.id, customer: customer, temp: 'normal', items: normalItems });
-    }
-  });
-
-  // 分成熱包和冷包
-  var hotParcels = parcels.filter(function(p) { return p.temp === 'hot'; });
-  var coldParcels = parcels.filter(function(p) { return p.temp === 'cold'; });
-  var normalParcels = parcels.filter(function(p) { return p.temp === 'normal'; });
-
-  // 左側放熱（左下優先→左上）
-  var leftSlots = ['左下', '左上'];
-  // 右側放冷（右下優先→右上）
-  var rightSlots = ['右下', '右上'];
-
-  // 分配策略：
-  // A) 有冷有熱 → 熱放左側，冷放右側，嚴格隔離
-  // B) 全同溫度(多訂單) → 交錯放左下、右下、左上、右上，方便辨識
-  // C) 單一訂單 → 從左下開始放
-
-  var hasBothTemps = hotParcels.length > 0 && coldParcels.length > 0;
-
-  if (hasBothTemps) {
-    // 策略A：冷熱隔離
-    var leftIdx = 0, rightIdx = 0;
-    hotParcels.forEach(function(p) {
-      if (leftIdx < leftSlots.length) {
-        result[leftSlots[leftIdx]] = { temp: 'hot', label: p.customer };
-        leftIdx++;
-      } else if (!result['肩背']) {
-        result['肩背'] = { temp: 'hot', label: p.customer };
-      }
-    });
-    coldParcels.forEach(function(p) {
-      if (rightIdx < rightSlots.length) {
-        result[rightSlots[rightIdx]] = { temp: 'cold', label: p.customer };
-        rightIdx++;
-      } else if (!result['肩背']) {
-        result['肩背'] = { temp: 'cold', label: p.customer };
-      }
-    });
-    normalParcels.forEach(function(p) {
-      if (!result['肩背']) result['肩背'] = { temp: 'normal', label: p.customer };
-    });
-  } else {
-    // 策略B：同溫度，交錯放左下→右下→左上→右上→肩背
-    // 這樣不同訂單分別在左右兩側，交貨好辨識
-    var interleaveSlots = ['左下', '右下', '左上', '右上', '肩背'];
-    var allParcels = hotParcels.concat(coldParcels).concat(normalParcels);
-    var slotIdx = 0;
-    allParcels.forEach(function(p) {
-      if (slotIdx < interleaveSlots.length) {
-        result[interleaveSlots[slotIdx]] = { temp: p.temp, label: p.customer };
-        slotIdx++;
-      }
-    });
-  }
-
-  return result;
-}
 
 function buildTripBuilderCard(slot, orders, defaultDepart) {
   const builderId = `builder_${slot.replace(/[^a-z0-9]/gi,'_')}`;
@@ -4292,28 +3838,19 @@ function buildTripBuilderCard(slot, orders, defaultDepart) {
       const fill = document.createElement('div'); fill.className = `tb-bag-fill ${fillClass}`;
       fill.style.width = Math.min(fillPct, 100) + '%';
       bar.appendChild(fill); gDiv.appendChild(bar);
-
-      // ── 智慧格位分配 ──
-      var allocation = allocateBagSlots(group);
-      var displayOrder = ['左上','右上','左下','右下','肩背'];
-      const slotWrap = document.createElement('div');
-      slotWrap.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:6px 0 2px';
-      displayOrder.forEach(function(nm, di){
-        var info = allocation[nm];
-        var sl = document.createElement('div');
-        if (info) {
-          var bg = info.temp === 'hot' ? '#fee2e2' : info.temp === 'cold' ? '#dbeafe' : '#dcfce7';
-          var border = info.temp === 'hot' ? '#ef4444' : info.temp === 'cold' ? '#3b82f6' : '#16a34a';
-          var icon = info.temp === 'hot' ? '🔥' : info.temp === 'cold' ? '🧊' : '📦';
-          var textColor = info.temp === 'hot' ? '#dc2626' : info.temp === 'cold' ? '#2563eb' : '#374151';
-          var label = info.label ? info.label.slice(0, 4) : '';
-          sl.style.cssText = 'background:' + bg + ';border:1.5px solid ' + border + ';border-radius:5px;padding:4px 6px;font-size:10px;text-align:center;font-weight:600;color:' + textColor + ';line-height:1.4;';
-          sl.innerHTML = icon + ' ' + esc(nm) + (label ? '<div style="font-size:9px;opacity:0.8;margin-top:1px;">' + esc(label) + '</div>' : '');
-        } else {
-          sl.style.cssText = 'background:#f3f4f6;border:1.5px solid #d1d5db;border-radius:5px;padding:4px 6px;font-size:10px;text-align:center;font-weight:500;color:#9ca3af;line-height:1.4;';
-          sl.innerHTML = '⬜ ' + esc(nm) + '<div style="font-size:9px;margin-top:1px;">空</div>';
-        }
-        if (di === 4) sl.style.gridColumn = 'span 2';
+      // 5 格位視覺化
+      const slotNames=['左上','右上','左下','右下','肩背'];
+      const slotWrap=document.createElement('div');
+      slotWrap.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:6px 0 2px';
+      slotNames.forEach((nm,idx)=>{
+        const threshold=(idx+1)*0.5;const prev=idx*0.5;
+        const ratio=gBags>=threshold?1:gBags>prev?(gBags-prev)/0.5:0;
+        const bg=ratio>=1?(overloaded?'#fee2e2':'#dcfce7'):ratio>0?'#fef9c3':'#f3f4f6';
+        const border=ratio>=1?(overloaded?'#ef4444':'#16a34a'):ratio>0?'#fbbf24':'#d1d5db';
+        const sl=document.createElement('div');
+        sl.style.cssText=`background:${bg};border:1px solid ${border};border-radius:5px;padding:3px 6px;font-size:11px;text-align:center;font-weight:500;color:#374151;`;
+        sl.textContent=(ratio>=1?'🟩':ratio>0?'🟨':'⬜')+' '+nm;
+        if(idx===4)sl.style.gridColumn='span 2';
         slotWrap.appendChild(sl);
       });
       gDiv.appendChild(slotWrap);
@@ -5635,132 +5172,6 @@ async function computeDriverHistory() {
     return '其他';
   }
 
-  // ── 座標資料庫（WGS84 經緯度）──
-  // 用途：Haversine 計算直線距離 × 1.35 路線修正係數
-  var GEO_DB = [
-    // 店家
-    { pattern: /東南街.*118|小鵲幸.*東南/, lat: 24.7935, lng: 120.9825, name: '小鵲幸東南店' },
-    { pattern: /東南街.*128|鐵三角.*東南/, lat: 24.7933, lng: 120.9823, name: '鐵三角東南店' },
-    { pattern: /東南街.*104|米米香/, lat: 24.7937, lng: 120.9827, name: '米米香' },
-    { pattern: /食品路.*125|越南麵包/, lat: 24.7928, lng: 120.9818, name: '越南麵包' },
-    { pattern: /東南街|玉蘭/, lat: 24.7936, lng: 120.9826, name: '玉蘭' },
-    { pattern: /嘉興路.*255/, lat: 24.8310, lng: 121.0120, name: '竹北嘉興店' },
-    // 科學園區 — 公司
-    { pattern: /力行路\s*8|力行路8|台積.*[七7]/, lat: 24.7770, lng: 120.9960, name: '台積七廠' },
-    { pattern: /力行[一1二2]路|台積.*[五5]/, lat: 24.7780, lng: 120.9950, name: '台積五廠/力行路' },
-    { pattern: /力行六路|力積電|力晶/, lat: 24.7730, lng: 121.0020, name: '力積電' },
-    { pattern: /篤行[一1]路\s*1|篤行一路1|聯發科/, lat: 24.7820, lng: 120.9930, name: '聯發科' },
-    { pattern: /創新[二2]路\s*2|創新二路2|瑞昱/, lat: 24.7790, lng: 120.9980, name: '瑞昱' },
-    { pattern: /園區[二2]路\s*51|園區二路51|宜特/, lat: 24.7810, lng: 120.9970, name: '宜特' },
-    { pattern: /研新[一1]路\s*1|研新一路1|智邦/, lat: 24.7785, lng: 120.9955, name: '智邦' },
-    { pattern: /工業東[三3]路|瓦雷/, lat: 24.7850, lng: 120.9900, name: '工業東三路' },
-    { pattern: /園區[一1]路/, lat: 24.7830, lng: 120.9920, name: '園區一路' },
-    { pattern: /園區[三3]路/, lat: 24.7750, lng: 121.0010, name: '園區三路' },
-    { pattern: /研新/, lat: 24.7790, lng: 120.9960, name: '研新路' },
-    { pattern: /篤行/, lat: 24.7810, lng: 120.9940, name: '篤行路' },
-    { pattern: /創新/, lat: 24.7795, lng: 120.9985, name: '創新路' },
-    { pattern: /聯詠|novatek/i, lat: 24.7815, lng: 120.9935, name: '聯詠' },
-    { pattern: /群聯|phison/i, lat: 24.7760, lng: 121.0000, name: '群聯' },
-    { pattern: /旺宏|macronix/i, lat: 24.7800, lng: 120.9945, name: '旺宏' },
-    { pattern: /世界先進|vanguard/i, lat: 24.7755, lng: 121.0005, name: '世界先進' },
-    { pattern: /台積|tsmc/i, lat: 24.7775, lng: 120.9955, name: '台積電' },
-    { pattern: /科學園區|園區/, lat: 24.7800, lng: 120.9950, name: '科學園區' },
-    // 工研院/竹東
-    { pattern: /工研院|中興路四段/, lat: 24.7740, lng: 121.0420, name: '工研院' },
-    { pattern: /竹東/, lat: 24.7330, lng: 121.0930, name: '竹東' },
-    // 東區
-    { pattern: /中央路/, lat: 24.7950, lng: 120.9770, name: '中央路' },
-    { pattern: /光復路[一1]/, lat: 24.7960, lng: 120.9880, name: '光復路一段' },
-    { pattern: /光復路[二2]/, lat: 24.7900, lng: 120.9960, name: '光復路二段' },
-    { pattern: /建功/, lat: 24.7920, lng: 120.9900, name: '建功路' },
-    { pattern: /學府/, lat: 24.7940, lng: 120.9860, name: '學府路' },
-    { pattern: /清華|清大/, lat: 24.7960, lng: 120.9950, name: '清華大學' },
-    { pattern: /交大|陽明交通/, lat: 24.7870, lng: 120.9990, name: '陽明交大' },
-    // 北區
-    { pattern: /西大路/, lat: 24.8050, lng: 120.9670, name: '西大路' },
-    { pattern: /經國路/, lat: 24.8100, lng: 120.9680, name: '經國路' },
-    { pattern: /中華路/, lat: 24.8020, lng: 120.9690, name: '中華路' },
-    // 竹北
-    { pattern: /高鐵|六家/, lat: 24.8080, lng: 121.0400, name: '竹北高鐵' },
-    { pattern: /竹北.*光明/, lat: 24.8360, lng: 121.0080, name: '竹北光明' },
-    { pattern: /竹北/, lat: 24.8390, lng: 121.0040, name: '竹北' },
-    { pattern: /新豐/, lat: 24.8800, lng: 120.9870, name: '新豐' },
-    { pattern: /湖口/, lat: 24.9000, lng: 121.0400, name: '湖口' },
-    { pattern: /香山/, lat: 24.7600, lng: 120.9300, name: '香山' },
-  ];
-
-  // Haversine 距離（公里）
-  function haversineKm(lat1, lng1, lat2, lng2) {
-    var R = 6371;
-    var dLat = (lat2 - lat1) * Math.PI / 180;
-    var dLng = (lng2 - lng1) * Math.PI / 180;
-    var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLng/2) * Math.sin(dLng/2);
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  }
-
-  // 地址→座標
-  function addrToCoord(addr) {
-    if (!addr) return null;
-    for (var i = 0; i < GEO_DB.length; i++) {
-      if (GEO_DB[i].pattern.test(addr)) {
-        return { lat: GEO_DB[i].lat, lng: GEO_DB[i].lng, name: GEO_DB[i].name };
-      }
-    }
-    return null;
-  }
-
-  // 路線修正係數（直線距離 × 係數 ≈ 實際行車距離）
-  var ROAD_FACTOR = 1.35;
-
-  // 兩地址間的距離
-  function calcDistBetween(addrA, addrB) {
-    var cA = addrToCoord(addrA);
-    var cB = addrToCoord(addrB);
-    if (!cA || !cB) return { km: 0, note: '無法定位' };
-    var km = haversineKm(cA.lat, cA.lng, cB.lat, cB.lng) * ROAD_FACTOR;
-    return { km: Math.round(km * 10) / 10, note: cA.name + ' → ' + cB.name };
-  }
-
-  // 訂單的店家地址（取第一個 vendorId 的地址）
-  function getOrderShopAddr(order) {
-    var vids = getOrderVendors(order);
-    if (vids.length && typeof getVendorAddr === 'function') return getVendorAddr(vids[0]);
-    return '新竹市東區東南街118號'; // fallback
-  }
-
-  // 計算一組訂單的路線距離（店家→第1站→第2站→...）
-  function calcRouteDistances(orders) {
-    if (!orders || !orders.length) return { legs: [], total: 0 };
-    var shopAddr = getOrderShopAddr(orders[0]);
-    var legs = [];
-    var prev = shopAddr;
-    var total = 0;
-    orders.forEach(function(o, i) {
-      var dest = o.address || '';
-      var d = calcDistBetween(prev, dest);
-      // 額外算店家→此目的地的直線距離
-      var shopDist = calcDistBetween(shopAddr, dest);
-      legs.push({
-        from: i === 0 ? '店家' : orders[i-1].customer || ('站' + i),
-        to: o.customer || ('站' + (i+1)),
-        km: d.km,
-        note: d.note,
-        shopKm: shopDist.km // 店家→此目的地
-      });
-      total += d.km;
-      prev = dest;
-    });
-    return { legs: legs, total: Math.round(total * 10) / 10 };
-  }
-
-  // 舊版相容（單一地址距離，從店家出發）
-  function estimateDistance(addr, shopAddr) {
-    if (!shopAddr) shopAddr = '新竹市東區東南街118號';
-    return calcDistBetween(shopAddr, addr);
-  }
-
   // 計算訂單馬鞍袋單位數
   // 馬鞍袋結構：左右各一袋，中間層架，每袋分 4 格（左上/左下/右上/右下）
   // 總共 8 格空間，每格容量依品類不同：
@@ -6430,7 +5841,7 @@ async function computeDriverHistory() {
 
   // 商家簡稱 & 顏色對照
   var VENDOR_SHORT = {
-    'v_qe':'鵲東南','v_qb':'鵲竹北','v_qt':'鵲台中',
+    'v_qe':'鶴東南','v_qb':'鶴竹北','v_qt':'鶴台中',
     'v_yl':'玉','v_te':'鐵東南','v_tb':'鐵竹北',
     'v_mm':'米米','v_vn':'越南','v_ah':'阿惠','v_yf':'一口丹','v_ot':'其他'
   };
@@ -6576,14 +5987,15 @@ async function computeDriverHistory() {
     html += '<table class="dv2-dispatch-tbl" style="width:100%;border-collapse:collapse;font-size:13px;min-width:800px;">';
     html += '<thead><tr style="background:#f8fafc;position:sticky;top:0;z-index:2;">';
     html += '<th style="padding:6px 4px;text-align:left;border-bottom:2px solid #e2e8f0;white-space:nowrap;">預約時段</th>';
-    html += '<th style="padding:6px 4px;text-align:center;border-bottom:2px solid #e2e8f0;color:#dc2626;white-space:nowrap;min-width:72px;">出門</th>';
+    html += '<th style="padding:6px 4px;text-align:center;border-bottom:2px solid #e2e8f0;color:#dc2626;white-space:nowrap;">出門時間</th>';
     html += '<th style="padding:6px 4px;text-align:left;border-bottom:2px solid #e2e8f0;">外送地點</th>';
-    html += '<th style="padding:6px 4px;text-align:center;border-bottom:2px solid #e2e8f0;white-space:nowrap;">路程</th>';
+    html += '<th style="padding:6px 4px;text-align:center;border-bottom:2px solid #e2e8f0;white-space:nowrap;">距離</th>';
     html += '<th style="padding:6px 4px;text-align:left;border-bottom:2px solid #e2e8f0;">備註</th>';
     html += '<th style="padding:6px 4px;text-align:center;border-bottom:2px solid #e2e8f0;white-space:nowrap;">品牌</th>';
     html += '<th style="padding:6px 4px;text-align:center;border-bottom:2px solid #e2e8f0;white-space:nowrap;">馬鞍袋</th>';
     html += '<th style="padding:6px 4px;text-align:right;border-bottom:2px solid #e2e8f0;white-space:nowrap;">總金額</th>';
     html += '<th style="padding:6px 8px;text-align:center;border-bottom:2px solid #e2e8f0;white-space:nowrap;">外送員</th>';
+    html += '<th style="padding:6px 4px;text-align:center;border-bottom:2px solid #e2e8f0;white-space:nowrap;"></th>';
     html += '</tr></thead><tbody>';
 
     // 組別色帶：用外送員顏色淡化當底色，組間加粗分隔線
@@ -6591,16 +6003,19 @@ async function computeDriverHistory() {
     var lastGi = -1;
     var groupColorIdx = -1;
 
-    // 預先算每組內的目的地順序（用 group 內的 orders 陣列順序）
+    // 預先算每組內的目的地順序
     var groupDestOrder = {};
-    var groupRoutes = {}; // gi → { legs, total, orderIds }
     dv2State.groups.forEach(function(g, gi){
-      // 順序由 g.orders 決定（可被重排）
-      g.orders.forEach(function(o, idx){
-        groupDestOrder[String(o.id)] = (g.orders.length > 1) ? (idx + 1) : 0;
+      if (g.orders.length <= 1) return;
+      // 按時段排序決定送貨順序
+      var sorted = g.orders.slice().sort(function(a, b){
+        var tA = parseTimeslotMinutes(a.timeslot) || 9999;
+        var tB = parseTimeslotMinutes(b.timeslot) || 9999;
+        return tA - tB;
       });
-      // 計算路線距離
-      groupRoutes[gi] = calcRouteDistances(g.orders);
+      sorted.forEach(function(o, idx){
+        groupDestOrder[String(o.id)] = idx + 1;
+      });
     });
 
     rows.forEach(function(r, ri){
@@ -6630,73 +6045,38 @@ async function computeDriverHistory() {
       var isFirstInGroup = (ri === 0 || rows[ri-1].gi !== r.gi);
       if (isFirstInGroup) {
         html += '<td style="padding:3px 2px;border-bottom:1px solid #f1f5f9;text-align:center;" rowspan="' + groupSize + '">';
-        html += '<input type="text" inputmode="numeric" placeholder="HH:MM" class="dv2-depart-input" data-gi="' + r.gi + '" value="' + escHtml(r.departTime) + '" style="width:60px;padding:5px 4px;border:2px solid #fca5a5;border-radius:6px;font-size:14px;font-weight:700;color:#dc2626;text-align:center;background:#fff5f5;box-sizing:border-box;letter-spacing:1px;">';
+        html += '<input type="time" class="dv2-depart-input" data-gi="' + r.gi + '" value="' + escHtml(r.departTime) + '" style="width:70px;padding:3px 4px;border:1.5px solid #fca5a5;border-radius:6px;font-size:13px;font-weight:700;color:#dc2626;text-align:center;background:#fff;">';
         if (r.isCrossSlot) {
           html += '<div style="font-size:9px;color:#6366f1;margin-top:2px;">跨時段建議</div>';
         }
         html += '</td>';
       }
 
-      // 外送地點 + 目的地順序 + 調換順序按鈕 + 店家距離
+      // 外送地點 + 目的地順序
       var addr = r.order.address || '';
       var customer = r.order.customer || '未命名';
       var destNum = groupDestOrder[String(r.order.id)];
-      var groupLen = dv2State.groups[r.gi].orders.length;
-      var route = groupRoutes[r.gi];
-      var leg = route && route.legs && route.legs[r.oi];
-      var shopKm = leg ? leg.shopKm : 0;
-      html += '<td class="dv2-order-cell" data-oid="' + String(r.order.id) + '" style="padding:5px 4px;border-bottom:1px solid #f1f5f9;cursor:pointer;" title="點擊查看訂單詳情">';
-      // 第一行：順序圓圈 + 客戶名 + 調換按鈕
-      html += '<div style="display:flex;align-items:center;gap:3px;">';
+      html += '<td style="padding:5px 4px;border-bottom:1px solid #f1f5f9;">';
       if (destNum) {
         var circleColors = ['#3b82f6','#f59e0b','#10b981'];
         var cClr = circleColors[(destNum-1) % circleColors.length];
-        html += '<span style="display:inline-block;width:18px;height:18px;line-height:18px;text-align:center;border-radius:50%;background:' + cClr + ';color:#fff;font-size:10px;font-weight:700;flex-shrink:0;">' + destNum + '</span>';
+        html += '<span style="display:inline-block;width:18px;height:18px;line-height:18px;text-align:center;border-radius:50%;background:' + cClr + ';color:#fff;font-size:10px;font-weight:700;margin-right:4px;vertical-align:middle;">' + destNum + '</span>';
       }
-      html += '<span style="font-weight:600;font-size:12px;color:#2563eb;text-decoration:underline;flex:1;">' + escHtml(customer) + '</span>';
-      // 合併訂單的調換順序按鈕
-      if (groupLen > 1) {
-        if (r.oi > 0) {
-          html += '<button class="dv2-reorder-btn" data-gi="' + r.gi + '" data-oi="' + r.oi + '" data-dir="up" title="上移" style="border:1px solid #bfdbfe;background:#eff6ff;border-radius:3px;cursor:pointer;font-size:10px;padding:1px 4px;color:#2563eb;flex-shrink:0;">▲</button>';
-        }
-        if (r.oi < groupLen - 1) {
-          html += '<button class="dv2-reorder-btn" data-gi="' + r.gi + '" data-oi="' + r.oi + '" data-dir="down" title="下移" style="border:1px solid #bfdbfe;background:#eff6ff;border-radius:3px;cursor:pointer;font-size:10px;padding:1px 4px;color:#2563eb;flex-shrink:0;">▼</button>';
-        }
-        html += '<button class="dv2-split-btn" data-gi="' + r.gi + '" data-oi="' + r.oi + '" title="拆出此單" style="border:1px solid #e5e7eb;background:#fff;border-radius:3px;cursor:pointer;font-size:10px;padding:1px 4px;color:#6b7280;flex-shrink:0;">✂️</button>';
-      }
-      html += '</div>';
-      // 第二行：地址 + 店家→目的地距離 + 跟單/門檻標記
-      html += '<div style="display:flex;align-items:center;gap:4px;margin-top:1px;flex-wrap:wrap;">';
-      html += '<span style="font-size:11px;color:#6b7280;flex:1;">' + escHtml(addr) + '</span>';
-      if (shopKm > 0) {
-        var shopDistClr = shopKm <= 3 ? '#16a34a' : shopKm <= 7 ? '#d97706' : '#dc2626';
-        html += '<span style="font-size:10px;color:' + shopDistClr + ';white-space:nowrap;flex-shrink:0;background:' + shopDistClr + '12;padding:1px 4px;border-radius:3px;" title="店家→目的地距離">🏪' + shopKm.toFixed(1) + 'km</span>';
-      }
-      if (r.order.isTagalong) {
-        html += '<span style="font-size:9px;color:#7c3aed;background:#ede9fe;padding:1px 4px;border-radius:3px;white-space:nowrap;flex-shrink:0;">🏷️跟單</span>';
-      } else if (typeof checkDeliveryThreshold === 'function') {
-        var thCheck = checkDeliveryThreshold(r.order);
-        if (!thCheck.pass) {
-          html += '<span style="font-size:9px;color:#dc2626;background:#fef2f2;padding:1px 4px;border-radius:3px;white-space:nowrap;flex-shrink:0;" title="' + escHtml(thCheck.message) + '">⚠️未達門檻</span>';
-        }
-      }
-      html += '</div>';
+      html += '<span style="font-weight:600;font-size:12px;">' + escHtml(customer) + '</span>';
+      html += '<div style="font-size:11px;color:#6b7280;margin-top:1px;">' + escHtml(addr) + '</div>';
       html += '</td>';
 
-      // 距離（逐段顯示：前一站→此站）
-      var legKm = leg ? leg.km : 0;
-      var legFrom = leg ? leg.from : '';
-      var legTo = leg ? leg.to : '';
-      var distColor = legKm <= 3 ? '#16a34a' : legKm <= 7 ? '#d97706' : '#dc2626';
-      html += '<td style="padding:4px 3px;border-bottom:1px solid #f1f5f9;text-align:center;font-size:11px;line-height:1.3;">';
-      html += '<div style="color:' + distColor + ';font-weight:700;">' + legKm.toFixed(1) + 'km</div>';
-      html += '<div style="font-size:9px;color:#9ca3af;">' + escHtml(legFrom) + '→' + escHtml(legTo) + '</div>';
-      // 同組最後一行顯示總距離
-      var isLastInGroup = (ri === rows.length - 1 || rows[ri+1].gi !== r.gi);
-      if (isLastInGroup && route && route.legs.length > 1) {
-        html += '<div style="font-size:9px;color:#6366f1;font-weight:600;border-top:1px solid #e5e7eb;margin-top:2px;padding-top:2px;">總 ' + route.total.toFixed(1) + 'km</div>';
-      }
-      html += '</td>';
+      // 距離
+      var distText = '—';
+      var distZone = guessDeliveryZone(addr);
+      // 簡易距離估算（無 Google Maps 時）
+      var ZONE_DIST = {
+        '新竹東南商圈': 1.5, '新竹科學園區': 5.5, '新竹湳雅商圈': 3.0,
+        '竹北福興商圈': 8.0, '竹東': 12.0, '其他': 6.0
+      };
+      var estKm = ZONE_DIST[distZone] || 5;
+      distText = estKm.toFixed(1) + 'km';
+      html += '<td style="padding:5px 4px;border-bottom:1px solid #f1f5f9;text-align:center;font-size:12px;color:#6b7280;">' + distText + '</td>';
 
       // 備註
       var note = r.order.note || r.order.deliveryNote || r.order.timeNote || '';
@@ -6717,20 +6097,30 @@ async function computeDriverHistory() {
 
       if (isFirstInGroup) {
         html += '<td style="padding:5px 4px;border-bottom:1px solid #f1f5f9;text-align:center;" rowspan="' + groupSize + '">';
-        html += '<select class="dv2-drv-sel" data-gi="' + r.gi + '" style="padding:4px 4px;border-radius:6px;border:2px solid ' + drvColor + ';font-size:13px;font-weight:700;color:' + drvColor + ';background:#fff;min-width:56px;cursor:pointer;">';
+        html += '<select class="dv2-drv-sel" data-gi="' + r.gi + '" style="padding:4px 6px;border-radius:6px;border:2px solid ' + drvColor + ';font-size:13px;font-weight:700;color:' + drvColor + ';background:#fff;min-width:70px;cursor:pointer;">';
         var ranked = r.ranked;
         if (!ranked.scored.length) {
           html += '<option value="">無可用</option>';
         } else {
           ranked.scored.forEach(function(d){
             var sel = (d.driverId === r.driver) ? ' selected' : '';
-            html += '<option value="' + escHtml(d.driverId) + '"' + sel + '>' + escHtml(d.driverId) + '</option>';
+            html += '<option value="' + escHtml(d.driverId) + '"' + sel + '>' + escHtml(d.driverId) + ' ' + Math.round(d.score) + '分</option>';
           });
         }
         html += '</select>';
         html += '</td>';
       }
       // else skip td due to rowspan
+
+      // 拆單按鈕
+      var groupLen = dv2State.groups[r.gi].orders.length;
+      if (groupLen > 1) {
+        html += '<td style="padding:3px 2px;border-bottom:1px solid #f1f5f9;text-align:center;">';
+        html += '<button class="dv2-split-btn" data-gi="' + r.gi + '" data-oi="' + r.oi + '" title="拆出此單" style="border:1px solid #e5e7eb;background:#fff;border-radius:4px;cursor:pointer;font-size:11px;padding:2px 6px;color:#6b7280;">✂️拆</button>';
+        html += '</td>';
+      } else {
+        html += '<td style="padding:3px 2px;border-bottom:1px solid #f1f5f9;"></td>';
+      }
 
       html += '</tr>';
     });
@@ -6823,43 +6213,12 @@ async function computeDriverHistory() {
       });
     });
 
-    // ── 綁定重排順序按鈕 ──
-    body.querySelectorAll('.dv2-reorder-btn').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        var gi = parseInt(btn.getAttribute('data-gi'), 10);
-        var oi = parseInt(btn.getAttribute('data-oi'), 10);
-        var dir = btn.getAttribute('data-dir');
-        var g = dv2State.groups[gi];
-        if (!g || !g.orders) return;
-        if (dir === 'up' && oi > 0) {
-          var tmp = g.orders[oi];
-          g.orders[oi] = g.orders[oi - 1];
-          g.orders[oi - 1] = tmp;
-        } else if (dir === 'down' && oi < g.orders.length - 1) {
-          var tmp = g.orders[oi];
-          g.orders[oi] = g.orders[oi + 1];
-          g.orders[oi + 1] = tmp;
-        }
-        renderDv2Summary(); // 即時重算距離並重繪
-      });
-    });
-
     // ── 綁定出門時間編輯 ──
     body.querySelectorAll('.dv2-depart-input').forEach(function(inp){
       inp.addEventListener('change', function(){
         var gi = parseInt(inp.getAttribute('data-gi'), 10);
         // 儲存自訂出門時間到 group
         dv2State.groups[gi].customDepart = inp.value;
-      });
-    });
-
-    // ── 綁定訂單點擊查看詳情（排除按鈕點擊） ──
-    body.querySelectorAll('.dv2-order-cell').forEach(function(cell){
-      cell.addEventListener('click', function(e){
-        // 如果點擊的是按鈕（▲▼✂️），不觸發詳情
-        if (e.target.tagName === 'BUTTON') return;
-        var oid = cell.getAttribute('data-oid');
-        if (oid && typeof openOrderDetail === 'function') openOrderDetail(oid);
       });
     });
   }
@@ -7160,7 +6519,6 @@ async function computeDriverHistory() {
     }
     try { if (typeof fbTrips !== 'undefined') { fbTrips = await fbGet('/trips') || {}; } } catch(e) {}
     if (typeof showToast === 'function') showToast('✅ 完成 ' + ok + ' 組派單' + (fail ? ' (失敗 ' + fail + ')' : ''));
-    if (typeof OpHistory !== 'undefined') OpHistory.record('dispatch_create', dv2State.dateStr + ' ' + ok + ' 組派單', null);
     closeDv2Modal();
     if (typeof renderDispatchContent === 'function') renderDispatchContent();
   }
@@ -7404,9 +6762,5 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 })();
 </script>
-
-<!-- 操作歷史浮動按鈕 -->
-<button class="op-history-fab" id="op-history-fab" title="操作歷史">🕓<span class="fab-badge" id="op-history-badge" style="display:none">0</span></button>
-
 </body>
 </html>

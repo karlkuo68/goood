@@ -1432,7 +1432,7 @@
             '鎮哥': '1111', '潘伊莎': '2222', '正志': '3333',
             '小賴': '4444', '純如': '5555', '熊熊': '6666',
             '龍': '7777', '瑋瑋': '8888', '平台': '9999',
-            '管理員': '123'
+            '阿德': '0000', '管理員': '123'
         };
 
         // Global state - regular script, NOT module scope
@@ -1662,14 +1662,14 @@
                     <div class="trip-stats">
                         <div class="stat-item">📦 ${(trip.orders || []).length} 訂</div>
                         <div class="stat-item">💰 ${(trip.orders || []).reduce((s, o) => s + (o.total || 0), 0)} 元</div>
-                        <div class="stat-item">🎒 ${(trip.orders || []).reduce((s, o) => s + (o.totalBags || 0), 0)} 袋</div>
+                        <div class="stat-item">🎒 ${(trip.orders || []).reduce((s, o) => s + (o.totalBags || 0), 0).toFixed(1)} 單位</div>
                     </div>
                     <div class="trip-orders-preview" style="margin-top:8px; border-top:1px solid var(--border); padding-top:8px;">
-                        ${(trip.orders || []).map((order, idx) => `
+                        ${(trip.orders || []).map((order, idx) => {const ti={cold:'🧊',hot:'🔥',normal:'📦'}[order.tempType||'normal']||'📦'; return `
                             <div style="font-size:13px; color:var(--text-sub); padding:2px 0;">
-                                ${idx + 1}. ${escapeHtml(order.customer || '未知')} - ${escapeHtml(order.address || '')}
+                                ${idx + 1}. ${ti} ${escapeHtml(order.customer || '未知')} - ${escapeHtml(order.address || '')}
                             </div>
-                        `).join('')}
+                        `;}).join('')}
                     </div>
                     <div style="font-size:12px; color:var(--green); text-align:center; margin-top:6px;">點擊查看詳情 ▼</div>
                 </div>
